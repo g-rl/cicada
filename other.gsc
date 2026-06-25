@@ -24,10 +24,13 @@ function initial_variable()
     self.element_list    = list("text,submenu,toggle,category,slider");
 
     self.color[0] = (1,1,1); // when cursor is over a option, this is the color. this is white for now
-    self.color[1] = (0.65, 0.20, 0.41);
-    self.color[2] = (0.84, 0.20, 0.5);
-    self.color[3] = (0.443, 0.455, 0.467);
+    self.color[1] = (0.0, 0.0, 0.0);
+    self.color[2] = (0.05, 0.0, 0.0);
+    self.color[3] = (0.45, 0.455, 0.45); // idk
     self.color[4] = self.color[0]; // this is normal color for option whenever cursor isn't over it
+
+    // main accent being used
+    self.current_menu_color = (1.0, 0.0, 0.10);
 
     self.cursor   = [];
     self.previous = [];
@@ -43,7 +46,7 @@ function structure()
     
     increment_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
     slider_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
-    credits = "made with ^1<3^7 by ^5nyli^7 & ^2mikey";
+    credits = "made with ^:<3^7 by ^5nyli^7 & ^6mikey";
     title = "cicada";
 
     switch(menu)
@@ -498,8 +501,6 @@ function open_menu(menu)
 
     if (!isdefined(self.slider))
         self.slider = [];
-
-    self.current_menu_color = (0.345, 0.0, 0.929);
 
     self.menu["hud"]["title"]        = self create_text("MP/NEURA_TITLE_" + self get_title(), "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 1.75), self.color[4], 1, 10);
     // outline
