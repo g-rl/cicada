@@ -3,9 +3,9 @@ setlocal enabledelayedexpansion
 
 set "ACTS=%~dp0tools\acts.exe"
 
-"%ACTS%" gscc "art.gsc" -o final\31FCFD26E002B5AD -g mwiii --name "scripts/mp/art.gsc" --crc "f5051fa6" --namespace "scripts/mp/art"
+"%ACTS%" gscc "main.gsc" -o final\31FCFD26E002B5AD -g mwiii --name "scripts/mp/art.gsc" --crc "f5051fa6" --namespace "scripts/mp/art"
 ::"%ACTS%" gscc "other_4500bytes.gsc" -o final\2B79931B08683E0A -g mwiii --name "script_2b79931b08683e0a.gsc" --crc "a325beb1" --namespace "namespace_152f3860b54f75e5"
-"%ACTS%" gscc "main_15000bytes.gsc" -o final\13645532f846e433 -g mwiii --name "script_13645532f846e433.gsc" --crc "1fa99f98" --namespace "namespace_eb31a7ea746bf7d0"
+"%ACTS%" gscc "other.gsc" -o final\13645532f846e433 -g mwiii --name "script_13645532f846e433.gsc" --crc "1fa99f98" --namespace "namespace_eb31a7ea746bf7d0"
 
 :: if Documents\retdonetskmod\ folder exists, keep going else create
 set "MODROOT=%USERPROFILE%\Documents\retdonetskmod"

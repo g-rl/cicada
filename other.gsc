@@ -1,11 +1,11 @@
-// 15879 bytes
+// 22000 < 23533 max bytes
 #using scripts\mp\hud_util;
 
 #namespace namespace_eb31a7ea746bf7d0;
 
 function test()
 {
-    a = "^2cicada test";
+    a = "^:cicada";
 	self iprintln(a);
     self iprintlnbold(a);
 }
@@ -24,8 +24,8 @@ function initial_variable()
     self.element_list    = list("text,submenu,toggle,category,slider");
 
     self.color[0] = (1,1,1); // when cursor is over a option, this is the color. this is white for now
-    self.color[1] = (0.109803, 0.129411, 0.156862);
-    self.color[2] = (0.133333, 0.152941, 0.180392);
+    self.color[1] = (0.65, 0.20, 0.41);
+    self.color[2] = (0.84, 0.20, 0.5);
     self.color[3] = (0.443, 0.455, 0.467);
     self.color[4] = self.color[0]; // this is normal color for option whenever cursor isn't over it
 
@@ -56,7 +56,7 @@ function structure()
         //self add_option("position", credits, &new_menu, "position");
         //self add_option("game", credits, &new_menu, "game settings");
         //self add_option("clients", credits, &new_menu, "manage clients");
-        //if (is_true(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
+        //if (istrue(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
         break;
 
     case "mods & toggles": // eh clean this up later -et
@@ -76,7 +76,7 @@ function structure()
         break;
 
     default:
-        //if (is_true(self.bind_index))
+        //if (istrue(self.bind_index))
         //    self bind_index(menu, increment_controls);
         //else 
         //    self player_index(menu, self.select_player);
@@ -121,20 +121,14 @@ function get_title()
     return self.menu["title"];
 }
 
-// lol
-function is_true(con)
-{
-    return con == true;
-}
-
 function in_menu()
 {
-    return is_true(self.in_menu);
+    return istrue(self.in_menu);
 }
 
 function set_procedure()
 {
-    self.in_menu = !is_true(self.in_menu);
+    self.in_menu = !istrue(self.in_menu);
 }
 
 function add_option(text, summary, func, argument_1, argument_2, argument_3, argument_4, argument_5)
@@ -183,7 +177,7 @@ function initial_monitor()
                 }
                 else if (self usebuttonpressed()) // back
                 {
-                   // self sfx("zmb_powerup_activate");
+                    // self sfx("zmb_powerup_activate");
 
                     if (isdefined(self.previous[(self.previous.size - 1)]))
                     {
@@ -215,13 +209,13 @@ function initial_monitor()
                 }
                 else if (self isbuttonpressed("-actionslot 4") && !self isbuttonpressed("-actionslot 3") || self isbuttonpressed("-actionslot 3") && !self isbuttonpressed("-actionslot 4"))
                 {
-                    if (is_true(self.structure[cursor]["slider"]))
+                    if (istrue(self.structure[cursor]["slider"]))
                     {
                         //self thread [[ &play_sound ]]("scavenger_pack_pickup");
                         scrolling = self isbuttonpressed("-actionslot 3") ? 1 : -1;
                         self set_slider(scrolling);
 
-                        if (is_true(self.structure[cursor]["is_increment"]))
+                        if (istrue(self.structure[cursor]["is_increment"]))
                         {
                             self thread [[ &execute_function ]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
                             //self thread [[ &play_sound ]]("ui_mp_weapon_pickup");
@@ -234,9 +228,9 @@ function initial_monitor()
                 {
                     if (isdefined(self.structure[cursor]["function"]))
                     {
-                        if (is_true(self.structure[cursor]["slider"]))
+                        if (istrue(self.structure[cursor]["slider"]))
                         {
-                            if (is_true(self.structure[cursor]["is_array"]))
+                            if (istrue(self.structure[cursor]["is_array"]))
                             {
                                 self thread [[ &execute_function ]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
                                 //self thread [[ &play_sound ]]("recondrone_tag");
@@ -256,7 +250,7 @@ function initial_monitor()
                         cursor_struct = self.structure[cursor];
                         if (isdefined(cursor_struct))
                         {
-                            if (isdefined(cursor_struct["toggle"]) || !is_true(cursor_struct["is_array"]))
+                            if (isdefined(cursor_struct["toggle"]) || !istrue(cursor_struct["is_array"]))
                             {
                                 self update_menu(menu, cursor);
                             }
@@ -388,7 +382,7 @@ function update_scrolling(scrolling)
     cursor_index = self get_cursor();
     structure = self.structure[cursor_index];
 
-    if (isdefined(structure) && is_true(structure["category"]))
+    if (isdefined(structure) && istrue(structure["category"]))
     {
         self set_cursor((self get_cursor() + scrolling));
         return false;
@@ -418,7 +412,7 @@ function update_resize()
     else
         position = 0;
 
-    if (is_true(self.shader_option[self get_menu()]))
+    if (istrue(self.shader_option[self get_menu()]))
     {
         self.menu["hud"]["foreground"][1].y = (self.y_offset + 46);
         self.menu["hud"]["foreground"][1].x = (self.menu["hud"]["text"][self get_cursor()].x - 10);
@@ -443,10 +437,10 @@ function update_resize()
         if (isdefined(self.menu["hud"]["arrow"][1])) self.menu["hud"]["arrow"][1] destroy_element();
     }
 
-    self.menu["hud"]["background"][0] set_shader(self.menu["hud"]["background"][0].shader, self.menu["hud"]["background"][0].width, is_true(self.shader_option[self get_menu()]) ? (isdefined(self.structure[self get_cursor()]["summary"]) && is_true(self.option_summary) ? 66 : 50) : (isdefined(self.structure[self get_cursor()]["summary"]) && is_true(self.option_summary) ? (height + 34) : (height + 18)));
-    self.menu["hud"]["background"][1] set_shader(self.menu["hud"]["background"][1].shader, self.menu["hud"]["background"][1].width, is_true(self.shader_option[self get_menu()]) ? (isdefined(self.structure[self get_cursor()]["summary"]) && is_true(self.option_summary) ? 64 : 48) : (isdefined(self.structure[self get_cursor()]["summary"]) && is_true(self.option_summary) ? (height + 32) : (height + 16)));
-    self.menu["hud"]["foreground"][0] set_shader(self.menu["hud"]["foreground"][0].shader, self.menu["hud"]["foreground"][0].width, is_true(self.shader_option[self get_menu()]) ? 32 : height);
-    self.menu["hud"]["foreground"][1] set_shader(self.menu["hud"]["foreground"][1].shader, is_true(self.shader_option[self get_menu()]) ? 20 : 214, is_true(self.shader_option[self get_menu()]) ? 2 : 16);
+    self.menu["hud"]["background"][0] set_shader(self.menu["hud"]["background"][0].shader, self.menu["hud"]["background"][0].width, istrue(self.shader_option[self get_menu()]) ? (isdefined(self.structure[self get_cursor()]["summary"]) && istrue(self.option_summary) ? 66 : 50) : (isdefined(self.structure[self get_cursor()]["summary"]) && istrue(self.option_summary) ? (height + 34) : (height + 18)));
+    self.menu["hud"]["background"][1] set_shader(self.menu["hud"]["background"][1].shader, self.menu["hud"]["background"][1].width, istrue(self.shader_option[self get_menu()]) ? (isdefined(self.structure[self get_cursor()]["summary"]) && istrue(self.option_summary) ? 64 : 48) : (isdefined(self.structure[self get_cursor()]["summary"]) && istrue(self.option_summary) ? (height + 32) : (height + 16)));
+    self.menu["hud"]["foreground"][0] set_shader(self.menu["hud"]["foreground"][0].shader, self.menu["hud"]["foreground"][0].width, istrue(self.shader_option[self get_menu()]) ? 32 : height);
+    self.menu["hud"]["foreground"][1] set_shader(self.menu["hud"]["foreground"][1].shader, istrue(self.shader_option[self get_menu()]) ? 20 : 214, istrue(self.shader_option[self get_menu()]) ? 2 : 16);
     self.menu["hud"]["foreground"][2] set_shader(self.menu["hud"]["foreground"][2].shader, self.menu["hud"]["foreground"][2].width, adjust);
 
     if (isdefined(self.menu["hud"]["foreground"][2]))
@@ -457,7 +451,7 @@ function update_resize()
     }
 
     if (isdefined(self.menu["hud"]["summary"]))
-        self.menu["hud"]["summary"].y = is_true(self.shader_option[self get_menu()]) ? (self.y_offset + 51) : (self.y_offset + ((limit * self.option_spacing) + 19));
+        self.menu["hud"]["summary"].y = istrue(self.shader_option[self get_menu()]) ? (self.y_offset + 51) : (self.y_offset + ((limit * self.option_spacing) + 19));
 }
 
 function new_menu(menu)
@@ -609,7 +603,7 @@ function update_menu(menu, cursor, force)
                 continue;
 
             if (player get_menu() == menu || self != player && player is_option(menu, cursor, self))
-                if (isdefined(player.menu["hud"]["text"][cursor]) || player == self && player get_menu() == menu && isdefined(player.menu["hud"]["text"][cursor]) || self != player && player is_option(menu, cursor, self) || is_true(force))
+                if (isdefined(player.menu["hud"]["text"][cursor]) || player == self && player get_menu() == menu && isdefined(player.menu["hud"]["text"][cursor]) || self != player && player is_option(menu, cursor, self) || istrue(force))
                     player create_option();
         }
     }
@@ -714,7 +708,7 @@ function override_string_for_index(index)
 
 sym()
 {
-    symbols = ["ߕ"]; // array for rn
+    symbols = ["߽"]; // array for rn
     symbol = symbols[randomint(symbols.size)];
     return symbol + " ";
 }
@@ -727,10 +721,10 @@ function create_title(title)
 
 function create_summary(summary)
 {
-    if (isdefined(self.menu["hud"]["summary"]) && !is_true(self.option_summary) || !isdefined(self.structure[self get_cursor()]["summary"]) && isdefined(self.menu["hud"]["summary"]))
+    if (isdefined(self.menu["hud"]["summary"]) && !istrue(self.option_summary) || !isdefined(self.structure[self get_cursor()]["summary"]) && isdefined(self.menu["hud"]["summary"]))
         self.menu["hud"]["summary"] destroy_element();
 
-    if (isdefined(self.structure[self get_cursor()]["summary"]) && is_true(self.option_summary))
+    if (isdefined(self.structure[self get_cursor()]["summary"]) && istrue(self.option_summary))
     {
         summary_ = tolower(isdefined(summary) ? summary : self.structure[self get_cursor()]["summary"]);
         lol_ = "MP/NEURA_INFO_" + "ߵ " + summary_;
@@ -760,7 +754,7 @@ function create_option()
         start = (self.structure.size - self.option_limit);
 
     self create_title();
-    if (is_true(self.option_summary))
+    if (istrue(self.option_summary))
         self create_summary();
 
     if (isdefined(self.structure) && self.structure.size)
@@ -771,7 +765,7 @@ function create_option()
             index      = (i + start);
             cursor     = (self get_cursor() == index);
             color[0] = cursor ? self.color[0] : self.color[4];
-            color[1] = is_true(self.structure[index]["toggle"]) ? cursor ? self.color[0] : (1,1,1) : cursor ? self.color[2] : self.color[1];
+            color[1] = istrue(self.structure[index]["toggle"]) ? cursor ? self.color[0] : (1,1,1) : cursor ? self.color[2] : self.color[1];
 
             // new menu text
             if (isdefined(self.structure[index]["function"]) && self.structure[index]["function"] == &new_menu)
@@ -782,7 +776,7 @@ function create_option()
                 // self.menu["hud"]["current_toggle_index"] = self.menu["hud"]["toggle"][index];
             }
 
-            if (is_true(self.structure[index]["slider"]))
+            if (istrue(self.structure[index]["slider"]))
             {
                 storage = (self get_menu() + "_" + index);
                 self.slider[storage] = isdefined(self.structure[index]["array"]) ? 0 : self.structure[index]["start"];
@@ -811,7 +805,7 @@ function create_option()
                 self set_slider(undefined, index);
             }
 
-            if (is_true(self.structure[index]["category"]))
+            if (istrue(self.structure[index]["category"]))
             {
                 og_string = "MP/NEURA_STR" + (i + 1) + "_" + tolower(self.structure[index]["text"]);
                 override_string = override_string_for_index(i + 1);
@@ -824,7 +818,7 @@ function create_option()
             {
                 menu = self get_menu();
                 shader_option = self.shader_option[menu];
-                if (is_true(shader_option))
+                if (istrue(shader_option))
                 {
                     shader = isdefined(self.structure[index]["text"]) ? self.structure[index]["text"] : "white";
                     color  = isdefined(self.structure[index]["argument_1"]) ? self.structure[index]["argument_1"] : (1, 1, 1); // come back
@@ -834,7 +828,7 @@ function create_option()
                 }
                 else
                 {
-                    menu_text = (is_true(self.structure[index]["slider"]) ? self.structure[index]["text"]/*+":"*/ : self.structure[index]["text"]);
+                    menu_text = (istrue(self.structure[index]["slider"]) ? self.structure[index]["text"]/*+":"*/ : self.structure[index]["text"]);
                     if (self get_menu() != "manage clients")
                         menu_text = tolower(menu_text);
 
