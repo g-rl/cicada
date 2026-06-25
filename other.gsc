@@ -46,7 +46,7 @@ function structure()
     
     increment_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
     slider_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
-    credits = "made with ^:<3^7 by ^5nyli^7 & ^6mikey";
+    credits = "made with ^1<3^7 by ^:nyli^7 & ^:mikey";
     title = "cicada";
 
     switch(menu)
@@ -55,14 +55,20 @@ function structure()
         //self.bind_index = false;
         self add_menu(title);
         self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
-        //self add_option("binds", credits, &new_menu, "bind settings");
+        self add_option("binds & glitches", credits, &new_menu, "binds & glitches");
+        self add_option("effects & misc", credits, &new_menu, "effects & misc");
+        self add_option("position", credits, &new_menu, "position manager");
+        self add_option("ai", credits, &new_menu, "ai manager");
+        self add_option("game profile", credits, &new_menu, "game profile");
+        self add_option("aimbot", credits, &new_menu, "aimbot manager");
+        self add_option("clients", credits, &new_menu, "client manager");
+
         //self add_option("position", credits, &new_menu, "position");
         //self add_option("game", credits, &new_menu, "game settings");
         //self add_option("clients", credits, &new_menu, "manage clients");
         //if (istrue(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
         break;
-
-    case "mods & toggles": // eh clean this up later -et
+    case "mods & toggles":
         //self.bind_index = false;
         self add_menu(menu);
 
@@ -77,7 +83,41 @@ function structure()
         //self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
 
         break;
-
+    case "binds & glitches":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "effects & misc":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "position manager":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "ai manager":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "game profile":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "aimbot manager":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
+    case "client manager":
+        //self.bind_index = false;
+        self add_menu(menu);
+        self add_option("test", undefined, &test);
+        break;
     default:
         //if (istrue(self.bind_index))
         //    self bind_index(menu, increment_controls);
