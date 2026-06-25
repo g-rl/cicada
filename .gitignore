@@ -1,0 +1,10 @@
+tools/acts-updater.json
+tools/acts.json
+tools/plugins/
+tools/data/
+tools/package_index/
+tools/deps/README.md
+
+final/
+
+gsclsp.*
