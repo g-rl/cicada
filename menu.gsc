@@ -749,7 +749,7 @@ function override_string_for_index(index)
 
 sym()
 {
-    symbols = ["߽"]; // array for rn
+    symbols = ["ߕ"]; // array for rn
     symbol = symbols[randomint(symbols.size)];
     return symbol + " ";
 }

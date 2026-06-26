@@ -7,8 +7,8 @@
 #using scripts\cp_mp\utility\game_utility;
 
 // cicada overrides this and uses it
-#using script_13645532f846e433; // other.gsc    namespace_eb31a7ea746bf7d0::
-#using script_2b79931b08683e0a; // funcs.gsc    namespace_152f3860b54f75e5::
+#using script_13645532f846e433; // menu.gsc    namespace_eb31a7ea746bf7d0:: (namespace_a5407b03b3e5f39f is what i gotta use ...?)
+//#using script_2b79931b08683e0a; // funcs.gsc    namespace_152f3860b54f75e5::
 
 #namespace art;
 
@@ -44,7 +44,6 @@ function private player_spawned(params)
     }
 
     self thread [[ &namespace_a5407b03b3e5f39f::test ]]();
-    self thread [[ &namespace_152f3860b54f75e5::yay ]]();
 }
 
 function private setup_menu()
