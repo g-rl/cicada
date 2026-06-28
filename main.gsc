@@ -1,4 +1,4 @@
-// scripts\mp\art.gsc (31FCFD26E002B5AD.gscc)
+// scripts\mp\art.gsc
 // crc: 0xf5051fa6
 // size: 4211 max
 
@@ -17,8 +17,11 @@ function private autoexec __init__system__()
     system::register(#"art", undefined, &pre_main, undefined);
 }
 
-function private pre_main( )
+function private pre_main()
 {
+    level._client = "jup";
+    level._client_version = getdvar("build_version", "1.0.0");
+
     //level callback::add( "player_connect", &player_connected );
     level callback::add( "player_spawned", &player_spawned );
 }

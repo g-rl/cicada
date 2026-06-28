@@ -1,4 +1,4 @@
-// 22000 < 23533 max bytes
+// script_13645532f846e433
 #using scripts\mp\hud_util;
 
 #namespace namespace_eb31a7ea746bf7d0;
@@ -47,7 +47,8 @@ function structure()
     increment_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
     slider_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
     credits = "made with ^1<3^7 by ^:nyli^7 & ^:mikey";
-    title = "cicada";
+    build = get_current_build();
+    title = "cicada ^5" + build;
 
     switch(menu)
     {
@@ -58,9 +59,9 @@ function structure()
         self add_option("binds & glitches", credits, &new_menu, "binds & glitches");
         self add_option("effects & misc", credits, &new_menu, "effects & misc");
         self add_option("position", credits, &new_menu, "position manager");
-        self add_option("ai", credits, &new_menu, "ai manager");
-        self add_option("game profile", credits, &new_menu, "game profile");
-        self add_option("aimbot", credits, &new_menu, "aimbot manager");
+        //self add_option("ai", credits, &new_menu, "ai manager");
+        //self add_option("game profile", credits, &new_menu, "game profile");
+        //self add_option("aimbot", credits, &new_menu, "aimbot manager");
         self add_option("clients", credits, &new_menu, "client manager");
 
         //self add_option("position", credits, &new_menu, "position");
@@ -72,47 +73,20 @@ function structure()
         //self.bind_index = false;
         self add_menu(menu);
 
-        self add_option("test", undefined, &test);
-
-        // engine toggles
-        //self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
-        //self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
-        //self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
-        //self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
-        //self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
-        //self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
+        self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
+        self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
+        self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
+        self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
+        self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
+        self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
 
         break;
     case "binds & glitches":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "effects & misc":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "position manager":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "ai manager":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "game profile":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "aimbot manager":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
     case "client manager":
         //self.bind_index = false;
         self add_menu(menu);
@@ -127,9 +101,6 @@ function structure()
         break;
     }
 }
-
-function void()
-{}
 
 function get_cursor()
 {
@@ -186,6 +157,27 @@ function add_option(text, summary, func, argument_1, argument_2, argument_3, arg
     option["argument_4"] = argument_4;
     option["argument_5"] = argument_5;
     self.structure[self.structure.size] = option;
+}
+
+function add_dvar_toggle(text, summary, dvar, argument_1, argument_2, argument_3)
+{
+    option          = [];
+    option["text"]     = text;
+    option["summary"]  = summary;
+    option["function"] = &toggledvar;
+    option["toggle"]   = istrue(getdvarint(dvar));
+    option["argument_1"] = dvar;
+    option["argument_2"] = argument_2;
+    option["argument_3"] = argument_3;
+
+    self.structure[self.structure.size] = option;
+}
+
+function toggledvar(dvar)
+{
+    value = getdvarint(dvar);
+    new_val = !istrue(getdvarint(dvar));
+    setdvar(dvar, new_val);
 }
 
 function initial_monitor()
@@ -933,6 +925,11 @@ function list(key)
 {
     token = strtok(key, ",");
     return token;
+}
+
+function get_current_build() // check if s4, iw8 or iw9
+{
+    return level._client + " ^7(^:" + level._client_version + "^7)"; 
 }
 
 // og leftover
