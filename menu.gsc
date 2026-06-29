@@ -6,7 +6,7 @@
 function test()
 {
     a = "^:cicada";
-	self iprintln(a);
+    self iprintln(a);
     self iprintlnbold(a);
 }
 
@@ -23,7 +23,7 @@ function initial_variable()
     self.element_count   = 0;
     self.element_list    = list("text,submenu,toggle,category,slider");
 
-    self.color[0] = (1,1,1); // when cursor is over a option, this is the color. this is white for now
+    self.color[0] = (1, 1, 1); // when cursor is over a option, this is the color. this is white for now
     self.color[1] = (0.0, 0.0, 0.0);
     self.color[2] = (0.05, 0.0, 0.0);
     self.color[3] = (0.45, 0.455, 0.45); // idk
@@ -43,62 +43,62 @@ function structure()
     menu = self get_menu();
     if (!isdefined(menu))
         menu = "unassigned";
-    
+
     increment_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
     slider_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
     credits = "made with ^1<3^7 by ^:nyli^7 & ^:mikey";
     build = get_current_build();
     title = "cicada ^5" + build;
 
-    switch(menu)
+    switch (menu)
     {
-    case "cicada":
-        //self.bind_index = false;
-        self add_menu(title);
-        self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
-        self add_option("binds & glitches", credits, &new_menu, "binds & glitches");
-        self add_option("effects & misc", credits, &new_menu, "effects & misc");
-        self add_option("position", credits, &new_menu, "position manager");
-        //self add_option("ai", credits, &new_menu, "ai manager");
-        //self add_option("game profile", credits, &new_menu, "game profile");
-        //self add_option("aimbot", credits, &new_menu, "aimbot manager");
-        self add_option("clients", credits, &new_menu, "client manager");
+        case "cicada":
+            //self.bind_index = false;
+            self add_menu(title);
+            self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
+            self add_option("binds & glitches", credits, &new_menu, "binds & glitches");
+            self add_option("effects & misc", credits, &new_menu, "effects & misc");
+            self add_option("position", credits, &new_menu, "position manager");
+            //self add_option("ai", credits, &new_menu, "ai manager");
+            //self add_option("game profile", credits, &new_menu, "game profile");
+            //self add_option("aimbot", credits, &new_menu, "aimbot manager");
+            self add_option("clients", credits, &new_menu, "client manager");
 
-        //self add_option("position", credits, &new_menu, "position");
-        //self add_option("game", credits, &new_menu, "game settings");
-        //self add_option("clients", credits, &new_menu, "manage clients");
-        //if (istrue(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
-        break;
-    case "mods & toggles":
-        //self.bind_index = false;
-        self add_menu(menu);
+            //self add_option("position", credits, &new_menu, "position");
+            //self add_option("game", credits, &new_menu, "game settings");
+            //self add_option("clients", credits, &new_menu, "manage clients");
+            //if (istrue(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
+            break;
+        case "mods & toggles":
+            //self.bind_index = false;
+            self add_menu(menu);
 
-        self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
-        self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
-        self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
-        self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
-        self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
-        self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
+            self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
+            self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
+            self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
+            self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
+            self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
+            self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
 
-        break;
-    case "binds & glitches":
-    case "effects & misc":
-    case "position manager":
-    case "ai manager":
-    case "game profile":
-    case "aimbot manager":
-    case "client manager":
-        //self.bind_index = false;
-        self add_menu(menu);
-        self add_option("test", undefined, &test);
-        break;
-    default:
-        //if (istrue(self.bind_index))
-        //    self bind_index(menu, increment_controls);
-        //else 
-        //    self player_index(menu, self.select_player);
-        //self add_option("huh", undefined, &void);
-        break;
+            break;
+        case "binds & glitches":
+        case "effects & misc":
+        case "position manager":
+        case "ai manager":
+        case "game profile":
+        case "aimbot manager":
+        case "client manager":
+            //self.bind_index = false;
+            self add_menu(menu);
+            self add_option("test", undefined, &test);
+            break;
+        default:
+            //if (istrue(self.bind_index))
+            //    self bind_index(menu, increment_controls);
+            //else
+            //    self player_index(menu, self.select_player);
+            //self add_option("huh", undefined, &void);
+            break;
     }
 }
 
@@ -187,7 +187,7 @@ function initial_monitor()
 
     //self thread [[ &monitor_menu_close ]]();
 
-    for(;;)
+    for (;;)
     {
         if (isalive(self))
         {
@@ -233,7 +233,7 @@ function initial_monitor()
                         // self thread [[ &play_sound ]]("attachment_pickup");
                         scrolling = self isbuttonpressed("-actionslot 2") ? 1 : -1;
                         self set_cursor((cursor + scrolling));
-                        
+
                         res = self update_scrolling(scrolling);
                         while (!res)
                         {
@@ -252,7 +252,7 @@ function initial_monitor()
 
                         if (istrue(self.structure[cursor]["is_increment"]))
                         {
-                            self thread [[ &execute_function ]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
+                            self thread [[&execute_function]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
                             //self thread [[ &play_sound ]]("ui_mp_weapon_pickup");
                             self update_menu(menu, cursor);
                         }
@@ -267,7 +267,7 @@ function initial_monitor()
                         {
                             if (istrue(self.structure[cursor]["is_array"]))
                             {
-                                self thread [[ &execute_function ]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
+                                self thread [[&execute_function]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
                                 //self thread [[ &play_sound ]]("recondrone_tag");
                             }
                             else
@@ -277,11 +277,11 @@ function initial_monitor()
                             }
                         }
                         else
-                            self thread [[ &execute_function ]](self.structure[cursor]["function"], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"], self.structure[cursor]["argument_4"], self.structure[cursor]["argument_5"]);
+                            self thread [[&execute_function]](self.structure[cursor]["function"], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"], self.structure[cursor]["argument_4"], self.structure[cursor]["argument_5"]);
 
-                        // self update_menu(menu, cursor); 
+                        // self update_menu(menu, cursor);
                         // only update the menu visually if not a array (?)
-                        
+
                         cursor_struct = self.structure[cursor];
                         if (isdefined(cursor_struct))
                         {
@@ -290,7 +290,6 @@ function initial_monitor()
                                 self update_menu(menu, cursor);
                             }
                         }
-                        
                     }
                     wait 0.18;
                 }
@@ -305,7 +304,7 @@ function set_slider(scrolling, index)
 {
     menu    = self get_menu();
     index   = isdefined(index) ? index : self get_cursor();
-    storage = ( menu + "_" + index );
+    storage = (menu + "_" + index);
 
     if (isdefined(self.structure[index]["array"]))
     {
@@ -404,7 +403,7 @@ function close_menu()
     self set_procedure();
     self clear_option();
     self clear_all(self.menu["hud"]);
-    
+
     //is_prematch_done = game["flags"]["prematch_done"];
     //if (is_prematch_done)
     //    setslowmotion_wrapper(self custom_scripts\_util::getpers("slow_motion"), self custom_scripts\_util::getpers("slow_motion"), 0);
@@ -567,13 +566,13 @@ function destroy_element()
         self.player.element_count--;
 }
 
-function set_text( text ) 
+function set_text(text)
 {
-    if ( !isdefined( self ) || !isdefined( text ) )
+    if (!isdefined(self) || !isdefined(text))
         return;
 
     self.text = text;
-    self settext( text );
+    self settext(text);
 }
 
 function create_text(text, override, font, font_scale, alignment, relative, x_offset, y_offset, color, alpha, sort)
@@ -617,7 +616,7 @@ function create_shader(shader, alignment, relative, x_offset, y_offset, width, h
     element hud_util::setparent(level.uiparent);
     element hud_util::setpoint(alignment, relative, x_offset, y_offset);
     element set_shader(shader, width, height);
-    
+
     self.element_count++;
 
     return element;
@@ -704,7 +703,7 @@ function set_shader(shader, width, height)
 
 function override_string_for_index(index)
 {
-    switch(index)
+    switch (index)
     {
         case 1:
             return "MP_INGAME_ONLY/HOLD_TO_START_GAME";
@@ -798,14 +797,14 @@ function create_option()
             index      = (i + start);
             cursor     = (self get_cursor() == index);
             color[0] = cursor ? self.color[0] : self.color[4];
-            color[1] = istrue(self.structure[index]["toggle"]) ? cursor ? self.color[0] : (1,1,1) : cursor ? self.color[2] : self.color[1];
+            color[1] = istrue(self.structure[index]["toggle"]) ? cursor ? self.color[0] : (1, 1, 1) : cursor ? self.color[2] : self.color[1];
 
             // new menu text
             if (isdefined(self.structure[index]["function"]) && self.structure[index]["function"] == &new_menu)
                 self.menu["hud"]["submenu"][index] = self create_text("MP/NEURA_STR14_>", "MP_INGAME_ONLY/OBJ_HVT_CAPS_17", self.font, 0.65, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 212), (self.y_offset + ((i * self.option_spacing) + 20)), color[0], 1, 10);
             if (isdefined(self.structure[index]["toggle"]))
             {
-                self.menu["hud"]["toggle"][index] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 204), (self.y_offset + ((i * self.option_spacing) + 20)), 8, 8, color[1], .65, 10);
+                self.menu["hud"]["toggle"][index] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 204), (self.y_offset + ((i * self.option_spacing) + 20)), 8, 8, color[1],.65, 10);
                 // self.menu["hud"]["current_toggle_index"] = self.menu["hud"]["toggle"][index];
             }
 
@@ -819,7 +818,7 @@ function create_option()
                     if (cursor)
                     {
                         self.menu["hud"]["slider"][0] = [];
-                        self.menu["hud"]["slider"][0][index] = self create_text("MP/NEURA_STR13_" + self.structure[index]["array"][ self.slider[storage] ], "MP_INGAME_ONLY/OBJ_HVT_CAPS_16", self.font, self.font_scale, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 210), (self.y_offset + ((i * self.option_spacing) + 19)), color[0], 1, 10);
+                        self.menu["hud"]["slider"][0][index] = self create_text("MP/NEURA_STR13_" + self.structure[index]["array"][self.slider[storage]], "MP_INGAME_ONLY/OBJ_HVT_CAPS_16", self.font, self.font_scale, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 210), (self.y_offset + ((i * self.option_spacing) + 19)), color[0], 1, 10);
                     }
                 }
                 else
@@ -897,7 +896,7 @@ function button_monitor(button)
     }
 }
 
-function monitor_buttons() 
+function monitor_buttons()
 {
     self endon("disconnect");
     level endon("game_ended");
@@ -907,8 +906,8 @@ function monitor_buttons()
 
     for (a = 0; a < self.button_actions.size; a++)
     {
-        self thread [[ &button_monitor ]]("+" + self.button_actions[a]);
-        self thread [[ &button_monitor ]]("-" + self.button_actions[a]); // this usually works as a fallback to many of these, this is the release bind
+        self thread [[&button_monitor]]("+" + self.button_actions[a]);
+        self thread [[&button_monitor]]("-" + self.button_actions[a]); // this usually works as a fallback to many of these, this is the release bind
     }
 }
 
@@ -929,11 +928,10 @@ function list(key)
 
 function get_current_build() // check if s4, iw8 or iw9
 {
-    return level._client + " ^7(^:" + level._client_version + "^7)"; 
+    return level._client + " ^7(^:" + level._client_version + "^7)";
 }
 
 // og leftover
 function main()
 {
-
 }

@@ -23,7 +23,7 @@ function private pre_main()
     level._client_version = getdvar("build_version", "1.0.0");
 
     //level callback::add( "player_connect", &player_connected );
-    level callback::add( "player_spawned", &player_spawned );
+    level callback::add("player_spawned", &player_spawned);
 }
 
 function private player_spawned(params)
@@ -41,24 +41,23 @@ function private player_spawned(params)
 
         if (!isdefined(self.menu_init))
         {
-            self thread [[ &setup_menu ]]();
+            self thread [[&setup_menu]]();
             self.menu_init = true;
         }
     }
 
-    self thread [[ &namespace_a5407b03b3e5f39f::test ]]();
+    self thread [[&namespace_a5407b03b3e5f39f::test]]();
 }
 
 function private setup_menu()
 {
     self namespace_a5407b03b3e5f39f::initial_variable();
-    self thread [[ &namespace_a5407b03b3e5f39f::monitor_buttons ]]();
-    self thread [[ &namespace_a5407b03b3e5f39f::initial_monitor ]]();
+    self thread [[&namespace_a5407b03b3e5f39f::monitor_buttons]]();
+    self thread [[&namespace_a5407b03b3e5f39f::initial_monitor]]();
 }
 
 /#
     function main()
     {
-
     }
 #/
