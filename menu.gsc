@@ -578,7 +578,7 @@ function set_text( text )
 
 function create_text(text, override, font, font_scale, alignment, relative, x_offset, y_offset, color, alpha, sort)
 {
-    element                = self scripts\mp\hud_util::createfontstring(font, font_scale);
+    element                = self hud_util::createfontstring(font, font_scale);
     if (isdefined(element))
     {
         element.color          = color;
@@ -591,7 +591,7 @@ function create_text(text, override, font, font_scale, alignment, relative, x_of
         element.hidewheninmenu = false;
         element.showinkillcam = 0;
 
-        element scripts\mp\hud_util::setpoint(alignment, relative, x_offset, y_offset);
+        element hud_util::setpoint(alignment, relative, x_offset, y_offset);
         element set_text(text);
 
         self.element_count++;
@@ -614,8 +614,8 @@ function create_shader(shader, alignment, relative, x_offset, y_offset, width, h
     element.hidden         = false;
     element.hidewheninmenu = true;
 
-    element scripts\mp\hud_util::setparent(level.uiparent);
-    element scripts\mp\hud_util::setpoint(alignment, relative, x_offset, y_offset);
+    element hud_util::setparent(level.uiparent);
+    element hud_util::setpoint(alignment, relative, x_offset, y_offset);
     element set_shader(shader, width, height);
     
     self.element_count++;
