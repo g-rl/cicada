@@ -1,11 +1,10 @@
-// script_13645532f846e433
 #using scripts\mp\hud_util;
 
-#namespace namespace_eb31a7ea746bf7d0;
+#namespace cicada_menu;
 
 function test()
 {
-    a = "^:cicada";
+    a = "^:cicada hot reload [{+actionslot 1}]";
     self iprintln(a);
     self iprintlnbold(a);
 }

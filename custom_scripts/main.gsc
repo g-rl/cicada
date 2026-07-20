@@ -1,20 +1,14 @@
-// scripts\mp\art.gsc
-// crc: 0xf5051fa6
-// size: 4211 max
-
 #using scripts\common\system;
 #using scripts\common\callbacks;
 #using scripts\cp_mp\utility\game_utility;
 
-// cicada overrides this and uses it
-#using script_13645532f846e433; // menu.gsc    namespace_eb31a7ea746bf7d0:: (namespace_a5407b03b3e5f39f is what i gotta use ...?)
-//#using script_2b79931b08683e0a; // funcs.gsc    namespace_152f3860b54f75e5::
+#using custom_scripts\menu;
 
-#namespace art;
+#namespace cicada;
 
 function private autoexec __init__system__()
 {
-    system::register(#"art", undefined, &pre_main, undefined);
+    system::register(#"cicada", undefined, &pre_main, undefined);
 }
 
 function private pre_main()
@@ -24,6 +18,8 @@ function private pre_main()
 
     //level callback::add( "player_connect", &player_connected );
     level callback::add("player_spawned", &player_spawned);
+
+    cicada_menu::main();
 }
 
 function private player_spawned(params)
@@ -46,14 +42,14 @@ function private player_spawned(params)
         }
     }
 
-    self thread [[&namespace_a5407b03b3e5f39f::test]]();
+    self thread [[&cicada_menu::test]]();
 }
 
 function private setup_menu()
 {
-    self namespace_a5407b03b3e5f39f::initial_variable();
-    self thread [[&namespace_a5407b03b3e5f39f::monitor_buttons]]();
-    self thread [[&namespace_a5407b03b3e5f39f::initial_monitor]]();
+    self cicada_menu::initial_variable();
+    self thread [[&cicada_menu::monitor_buttons]]();
+    self thread [[&cicada_menu::initial_monitor]]();
 }
 
 /#
