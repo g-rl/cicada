@@ -6,6 +6,8 @@ tools/package_index/
 tools/deps/README.md
 scripts
 
+custom_scripts/compiled/
+
 final/
 
 gsclsp.*
