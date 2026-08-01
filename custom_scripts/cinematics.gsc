@@ -211,15 +211,22 @@ function travel_bezier(rig, speed)
     if (steps < 1)
         steps = 1;
 
-    for (i = 0; i <= steps; i++)
+    total = steps * 0.05;
+    segments = int(total / 0.25);
+    if (segments < 1)
+        segments = 1;
+
+    leg = total / segments;
+
+    for (i = 1; i <= segments; i++)
     {
         if (!istrue(camera.running))
             return;
 
-        t = float(i) / steps;
-        rig moveto(bezier(origins, t), 0.05, 0, 0);
-        rig rotateto(bezier(angles, t), 0.05, 0, 0);
-        waitframe();
+        t = float(i) / segments;
+        rig moveto(bezier(origins, t), leg, 0, 0);
+        rig rotateto(bezier(angles, t), leg, 0, 0);
+        wait (leg);
     }
 }
 
