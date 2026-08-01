@@ -7,6 +7,9 @@
 #using scripts\mp\utility\game;
 #using scripts\mp\utility\player;
 
+#using custom_scripts\killcam;
+#using custom_scripts\loadout;
+#using custom_scripts\movement;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
 
@@ -34,6 +37,7 @@ function init()
     register("no_hud", &hide_hud, &show_hud);
     register("no_oob", &disable_oob, &enable_oob);
     register("no_barriers", &remove_barriers, &restore_barriers);
+    register("clean_killcam", &cicada_killcam::clean);
 }
 
 function register(key, start, stop)
@@ -42,11 +46,6 @@ function register(key, start, stop)
     feature["start"] = start;
     feature["stop"] = stop;
     level.cicada_features[key] = feature;
-}
-
-function stop_event(key)
-{
-    return "cicada_stop_" + key;
 }
 
 function toggle(key)
@@ -66,7 +65,7 @@ function start(key)
 
 function stop(key)
 {
-    self notify(stop_event(key));
+    self notify(cicada_util::stop_event(key));
 
     feature = level.cicada_features[key];
     if (isdefined(feature) && isdefined(feature["stop"]))
@@ -90,6 +89,8 @@ function refresh_on_spawn()
         self detach_anchor();
 
     self stop_elevator();
+    self cicada_movement::stop_ride();
+    self cicada_loadout::apply_camo();
 
     if (istrue(self cicada_util::getpers("invincible")))
     {
@@ -124,7 +125,7 @@ function toggle_dvar(dvar)
 function godmode(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     if (!isdefined(level.cicada_fall_height))
@@ -158,7 +159,7 @@ function mortal(key)
 function noclip(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     while (!isalive(self))
@@ -226,7 +227,7 @@ function move_anchor()
 function always_nac(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -239,7 +240,7 @@ function always_nac(key)
 function instaswaps(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -254,7 +255,7 @@ function instaswaps(key)
 function elevators(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -303,7 +304,7 @@ function stop_elevator()
 function auto_prone(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -338,7 +339,7 @@ function hold_prone()
 function auto_reload(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
 
     level waittill("game_ended");
 
@@ -352,7 +353,7 @@ function auto_reload(key)
 function infinite_equipment(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -377,7 +378,7 @@ function limited_lives(key)
 function headbounces(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -397,7 +398,7 @@ function headbounces(key)
 function bounce_pads(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -458,7 +459,7 @@ function save_load_binds(key)
 function crouch_bind(button, action)
 {
     self endon("disconnect");
-    self endon(stop_event("save_load_binds"));
+    self endon(cicada_util::stop_event("save_load_binds"));
     level endon("game_ended");
 
     for (;;)
@@ -547,7 +548,7 @@ function unstuck()
 function freeze_bots(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -565,6 +566,45 @@ function unfreeze_bots(key)
     foreach (player_ in level.players)
         if (cicada_util::is_bot(player_))
             player_ freezecontrols(0);
+}
+
+function is_frozen(player_)
+{
+    return isdefined(player_) && istrue(player_.cicada_frozen);
+}
+
+function toggle_freeze(player_)
+{
+    if (player_ == self)
+    {
+        self cicada_util::message("^1cannot freeze yourself");
+        return;
+    }
+
+    if (is_frozen(player_))
+    {
+        player_.cicada_frozen = false;
+        player_ notify("cicada_unfreeze");
+        player_ freezecontrols(0);
+        return;
+    }
+
+    player_.cicada_frozen = true;
+    player_ thread hold_freeze();
+}
+
+// respawning clears freezecontrols, so the state has to be reapplied on a loop
+function hold_freeze()
+{
+    self endon("disconnect");
+    self endon("cicada_unfreeze");
+    level endon("game_ended");
+
+    for (;;)
+    {
+        self freezecontrols(1);
+        wait 0.5;
+    }
 }
 
 function move_bots(target)
@@ -628,7 +668,7 @@ function track_velocity(prefix)
 function aimbot(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -674,7 +714,7 @@ function deal_damage(victim, amount, attacker)
 function tracers(key)
 {
     self endon("disconnect");
-    self endon(stop_event(key));
+    self endon(cicada_util::stop_event(key));
     level endon("game_ended");
 
     for (;;)
@@ -819,8 +859,38 @@ function restore_timescale()
     setslowmotion(scale, scale, 0);
 }
 
+// gamelogic::prematchperiod reads level.prematchperiodend once, right before the
+// "match starting in" countdown, and calls matchstarttimerskip when it is 0. the
+// value is set from scr_game_matchstarttime during precache, so it gets flattened
+// every frame until prematch actually starts rather than once at init.
+function skip_prematch()
+{
+    level endon("game_ended");
+
+    setdvar("scr_game_matchstarttime", 0);
+
+    while (!istrue(level.prematchstarted))
+    {
+        level.prematchperiodend = 0;
+        level.prematchperiod = 0;
+        waitframe();
+    }
+
+    // level.matchcountdowntime only exists once gamelogic::teamstarttimer ran, which
+    // means the countdown beat us to it - cut it short instead of waiting it out
+    if (isdefined(level.matchcountdowntime))
+    {
+        level notify("match_start_timer_beginning");
+        level notify("matchStartTimer_done");
+        visionsetnaked("", 0);
+    }
+}
+
 function fast_restart()
 {
+    // dvars survive the restart, so zeroing it here beats the next cycle's precache
+    // no matter when our own init thread gets scheduled
+    setdvar("scr_game_matchstarttime", 0);
     map_restart(1);
 }
 
@@ -984,6 +1054,28 @@ function next_class()
 
     self set_class("custom" + index);
     self reload_class();
+    self thread [[&after_class_change]]();
+}
+
+function after_class_change()
+{
+    self endon("disconnect");
+    self endon("death");
+    level endon("game_ended");
+
+    wait 0.5;
+
+    if (istrue(self cicada_util::getpers("class_empty_clip")))
+        self cicada_weapon::empty_clip();
+
+    if (istrue(self cicada_util::getpers("class_one_bullet")))
+        self cicada_weapon::one_bullet();
+
+    if (istrue(self cicada_util::getpers("class_canswap")))
+        self cicada_weapon::canswap();
+
+    if (istrue(self cicada_util::getpers("class_illusion")))
+        self cicada_weapon::illusion();
 }
 
 function one_handed_gun()
@@ -1031,6 +1123,33 @@ function apply_defaults()
     self cicada_util::initpers("equipment_weapon", "semtex_mp");
     self cicada_util::initpers("equipment_putaway", false);
     self cicada_util::initpers("equipment_putaway_time", 0.05);
+
+    self cicada_util::initpers("class_one_bullet", false);
+    self cicada_util::initpers("class_empty_clip", false);
+    self cicada_util::initpers("class_illusion", false);
+    self cicada_util::initpers("class_canswap", false);
+
+    self cicada_util::initpers("camo", "none");
+    self cicada_util::initpers("replace_weapon", false);
+
+    self cicada_util::initpers("camera_mode", "bezier");
+    self cicada_util::initpers("camera_bezier_speed", 5);
+    self cicada_util::initpers("camera_linear_time", 10);
+    self cicada_util::initpers("camera_rotation", 0);
+
+    self cicada_util::initpers("bolt_speed", 1);
+    self cicada_util::initpers("bot_bolt_speed", 1);
+    self cicada_util::initpers("bolt_count", 0);
+    self cicada_util::initpers("bot_bolt_count", 0);
+    self cicada_util::initpers("record_count", 0);
+    self cicada_util::initpers("path_count", 0);
+
+    self cicada_util::initpers("hide_weapon", true);
+    self cicada_util::initpers("hide_victim", true);
+    self cicada_util::initpers("hide_perks", true);
+    self cicada_util::initpers("hide_attachments", true);
+    self cicada_util::initpers("hide_equipment", true);
+    self cicada_util::initpers("hide_field_upgrade", true);
 
     self default_velocity("");
     self default_velocity("bot_");

@@ -2,7 +2,10 @@
 #using scripts\mp\utility\player;
 #using scripts\mp\weapons;
 
+#using custom_scripts\cinematics;
+#using custom_scripts\loadout;
 #using custom_scripts\mods;
+#using custom_scripts\movement;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
 
@@ -26,6 +29,11 @@ function init()
     register("bounce", &bounce);
     register("velocity", &apply_velocity);
     register("bot velocity", &apply_bot_velocity);
+    register("bolt movement", &cicada_movement::play_bolt);
+    register("bot bolt movement", &cicada_movement::play_bot_bolt);
+    register("record movement", &cicada_movement::play_record);
+    register("load class", &cicada_loadout::load_class);
+    register("start camera", &cicada_cinematics::start_path);
     register("save position", &save_position);
     register("load position", &load_position);
     register("unstuck", &unstuck);

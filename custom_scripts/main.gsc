@@ -2,8 +2,11 @@
 #using scripts\common\system;
 
 #using custom_scripts\binds;
+#using custom_scripts\catalog;
+#using custom_scripts\cinematics;
 #using custom_scripts\menu;
 #using custom_scripts\mods;
+#using custom_scripts\movement;
 #using custom_scripts\util;
 
 #namespace cicada;
@@ -18,8 +21,13 @@ function private pre_main()
     level._client = "jup";
     level._client_version = getdvar("build_version", "1.0.0");
 
+    cicada_catalog::init();
+    cicada_cinematics::init();
+    cicada_movement::init();
     cicada_mods::init();
     cicada_binds::init();
+
+    level thread [[&cicada_mods::skip_prematch]]();
 
     level callback::add("player_spawned", &on_player_spawned);
 }

@@ -2,7 +2,12 @@
 #using scripts\mp\hud_util;
 
 #using custom_scripts\binds;
+#using custom_scripts\catalog;
+#using custom_scripts\cinematics;
+#using custom_scripts\killcam;
+#using custom_scripts\loadout;
 #using custom_scripts\mods;
+#using custom_scripts\movement;
 #using custom_scripts\util;
 
 #namespace cicada_menu;
@@ -50,57 +55,110 @@ function structure()
         case "cicada":
             self add_menu("cicada ^5" + cicada_util::get_current_build());
             self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
-            self add_option("binds", credits, &new_menu, "binds & glitches");
-            self add_option("effects & misc", credits, &new_menu, "effects & misc");
-            self add_option("position", credits, &new_menu, "position manager");
-            //self add_option("cinematics", credits, ::new_menu, "cinematics");
-            self add_option("aimbot", credits, &new_menu, "aimbot manager");
-            // self add_option("class", credits, ::new_menu, "class manager");
+            self add_option("binds", credits, &new_menu, "bind settings");
+            self add_option("position", credits, &new_menu, "position");
+            self add_option("cinematics", credits, &new_menu, "cinematics");
+            self add_option("aimbot", credits, &new_menu, "aimbot settings");
+            self add_option("class", credits, &new_menu, "class manager");
             self add_option("game", credits, &new_menu, "game settings");
-            self add_option("clients", credits, &new_menu, "client manager");
+            self add_option("clients", credits, &new_menu, "manage clients");
             break;
 
         case "mods & toggles":
             self add_menu(menu);
+            self add_option("glitches", undefined, &new_menu, "glitches");
+            if (game_utility::getgametype() == "sd")
+                self add_option("fast last", undefined, &cicada_mods::fast_last);
             self add_feature("invincibility", undefined, "invincible");
             self add_feature("unlimited lives", undefined, "unlimited_lives");
             self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
-            self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");
-            self add_feature("always nac", "[{+weapnext}] to swap", "always_nac");
-            self add_feature("instaswaps", "[{+frag}] to swap", "instaswaps");
-            self add_increment("instaswap time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("instaswaps_time"), 0.05, 1, 0.05, "instaswaps_time");
-            self add_feature("auto prone", undefined, "auto_prone");
-            self add_array("auto prone mode", sliders, &cicada_mods::set_value, cicada_util::list("air,always"), self cicada_util::getpers("auto_prone_mode"), "auto_prone_mode");
-            self add_feature("auto reload", undefined, "auto_reload");
-            self add_feature("infinite equipment", undefined, "inf_equipment");
-            self add_feature("headbounces", undefined, "headbounces");
-            self add_option("weapons", undefined, &new_menu, "weapon manager");
-            self add_option("--> engine toggles", undefined, &new_menu, "engine toggles");
-            break;
-
-        case "engine toggles":
-            self add_menu(menu);
             self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
             self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
             self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
             self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
             self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
             self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
+            self add_feature("always nac", "[{+weapnext}] to swap", "always_nac");
+            self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");
+            self add_feature("instaswaps", "[{+frag}] to swap", "instaswaps");
+            self add_feature("auto prone", undefined, "auto_prone");
+            self add_feature("auto reload", undefined, "auto_reload");
+            self add_feature("headbounces", undefined, "headbounces");
+            self add_increment("instaswaps time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("instaswaps_time"), 0.05, 1, 0.05, "instaswaps_time");
+            self add_array("auto prone mode", sliders, &cicada_mods::set_value, cicada_util::list("air,always"), self cicada_util::getpers("auto_prone_mode"), "auto_prone_mode");
             break;
 
-        case "weapon manager":
+        case "glitches":
             self add_menu(menu);
-            self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
-            self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
-            self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
             self add_option("one handed gun", "shoot after the swap", &cicada_mods::one_handed_gun);
-            self add_increment("class wrap", increments, &cicada_mods::set_value, self cicada_util::getpersint("class_wrap"), 1, 10, 1, "class_wrap");
+            self add_option("switch to equipment", "^:" + cicada_catalog::count("equipment") + " ^7equipment available", &new_menu, "switch to equipment");
             break;
 
-        case "binds & glitches":
+        case "switch to equipment":
             self add_menu(menu);
-            self add_option("choose bind", "^:" + level.cicada_bind_names.size + " ^7actions available", &new_menu, "binds");
-            self add_option("bind settings", undefined, &new_menu, "bind settings");
+            foreach (item in cicada_catalog::get("equipment"))
+                self add_option(item.name, "^:" + item.id, &cicada_loadout::give_equipment, item.id);
+            break;
+
+        case "cinematics":
+            self add_menu(menu);
+            self add_option("start camera path", self cicada_cinematics::summary(), &cicada_cinematics::start_path);
+            self add_option("stop camera path", self cicada_cinematics::summary(), &cicada_cinematics::stop_path);
+            self add_array("set camera mode", sliders, &cicada_cinematics::set_mode, cicada_util::list("bezier,linear"), self cicada_cinematics::mode());
+            if (self cicada_cinematics::mode() == "bezier")
+                self add_increment("set bezier speed", increments, &cicada_mods::set_value, self cicada_util::getpersint("camera_bezier_speed"), 1, 20, 1, "camera_bezier_speed");
+            else
+                self add_increment("set linear time", increments, &cicada_mods::set_value, self cicada_util::getpersint("camera_linear_time"), 1, 20, 1, "camera_linear_time");
+            self add_increment("set camera rotation", increments, &cicada_cinematics::set_rotation, self cicada_util::getpersint("camera_rotation"), 0, 360, 1);
+            self add_option("save node", self cicada_cinematics::summary(), &cicada_cinematics::save_node);
+            self add_option("delete last node", self cicada_cinematics::summary(), &cicada_cinematics::delete_last_node);
+            self add_option("clone self", undefined, &cicada_cinematics::clone_self);
+            self add_option(cicada_util::warn("clear all nodes"), self cicada_cinematics::summary(), &cicada_cinematics::clear_nodes);
+            break;
+
+        case "position":
+            self add_menu(menu);
+            self add_array("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "crosshair");
+            self add_feature("freeze bots", undefined, "frozen_bots");
+            self add_option("kill bots", undefined, &cicada_binds::kill_bots);
+            self add_option("unstuck", undefined, &cicada_mods::unstuck);
+            self add_feature("save and load binds", "crouch ^5+ ^7[{+actionslot 3}] ^5/ ^7[{+actionslot 2}]", "save_load_binds");
+            self add_array("manage position", sliders, &cicada_mods::manage_position, cicada_util::list("save,load,reset"), "save");
+            if (self cicada_mods::has_position())
+                self position_options(increments);
+            self add_option("bot paths", self cicada_movement::summary("path"), &new_menu, "bot paths");
+            break;
+
+        case "bot paths":
+            self add_menu(menu);
+            self add_option("start path movement", self cicada_movement::summary("path"), &cicada_movement::start_bot_path);
+            self add_option("save point", self cicada_movement::summary("path"), &cicada_movement::save_point, "path");
+            self add_option("delete last point", self cicada_movement::summary("path"), &cicada_movement::delete_point, "path");
+            break;
+
+        case "aimbot settings":
+            self add_menu(menu);
+            self add_feature("aimbot", "fires on snipers and marksman rifles", "aimbot");
+            self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
+            self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
+            self add_option("effect manager", undefined, &new_menu, "edit effects");
+            break;
+
+        case "edit effects":
+            self add_menu(menu);
+            self add_state("kill effects", "current: ^:" + self cicada_util::getpers("kill_effect"), "kill_effects");
+            self add_array("kill effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("kill_effect"), "kill_effect");
+            self add_option("randomize kill effect", "current: ^:" + self cicada_util::getpers("kill_effect"), &cicada_mods::randomize_effect, "kill_effect");
+            self add_option("preview kill effect", "current: ^:" + self cicada_util::getpers("kill_effect"), &cicada_mods::preview_effect, self cicada_util::getpers("kill_effect"));
+            self add_option("tracer effects", undefined, &new_menu, "edit tracers");
+            break;
+
+        case "edit tracers":
+            self add_menu(menu);
+            self add_feature("tracer rounds", "current: ^:" + self cicada_util::getpers("tracer_effect"), "tracers");
+            self add_increment("effect count", increments, &cicada_mods::set_value, self cicada_util::getpersint("tracer_count"), 1, 10, 1, "tracer_count");
+            self add_array("tracer effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("tracer_effect"), "tracer_effect");
+            self add_option("randomize tracer effects", "current: ^:" + self cicada_util::getpers("tracer_effect"), &cicada_mods::randomize_effect, "tracer_effect");
             break;
 
         case "binds":
@@ -111,100 +169,161 @@ function structure()
 
         case "bind settings":
             self add_menu(menu);
+            self add_option("choose bind", "^:" + level.cicada_bind_names.size + " ^7actions available", &new_menu, "binds");
+            self add_option("edit record movement", self cicada_movement::summary("record"), &new_menu, "record movement settings");
+            self add_option("edit bolt movement", self cicada_movement::summary("bolt"), &new_menu, "bolt movement settings");
+            self add_option("edit class change", undefined, &new_menu, "class change settings");
+            self add_option("edit velocity", undefined, &new_menu, "edit velocity");
+            self add_option("edit bot velocity", undefined, &new_menu, "edit bot velocity");
+            self add_option("choose equipment", "^:" + self cicada_util::getpers("equipment_weapon"), &new_menu, "equipment bind");
+            self add_array("stuck weapon", sliders, &cicada_mods::set_value, cicada_util::list("semtex_mp,molotov_mp,thermite_mp"), self cicada_util::getpers("stuck_weapon"), "stuck_weapon");
+            self add_state("put away equipment", undefined, "equipment_putaway");
+            if (istrue(self cicada_util::getpers("equipment_putaway")))
+                self add_increment("put away time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("equipment_putaway_time"), 0.05, 5, 0.05, "equipment_putaway_time");
+            self add_state("real scavenger", undefined, "real_scavenger");
+            self add_state("repeater illusions", undefined, "repeater_illusion");
+            self add_increment("spectator repeater time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("spectate_time"), 0.05, 2, 0.05, "spectate_time");
             self add_increment("damage amount", increments, &cicada_mods::set_value, self cicada_util::getpersint("damage_amount"), 10, 100, 10, "damage_amount");
             self add_increment("flash amount", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("flash_amount"), 0.25, 5, 0.25, "flash_amount");
             self add_increment("shellshock amount", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("shellshock_amount"), 0.05, 1, 0.05, "shellshock_amount");
             self add_array("shellshock type", sliders, &cicada_mods::set_value, cicada_util::list("frag_grenade_mp,flash_grenade_mp,concussion_grenade_mp,thermite_mp"), self cicada_util::getpers("shellshock_type"), "shellshock_type");
-            self add_array("stuck weapon", sliders, &cicada_mods::set_value, cicada_util::list("semtex_mp,molotov_mp,thermite_mp"), self cicada_util::getpers("stuck_weapon"), "stuck_weapon");
-            self add_increment("spectate time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("spectate_time"), 0.05, 2, 0.05, "spectate_time");
-            self add_state("repeater illusion", undefined, "repeater_illusion");
-            self add_state("real scavenger", undefined, "real_scavenger");
-            self add_array("equipment weapon", sliders, &cicada_mods::set_value, cicada_util::list("semtex_mp,molotov_mp,thermite_mp,frag_grenade_mp,flash_grenade_mp,concussion_grenade_mp,snapshot_grenade_mp"), self cicada_util::getpers("equipment_weapon"), "equipment_weapon");
-            self add_state("put away equipment", undefined, "equipment_putaway");
-            if (istrue(self cicada_util::getpers("equipment_putaway")))
-                self add_increment("put away time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("equipment_putaway_time"), 0.05, 5, 0.05, "equipment_putaway_time");
             break;
 
-        case "effects & misc":
+        case "equipment bind":
             self add_menu(menu);
-            self add_feature("tracer rounds", "current: ^:" + self cicada_util::getpers("tracer_effect"), "tracers");
-            self add_increment("tracer count", increments, &cicada_mods::set_value, self cicada_util::getpersint("tracer_count"), 1, 10, 1, "tracer_count");
-            self add_array("tracer effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("tracer_effect"), "tracer_effect");
-            self add_option("randomize tracer effect", "current: ^:" + self cicada_util::getpers("tracer_effect"), &cicada_mods::randomize_effect, "tracer_effect");
-            self add_state("kill effects", "current: ^:" + self cicada_util::getpers("kill_effect"), "kill_effects");
-            self add_array("kill effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("kill_effect"), "kill_effect");
-            self add_option("randomize kill effect", "current: ^:" + self cicada_util::getpers("kill_effect"), &cicada_mods::randomize_effect, "kill_effect");
-            self add_option("preview kill effect", undefined, &cicada_mods::preview_effect, self cicada_util::getpers("kill_effect"));
-            self add_feature("no hud", undefined, "no_hud");
-            self add_state("messages", undefined, "messages");
-            self add_state("sounds", undefined, "sounds");
+            foreach (item in cicada_catalog::get("equipment"))
+                self add_option(item.name, "^:" + item.id, &cicada_mods::set_value, item.id, "equipment_weapon");
             break;
 
-        case "position manager":
+        case "bolt movement settings":
             self add_menu(menu);
-            self add_array("manage position", sliders, &cicada_mods::manage_position, cicada_util::list("save,load,reset"), "save");
-            self add_feature("save & load binds", "crouch ^5+ ^7[{+actionslot 3}] ^5/ ^7[{+actionslot 2}]", "save_load_binds");
-            self add_option("unstuck", undefined, &cicada_mods::unstuck);
-            if (self cicada_mods::has_position())
-                self position_options(increments);
-            self add_option("velocity", undefined, &new_menu, "velocity manager");
-            self add_option("bots", undefined, &new_menu, "bot manager");
+            self add_option("bot bolt movement", self cicada_movement::summary("bot_bolt"), &new_menu, "bot bolt movement settings");
+            self add_increment("bolt speed", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bolt_speed"), 0.1, 10, 0.1, "bolt_speed");
+            self add_option("save bolt", self cicada_movement::summary("bolt"), &cicada_movement::save_point, "bolt");
+            self add_option("delete last bolt", self cicada_movement::summary("bolt"), &cicada_movement::delete_point, "bolt");
+            self add_option("play bolt", self cicada_movement::summary("bolt"), &cicada_movement::play_bolt);
             break;
 
-        case "velocity manager":
+        case "bot bolt movement settings":
+            self add_menu(menu);
+            self add_increment("bot bolt speed", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bot_bolt_speed"), 0.1, 10, 0.1, "bot_bolt_speed");
+            self add_option("save bot bolt", self cicada_movement::summary("bot_bolt"), &cicada_movement::save_point, "bot_bolt");
+            self add_option("delete last bot bolt", self cicada_movement::summary("bot_bolt"), &cicada_movement::delete_point, "bot_bolt");
+            self add_option("play bot bolt", self cicada_movement::summary("bot_bolt"), &cicada_movement::play_bot_bolt);
+            break;
+
+        case "record movement settings":
+            self add_menu(menu);
+            self add_option("record movement", self cicada_movement::summary("record"), &cicada_movement::record_movement);
+            self add_option("delete last point", self cicada_movement::summary("record"), &cicada_movement::delete_point, "record");
+            self add_option("reset points", self cicada_movement::summary("record"), &cicada_movement::clear_points, "record");
+            self add_option("play movement", self cicada_movement::summary("record"), &cicada_movement::play_record);
+            break;
+
+        case "class change settings":
+            self add_menu(menu);
+            self add_increment("class wrap", increments, &cicada_mods::set_value, self cicada_util::getpersint("class_wrap"), 1, 10, 1, "class_wrap");
+            self add_state("one bullet left", undefined, "class_one_bullet");
+            self add_state("empty clip", undefined, "class_empty_clip");
+            self add_state("illusion", undefined, "class_illusion");
+            self add_state("canswap", undefined, "class_canswap");
+            break;
+
+        case "edit velocity":
             self add_menu(menu);
             self velocity_options("", increments);
             break;
 
-        case "bot velocity manager":
+        case "edit bot velocity":
             self add_menu(menu);
             self velocity_options("bot_", increments);
             break;
 
-        case "bot manager":
+        case "class manager":
             self add_menu(menu);
-            self add_array("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "crosshair");
-            self add_feature("freeze bots", undefined, "frozen_bots");
-            self add_option("kill bots", undefined, &cicada_binds::kill_bots);
-            self add_option("bot velocity", undefined, &new_menu, "bot velocity manager");
+            self add_feature("infinite equipment", undefined, "inf_equipment");
+            self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
+            self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
+            self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
+            self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
+            self add_state("replace weapon", "replace current when giving weapon", "replace_weapon");
+            self add_option("primaries", "^:" + level.cicada_groups["primaries"].size + " ^7categories", &new_menu, "primaries");
+            self add_option("secondaries", "^:" + level.cicada_groups["secondaries"].size + " ^7categories", &new_menu, "secondaries");
+            self add_option("streak manager", undefined, &new_menu, "streaks");
+            self add_option("apply random camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::randomize_camo);
+            self add_option("clear camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::clear_camo);
             break;
 
-        case "aimbot manager":
+        case "primaries":
+        case "secondaries":
             self add_menu(menu);
-            self add_feature("aimbot", "fires on snipers and marksman rifles", "aimbot");
-            self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
-            self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
-            self add_option("effects", undefined, &new_menu, "effects & misc");
+            foreach (category in level.cicada_groups[menu])
+                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons available", &new_menu, category);
+            break;
+
+        case "streaks":
+            self add_menu(menu);
+            self add_option("give streak", "^:" + cicada_catalog::count("streaks") + " ^7streaks available", &new_menu, "give streaks");
+            break;
+
+        case "give streaks":
+            self add_menu(menu);
+            foreach (streak in cicada_catalog::get("streaks"))
+                self add_option(streak.name, "^:" + streak.id, &cicada_loadout::give_streak, streak.id);
             break;
 
         case "game settings":
             self add_menu(menu);
-            self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
-            self add_feature("out of bounds off", undefined, "no_oob");
-            self add_feature("remove barriers", undefined, "no_barriers");
+            self add_option("dvars", undefined, &new_menu, "dvars");
+            self add_option("killcam manager", undefined, &new_menu, "killcam manager");
+            self add_feature("no hud", undefined, "no_hud");
             self add_feature("bounce pads", "^:" + self cicada_mods::bounce_count() + " ^7saved", "bounce_pads");
             self add_option("save bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::save_bounce);
             self add_option("delete last bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::delete_bounce);
             self add_option(cicada_util::warn("fast restart"), undefined, &cicada_mods::fast_restart);
+            self add_state("messages", undefined, "messages");
+            self add_state("sounds", "menu sounds etc", "sounds");
+            self add_feature("out of bounds off", undefined, "no_oob");
+            self add_feature("remove barriers", undefined, "no_barriers");
             if (game_utility::getgametype() == "sd")
-            {
                 self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
-                self add_option("fast last", undefined, &cicada_mods::fast_last);
-            }
             break;
 
-        case "client manager":
+        case "dvars":
+            self add_menu(menu);
+            self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
+            break;
+
+        case "killcam manager":
+            self add_menu(menu);
+            self add_feature("allow hud edits", "allow editing killcam elems", "clean_killcam");
+            self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 10, 1);
+            self add_state("hide weapon & items", undefined, "hide_weapon");
+            self add_state("hide victim", undefined, "hide_victim");
+            self add_state("hide perks", undefined, "hide_perks");
+            self add_state("hide attachments", undefined, "hide_attachments");
+            self add_state("hide equipment", undefined, "hide_equipment");
+            self add_state("hide field upgrade", undefined, "hide_field_upgrade");
+            break;
+
+        case "manage clients":
             self add_menu(menu);
             foreach (player in level.players)
-                self add_option(player cicada_util::player_name(), cicada_util::is_bot(player) ? "^:bot" : "^:player", &new_menu, "player options");
+                self add_option(player cicada_util::player_name(), cicada_util::is_bot(player) ? "^:bot" : "^:player", &new_menu, "player option");
             break;
 
-        case "player options":
+        case "player option":
             self player_options(self.select_player, sliders);
             break;
 
         default:
-            if (isdefined(level.cicada_binds[menu]))
+            if (isdefined(level.cicada_catalog[menu]))
+            {
+                self add_menu(menu);
+                foreach (weapon in cicada_catalog::get(menu))
+                    self add_option(weapon.name, "^:" + weapon.id, &cicada_loadout::give_weapon, weapon.id);
+            }
+            else if (isdefined(level.cicada_binds[menu]))
             {
                 self add_menu(menu);
                 self add_bind_slots(menu);
@@ -271,6 +390,7 @@ function player_options(player, sliders)
     self add_option("kill", undefined, &cicada_mods::kill_player, player);
     self add_option("respawn", undefined, &cicada_mods::respawn_player, player);
     self add_option("change team", undefined, &cicada_mods::change_team, player);
+    self add_toggle("freeze controls", undefined, cicada_mods::is_frozen(player), &cicada_mods::toggle_freeze, player);
     self add_array("teleport", sliders, &cicada_mods::manage_teleport, cicada_util::list("crosshair,me,them"), "crosshair", player);
 
     if (!cicada_util::is_bot(player))
@@ -278,6 +398,8 @@ function player_options(player, sliders)
 
     self add_option("look at me", undefined, &cicada_mods::look_at_me, player);
     self add_option("give my weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::give_bot_weapon, player, self getcurrentweapon());
+    self add_option("give shield", undefined, &cicada_loadout::give_bot_shield, player);
+    self add_option("apply random camo", "currently set: ^:" + player cicada_loadout::camo(), &cicada_loadout::randomize_camo, player);
 }
 
 function get_cursor()
@@ -718,7 +840,7 @@ function update_resize()
 
 function new_menu(menu)
 {
-    if (self get_menu() == "client manager")
+    if (self get_menu() == "manage clients")
         self.select_player = level.players[self get_cursor()];
 
     if (!isdefined(menu))

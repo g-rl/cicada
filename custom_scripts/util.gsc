@@ -50,6 +50,11 @@ function list(text)
     return strtok(text, ",");
 }
 
+function stop_event(key)
+{
+    return "cicada_stop_" + key;
+}
+
 function warn(text)
 {
     return "ߨ " + text;
