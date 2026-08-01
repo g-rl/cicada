@@ -37,6 +37,9 @@ function private on_player_spawned(params)
     if (cicada_util::is_bot(self))
         return;
 
+    // a fast restart kills the level thread started in pre_main without re-running it
+    level thread [[&cicada_mods::skip_prematch]]();
+
     self cicada_menu::print_controls();
 
     self cicada_mods::apply_defaults();

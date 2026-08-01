@@ -1,8 +1,10 @@
 #using scripts\cp_mp\utility\inventory_utility;
 #using scripts\engine\utility;
 #using scripts\mp\class;
+#using scripts\mp\flags;
 #using scripts\mp\gamelogic;
 #using scripts\mp\outofbounds;
+#using scripts\mp\playerlogic;
 #using scripts\mp\supers;
 #using scripts\mp\utility\game;
 #using scripts\mp\utility\player;
@@ -859,12 +861,11 @@ function restore_timescale()
     setslowmotion(scale, scale, 0);
 }
 
-// gamelogic::prematchperiod reads level.prematchperiodend once, right before the
-// "match starting in" countdown, and calls matchstarttimerskip when it is 0. the
-// value is set from scr_game_matchstarttime during precache, so it gets flattened
-// every frame until prematch actually starts rather than once at init.
+// gamelogic::prematchperiod reads level.prematchperiodend once, right before the and calls matchstarttimerskip when it is 0. the
 function skip_prematch()
 {
+    level notify("cicada_skip_prematch"); // end old thread if it exists
+    level endon("cicada_skip_prematch");
     level endon("game_ended");
 
     setdvar("scr_game_matchstarttime", 0);
@@ -876,20 +877,32 @@ function skip_prematch()
         waitframe();
     }
 
-    // level.matchcountdowntime only exists once gamelogic::teamstarttimer ran, which
-    // means the countdown beat us to it - cut it short instead of waiting it out
     if (isdefined(level.matchcountdowntime))
+        cancel_countdown();
+}
+
+function cancel_countdown()
+{
+    level notify("match_start_timer_beginning");
+    level.matchcountdowntime = undefined;
+
+    foreach (player_ in level.players)
     {
-        level notify("match_start_timer_beginning");
-        level notify("matchStartTimer_done");
-        visionsetnaked("", 0);
+        playerlogic::clearprematchlook(player_);
+        player_ setclientomnvar("ui_match_start_countdown", -1);
+        player_ setclientomnvar("ui_match_in_progress", 1);
+
+        if (!is_frozen(player_))
+            player_ freezecontrols(0);
     }
+
+    flags::gameflagset("prematch_values_reset");
+    visionsetnaked("", 0);
+    level notify("matchStartTimer_done");
 }
 
 function fast_restart()
 {
-    // dvars survive the restart, so zeroing it here beats the next cycle's precache
-    // no matter when our own init thread gets scheduled
     setdvar("scr_game_matchstarttime", 0);
     map_restart(1);
 }
