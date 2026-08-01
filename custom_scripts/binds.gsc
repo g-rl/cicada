@@ -306,7 +306,7 @@ function stuck()
     }
 
     grenade = self magicgrenademanual(self cicada_util::getpers("stuck_weapon"), self.origin, (0, 0, 0), 3);
-    thread weapons::grenadestuckto(grenade, target, false);
+    thread [[&weapons::grenadestuckto]](grenade, target, false);
 }
 
 function kill_bots()

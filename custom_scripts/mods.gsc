@@ -592,7 +592,7 @@ function toggle_freeze(player_)
     }
 
     player_.cicada_frozen = true;
-    player_ thread hold_freeze();
+    player_ thread [[&hold_freeze]]();
 }
 
 // respawning clears freezecontrols, so the state has to be reapplied on a loop
@@ -911,7 +911,7 @@ function end_round()
 {
     setomnvarforallclients("ui_objective_state", 0);
     setomnvar("ui_bomb_interacting", 0);
-    thread gamelogic::endgame(game["attackers"], game["end_reason"][tolower(game[game["defenders"]]) + "_eliminated"]);
+    thread [[&gamelogic::endgame]](game["attackers"], game["end_reason"][tolower(game[game["defenders"]]) + "_eliminated"]);
 }
 
 function fast_last()
