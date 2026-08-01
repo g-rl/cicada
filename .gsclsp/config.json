@@ -2,13 +2,5 @@
   "dumpPaths": {
     "jup": "c:\\GitHuhb\\mwiii-source\\mp"
   },
-  "game": "jup",
-  "builtins": {
-    "jup": {
-      "functions": [
-        { "name": "mycustomfunc", "description": "Added by my mod.", "args": ["player", "value"], "minArgs": 1, "maxArgs": 2 }
-      ],
-      "methods": [ { "name": "mycustommethod" } ]
-    }
-  }
+  "game": "jup"
 }

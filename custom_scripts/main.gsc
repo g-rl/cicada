@@ -1,8 +1,10 @@
-#using scripts\common\system;
 #using scripts\common\callbacks;
-#using scripts\cp_mp\utility\game_utility;
+#using scripts\common\system;
 
+#using custom_scripts\binds;
 #using custom_scripts\menu;
+#using custom_scripts\mods;
+#using custom_scripts\util;
 
 #namespace cicada;
 
@@ -16,44 +18,35 @@ function private pre_main()
     level._client = "jup";
     level._client_version = getdvar("build_version", "1.0.0");
 
-    //level callback::add( "player_connect", &player_connected );
-    level callback::add("player_spawned", &player_spawned);
+    cicada_mods::init();
+    cicada_binds::init();
 
-    cicada_menu::main();
+    level callback::add("player_spawned", &on_player_spawned);
 }
 
-function private player_spawned(params)
+function private on_player_spawned(params)
 {
-    if (!isdefined(self.f))
+    if (cicada_util::is_bot(self))
+        return;
+
+    self cicada_menu::print_controls();
+
+    self cicada_mods::apply_defaults();
+
+    if (!isdefined(self.cicada_ready))
     {
-        self.f = true;
+        self.cicada_ready = true;
+        self.menu = [];
 
-        self.neura = [];
-        self.has_spawned = true;
-        self.round_has_ended = 0;
+        self cicada_menu::initial_variable();
+        self thread [[&cicada_menu::initial_monitor]]();
+        self thread [[&cicada_util::monitor_buttons]]();
 
-        if (!isdefined(self.menu))
-            self.menu = [];
-
-        if (!isdefined(self.menu_init))
-        {
-            self thread [[&setup_menu]]();
-            self.menu_init = true;
-        }
+        self thread [[&cicada_binds::start_monitors]]();
+        self thread [[&cicada_mods::restore_features]]();
+        self thread [[&cicada_mods::restore_timescale]]();
     }
 
-    self thread [[&cicada_menu::test]]();
+    self thread [[&cicada_menu::close_menu_on_death]]();
+    self thread [[&cicada_mods::refresh_on_spawn]]();
 }
-
-function private setup_menu()
-{
-    self cicada_menu::initial_variable();
-    self thread [[&cicada_menu::monitor_buttons]]();
-    self thread [[&cicada_menu::initial_monitor]]();
-}
-
-/#
-    function main()
-    {
-    }
-#/

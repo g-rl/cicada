@@ -1,13 +1,11 @@
+#using scripts\cp_mp\utility\game_utility;
 #using scripts\mp\hud_util;
 
-#namespace cicada_menu;
+#using custom_scripts\binds;
+#using custom_scripts\mods;
+#using custom_scripts\util;
 
-function test()
-{
-    a = "^:cicada hot reload [{+actionslot 1}]";
-    self iprintln(a);
-    self iprintlnbold(a);
-}
+#namespace cicada_menu;
 
 function initial_variable()
 {
@@ -20,7 +18,7 @@ function initial_variable()
     self.x_offset        = -110;
     self.y_offset        = 80;
     self.element_count   = 0;
-    self.element_list    = list("text,submenu,toggle,category,slider");
+    self.element_list    = cicada_util::list("text,submenu,toggle,category,slider");
 
     self.color[0] = (1, 1, 1); // when cursor is over a option, this is the color. this is white for now
     self.color[1] = (0.0, 0.0, 0.0);
@@ -43,62 +41,243 @@ function structure()
     if (!isdefined(menu))
         menu = "unassigned";
 
-    increment_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
-    slider_controls = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
+    increments = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
+    sliders = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
     credits = "made with ^1<3^7 by ^:nyli^7 & ^:mikey";
-    build = get_current_build();
-    title = "cicada ^5" + build;
 
     switch (menu)
     {
         case "cicada":
-            //self.bind_index = false;
-            self add_menu(title);
+            self add_menu("cicada ^5" + cicada_util::get_current_build());
             self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
-            self add_option("binds & glitches", credits, &new_menu, "binds & glitches");
+            self add_option("binds", credits, &new_menu, "binds & glitches");
             self add_option("effects & misc", credits, &new_menu, "effects & misc");
             self add_option("position", credits, &new_menu, "position manager");
-            //self add_option("ai", credits, &new_menu, "ai manager");
-            //self add_option("game profile", credits, &new_menu, "game profile");
-            //self add_option("aimbot", credits, &new_menu, "aimbot manager");
+            //self add_option("cinematics", credits, ::new_menu, "cinematics");
+            self add_option("aimbot", credits, &new_menu, "aimbot manager");
+            // self add_option("class", credits, ::new_menu, "class manager");
+            self add_option("game", credits, &new_menu, "game settings");
             self add_option("clients", credits, &new_menu, "client manager");
-
-            //self add_option("position", credits, &new_menu, "position");
-            //self add_option("game", credits, &new_menu, "game settings");
-            //self add_option("clients", credits, &new_menu, "manage clients");
-            //if (istrue(level.is_debug)) self add_option("debug settings", credits, &new_menu, "debug settings");
             break;
-        case "mods & toggles":
-            //self.bind_index = false;
-            self add_menu(menu);
 
+        case "mods & toggles":
+            self add_menu(menu);
+            self add_feature("invincibility", undefined, "invincible");
+            self add_feature("unlimited lives", undefined, "unlimited_lives");
+            self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
+            self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");
+            self add_feature("always nac", "[{+weapnext}] to swap", "always_nac");
+            self add_feature("instaswaps", "[{+frag}] to swap", "instaswaps");
+            self add_increment("instaswap time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("instaswaps_time"), 0.05, 1, 0.05, "instaswaps_time");
+            self add_feature("auto prone", undefined, "auto_prone");
+            self add_array("auto prone mode", sliders, &cicada_mods::set_value, cicada_util::list("air,always"), self cicada_util::getpers("auto_prone_mode"), "auto_prone_mode");
+            self add_feature("auto reload", undefined, "auto_reload");
+            self add_feature("infinite equipment", undefined, "inf_equipment");
+            self add_feature("headbounces", undefined, "headbounces");
+            self add_option("weapons", undefined, &new_menu, "weapon manager");
+            self add_option("--> engine toggles", undefined, &new_menu, "engine toggles");
+            break;
+
+        case "engine toggles":
+            self add_menu(menu);
             self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
             self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
             self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
             self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
             self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
             self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
+            break;
 
-            break;
-        case "binds & glitches":
-        case "effects & misc":
-        case "position manager":
-        case "ai manager":
-        case "game profile":
-        case "aimbot manager":
-        case "client manager":
-            //self.bind_index = false;
+        case "weapon manager":
             self add_menu(menu);
-            self add_option("test", undefined, &test);
+            self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
+            self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
+            self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
+            self add_option("one handed gun", "shoot after the swap", &cicada_mods::one_handed_gun);
+            self add_increment("class wrap", increments, &cicada_mods::set_value, self cicada_util::getpersint("class_wrap"), 1, 10, 1, "class_wrap");
             break;
+
+        case "binds & glitches":
+            self add_menu(menu);
+            self add_option("choose bind", "^:" + level.cicada_bind_names.size + " ^7actions available", &new_menu, "binds");
+            self add_option("bind settings", undefined, &new_menu, "bind settings");
+            break;
+
+        case "binds":
+            self add_menu(menu);
+            foreach (name in level.cicada_bind_names)
+                self add_option(name, self bind_summary(name), &new_menu, name);
+            break;
+
+        case "bind settings":
+            self add_menu(menu);
+            self add_increment("damage amount", increments, &cicada_mods::set_value, self cicada_util::getpersint("damage_amount"), 10, 100, 10, "damage_amount");
+            self add_increment("flash amount", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("flash_amount"), 0.25, 5, 0.25, "flash_amount");
+            self add_increment("shellshock amount", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("shellshock_amount"), 0.05, 1, 0.05, "shellshock_amount");
+            self add_array("shellshock type", sliders, &cicada_mods::set_value, cicada_util::list("frag_grenade_mp,flash_grenade_mp,concussion_grenade_mp,thermite_mp"), self cicada_util::getpers("shellshock_type"), "shellshock_type");
+            self add_array("stuck weapon", sliders, &cicada_mods::set_value, cicada_util::list("semtex_mp,molotov_mp,thermite_mp"), self cicada_util::getpers("stuck_weapon"), "stuck_weapon");
+            self add_increment("spectate time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("spectate_time"), 0.05, 2, 0.05, "spectate_time");
+            self add_state("repeater illusion", undefined, "repeater_illusion");
+            self add_state("real scavenger", undefined, "real_scavenger");
+            self add_array("equipment weapon", sliders, &cicada_mods::set_value, cicada_util::list("semtex_mp,molotov_mp,thermite_mp,frag_grenade_mp,flash_grenade_mp,concussion_grenade_mp,snapshot_grenade_mp"), self cicada_util::getpers("equipment_weapon"), "equipment_weapon");
+            self add_state("put away equipment", undefined, "equipment_putaway");
+            if (istrue(self cicada_util::getpers("equipment_putaway")))
+                self add_increment("put away time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("equipment_putaway_time"), 0.05, 5, 0.05, "equipment_putaway_time");
+            break;
+
+        case "effects & misc":
+            self add_menu(menu);
+            self add_feature("tracer rounds", "current: ^:" + self cicada_util::getpers("tracer_effect"), "tracers");
+            self add_increment("tracer count", increments, &cicada_mods::set_value, self cicada_util::getpersint("tracer_count"), 1, 10, 1, "tracer_count");
+            self add_array("tracer effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("tracer_effect"), "tracer_effect");
+            self add_option("randomize tracer effect", "current: ^:" + self cicada_util::getpers("tracer_effect"), &cicada_mods::randomize_effect, "tracer_effect");
+            self add_state("kill effects", "current: ^:" + self cicada_util::getpers("kill_effect"), "kill_effects");
+            self add_array("kill effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("kill_effect"), "kill_effect");
+            self add_option("randomize kill effect", "current: ^:" + self cicada_util::getpers("kill_effect"), &cicada_mods::randomize_effect, "kill_effect");
+            self add_option("preview kill effect", undefined, &cicada_mods::preview_effect, self cicada_util::getpers("kill_effect"));
+            self add_feature("no hud", undefined, "no_hud");
+            self add_state("messages", undefined, "messages");
+            self add_state("sounds", undefined, "sounds");
+            break;
+
+        case "position manager":
+            self add_menu(menu);
+            self add_array("manage position", sliders, &cicada_mods::manage_position, cicada_util::list("save,load,reset"), "save");
+            self add_feature("save & load binds", "crouch ^5+ ^7[{+actionslot 3}] ^5/ ^7[{+actionslot 2}]", "save_load_binds");
+            self add_option("unstuck", undefined, &cicada_mods::unstuck);
+            if (self cicada_mods::has_position())
+                self position_options(increments);
+            self add_option("velocity", undefined, &new_menu, "velocity manager");
+            self add_option("bots", undefined, &new_menu, "bot manager");
+            break;
+
+        case "velocity manager":
+            self add_menu(menu);
+            self velocity_options("", increments);
+            break;
+
+        case "bot velocity manager":
+            self add_menu(menu);
+            self velocity_options("bot_", increments);
+            break;
+
+        case "bot manager":
+            self add_menu(menu);
+            self add_array("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "crosshair");
+            self add_feature("freeze bots", undefined, "frozen_bots");
+            self add_option("kill bots", undefined, &cicada_binds::kill_bots);
+            self add_option("bot velocity", undefined, &new_menu, "bot velocity manager");
+            break;
+
+        case "aimbot manager":
+            self add_menu(menu);
+            self add_feature("aimbot", "fires on snipers and marksman rifles", "aimbot");
+            self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
+            self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
+            self add_option("effects", undefined, &new_menu, "effects & misc");
+            break;
+
+        case "game settings":
+            self add_menu(menu);
+            self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
+            self add_feature("out of bounds off", undefined, "no_oob");
+            self add_feature("remove barriers", undefined, "no_barriers");
+            self add_feature("bounce pads", "^:" + self cicada_mods::bounce_count() + " ^7saved", "bounce_pads");
+            self add_option("save bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::save_bounce);
+            self add_option("delete last bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::delete_bounce);
+            self add_option(cicada_util::warn("fast restart"), undefined, &cicada_mods::fast_restart);
+            if (game_utility::getgametype() == "sd")
+            {
+                self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
+                self add_option("fast last", undefined, &cicada_mods::fast_last);
+            }
+            break;
+
+        case "client manager":
+            self add_menu(menu);
+            foreach (player in level.players)
+                self add_option(player cicada_util::player_name(), cicada_util::is_bot(player) ? "^:bot" : "^:player", &new_menu, "player options");
+            break;
+
+        case "player options":
+            self player_options(self.select_player, sliders);
+            break;
+
         default:
-            //if (istrue(self.bind_index))
-            //    self bind_index(menu, increment_controls);
-            //else
-            //    self player_index(menu, self.select_player);
-            //self add_option("huh", undefined, &void);
+            if (isdefined(level.cicada_binds[menu]))
+            {
+                self add_menu(menu);
+                self add_bind_slots(menu);
+            }
+            else
+            {
+                self add_menu("error");
+                self add_option("unable to load " + menu);
+            }
             break;
     }
+}
+
+function bind_summary(name)
+{
+    for (slot = 1; slot <= 4; slot++)
+        if (self cicada_binds::has_bind(name, slot))
+            return "bound to ^:actionslot " + slot;
+
+    return "not bound";
+}
+
+function add_bind_slots(name)
+{
+    for (slot = 1; slot <= 4; slot++)
+        self add_toggle("actionslot " + slot, "run ^:" + name + " ^7on release", self cicada_binds::has_bind(name, slot), &cicada_binds::assign, name, slot);
+}
+
+function position_options(increments)
+{
+    origin = self cicada_util::getpers("position");
+    step = self cicada_util::getpersfloat("position_step");
+
+    self add_increment("change x", increments, &cicada_mods::nudge_position, origin[0], -100000, 100000, step, "x");
+    self add_increment("change y", increments, &cicada_mods::nudge_position, origin[1], -100000, 100000, step, "y");
+    self add_increment("change z", increments, &cicada_mods::nudge_position, origin[2], -100000, 100000, step, "z");
+    self add_increment("change by", increments, &cicada_mods::set_value, step, 1, 500, 1, "position_step");
+}
+
+function velocity_options(prefix, increments)
+{
+    step = self cicada_util::getpersfloat(prefix + "velocity_step");
+    summary = "x: ^5" + self cicada_util::getpersfloat(prefix + "velocity_x") + " ^7y: ^5" + self cicada_util::getpersfloat(prefix + "velocity_y") + " ^7z: ^5" + self cicada_util::getpersfloat(prefix + "velocity_z");
+
+    self add_increment("change x", increments, &cicada_mods::set_value, self cicada_util::getpersfloat(prefix + "velocity_x"), -2000, 2000, step, prefix + "velocity_x");
+    self add_increment("change y", increments, &cicada_mods::set_value, self cicada_util::getpersfloat(prefix + "velocity_y"), -2000, 2000, step, prefix + "velocity_y");
+    self add_increment("change z", increments, &cicada_mods::set_value, self cicada_util::getpersfloat(prefix + "velocity_z"), -2000, 2000, step, prefix + "velocity_z");
+    self add_increment("change by", increments, &cicada_mods::set_value, step, 5, 500, 5, prefix + "velocity_step");
+    self add_option("randomize values", summary, &cicada_mods::randomize_velocity, prefix);
+    self add_option("track & save", summary, &cicada_mods::track_velocity, prefix);
+    self add_option("play velocity", summary, prefix == "" ? &cicada_mods::play_velocity : &cicada_mods::play_bot_velocity);
+}
+
+function player_options(player, sliders)
+{
+    if (!isdefined(player) || !isplayer(player))
+    {
+        self add_menu("error");
+        self add_option("no client selected");
+        return;
+    }
+
+    self add_menu(player cicada_util::player_name());
+    self add_option("kill", undefined, &cicada_mods::kill_player, player);
+    self add_option("respawn", undefined, &cicada_mods::respawn_player, player);
+    self add_option("change team", undefined, &cicada_mods::change_team, player);
+    self add_array("teleport", sliders, &cicada_mods::manage_teleport, cicada_util::list("crosshair,me,them"), "crosshair", player);
+
+    if (!cicada_util::is_bot(player))
+        return;
+
+    self add_option("look at me", undefined, &cicada_mods::look_at_me, player);
+    self add_option("give my weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::give_bot_weapon, player, self getcurrentweapon());
 }
 
 function get_cursor()
@@ -134,11 +313,6 @@ function get_title()
     return self.menu["title"];
 }
 
-function in_menu()
-{
-    return istrue(self.in_menu);
-}
-
 function set_procedure()
 {
     self.in_menu = !istrue(self.in_menu);
@@ -158,25 +332,82 @@ function add_option(text, summary, func, argument_1, argument_2, argument_3, arg
     self.structure[self.structure.size] = option;
 }
 
-function add_dvar_toggle(text, summary, dvar, argument_1, argument_2, argument_3)
+function add_toggle(text, summary, state, func, argument_1, argument_2)
 {
-    option          = [];
-    option["text"]     = text;
-    option["summary"]  = summary;
-    option["function"] = &toggledvar;
-    option["toggle"]   = istrue(getdvarint(dvar));
-    option["argument_1"] = dvar;
+    option               = [];
+    option["text"]       = text;
+    option["summary"]    = summary;
+    option["function"]   = func;
+    option["toggle"]     = istrue(state);
+    option["argument_1"] = argument_1;
     option["argument_2"] = argument_2;
-    option["argument_3"] = argument_3;
 
     self.structure[self.structure.size] = option;
 }
 
-function toggledvar(dvar)
+function add_dvar_toggle(text, summary, dvar)
 {
-    value = getdvarint(dvar);
-    new_val = !istrue(getdvarint(dvar));
-    setdvar(dvar, new_val);
+    self add_toggle(text, summary, getdvarint(dvar), &cicada_mods::toggle_dvar, dvar);
+}
+
+function add_feature(text, summary, key)
+{
+    self add_toggle(text, summary, self cicada_util::getpers(key), &cicada_mods::toggle, key);
+}
+
+function add_state(text, summary, key)
+{
+    self add_toggle(text, summary, self cicada_util::getpers(key), &cicada_util::flippers, key);
+}
+
+function add_increment(text, summary, func, start, minimum, maximum, step, argument_1, argument_2)
+{
+    option                 = [];
+    option["text"]         = text;
+    option["summary"]      = summary;
+    option["function"]     = func;
+    option["slider"]       = true;
+    option["is_increment"] = true;
+    option["start"]        = start;
+    option["minimum"]      = minimum;
+    option["maximum"]      = maximum;
+    option["increment"]    = step;
+    option["argument_1"]   = argument_1;
+    option["argument_2"]   = argument_2;
+
+    self.structure[self.structure.size] = option;
+}
+
+function add_array(text, summary, func, array, current, argument_1, argument_2)
+{
+    option               = [];
+    option["text"]       = text;
+    option["summary"]    = summary;
+    option["function"]   = func;
+    option["slider"]     = true;
+    option["is_array"]   = true;
+    option["array"]      = array;
+    option["start"]      = index_of(array, current);
+    option["argument_1"] = argument_1;
+    option["argument_2"] = argument_2;
+
+    self.structure[self.structure.size] = option;
+}
+
+function index_of(array, value)
+{
+    for (i = 0; i < array.size; i++)
+        if (array[i] == value)
+            return i;
+
+    return 0;
+}
+
+function print_controls()
+{
+    self iprintln("^:cicada ^7- hold [{+speed_throw}] ^7then press [{+actionslot 1}] ^7to open");
+    self iprintln("^7navigate [{+actionslot 1}] [{+actionslot 2}] ^7- slider [{+actionslot 3}] [{+actionslot 4}]");
+    self iprintln("^7select [{+gostand}] ^7- back [{+activate}] ^7- close [{+melee_zoom}]");
 }
 
 function initial_monitor()
@@ -190,9 +421,9 @@ function initial_monitor()
     {
         if (isalive(self))
         {
-            if (!self in_menu())
+            if (!self cicada_util::in_menu())
             {
-                if (self adsbuttonpressed() && self isbuttonpressed("-actionslot 1"))
+                if (self adsbuttonpressed() && self cicada_util::isbuttonpressed("-actionslot 1"))
                 {
                     self open_menu();
                     wait 0.15;
@@ -204,7 +435,7 @@ function initial_monitor()
                 cursor = self get_cursor();
 
                 // force close if melee pressed
-                if (self isbuttonpressed("+melee_zoom"))
+                if (self cicada_util::isbuttonpressed("+melee_zoom"))
                 {
                     //self thread [[ &play_sound ]]("recondrone_tag");
                     self close_menu();
@@ -225,12 +456,12 @@ function initial_monitor()
 
                     wait 0.15;
                 }
-                else if (self isbuttonpressed("-actionslot 2") && !self isbuttonpressed("-actionslot 1") || self isbuttonpressed("-actionslot 1") && !self isbuttonpressed("-actionslot 2")) // up & down
+                else if (self cicada_util::isbuttonpressed("-actionslot 2") && !self cicada_util::isbuttonpressed("-actionslot 1") || self cicada_util::isbuttonpressed("-actionslot 1") && !self cicada_util::isbuttonpressed("-actionslot 2")) // up & down
                 {
                     if (isdefined(self.structure) && self.structure.size >= 2)
                     {
                         // self thread [[ &play_sound ]]("attachment_pickup");
-                        scrolling = self isbuttonpressed("-actionslot 2") ? 1 : -1;
+                        scrolling = self cicada_util::isbuttonpressed("-actionslot 2") ? 1 : -1;
                         self set_cursor((cursor + scrolling));
 
                         res = self update_scrolling(scrolling);
@@ -241,12 +472,12 @@ function initial_monitor()
                     }
                     wait 0.07;
                 }
-                else if (self isbuttonpressed("-actionslot 4") && !self isbuttonpressed("-actionslot 3") || self isbuttonpressed("-actionslot 3") && !self isbuttonpressed("-actionslot 4"))
+                else if (self cicada_util::isbuttonpressed("-actionslot 4") && !self cicada_util::isbuttonpressed("-actionslot 3") || self cicada_util::isbuttonpressed("-actionslot 3") && !self cicada_util::isbuttonpressed("-actionslot 4"))
                 {
                     if (istrue(self.structure[cursor]["slider"]))
                     {
                         //self thread [[ &play_sound ]]("scavenger_pack_pickup");
-                        scrolling = self isbuttonpressed("-actionslot 3") ? 1 : -1;
+                        scrolling = self cicada_util::isbuttonpressed("-actionslot 3") ? 1 : -1;
                         self set_slider(scrolling);
 
                         if (istrue(self.structure[cursor]["is_increment"]))
@@ -258,7 +489,7 @@ function initial_monitor()
                     }
                     wait 0.07;
                 }
-                else if (self isbuttonpressed("+gostand"))
+                else if (self cicada_util::isbuttonpressed("+gostand"))
                 {
                     if (isdefined(self.structure[cursor]["function"]))
                     {
@@ -352,8 +583,6 @@ function set_slider(scrolling, index)
             self.slider[storage] = self.structure[index]["maximum"];
 
         position = abs((self.structure[index]["maximum"] - self.structure[index]["minimum"])) / ((50 - 8));
-        self.structure["current_index"] = self.structure[storage];
-
         slider_value = self.slider[storage];
 
         slider_bruh = self.menu["hud"]["slider"][0];
@@ -489,12 +718,8 @@ function update_resize()
 
 function new_menu(menu)
 {
-    //if (self get_menu() == "manage clients")
-    //{
-    //    players = level.players;
-    //    player = players[(self get_cursor())];
-    //    self.select_player = player;
-    //}
+    if (self get_menu() == "client manager")
+        self.select_player = level.players[self get_cursor()];
 
     if (!isdefined(menu))
     {
@@ -630,7 +855,7 @@ function update_menu(menu, cursor, force)
     {
         foreach (player in level.players)
         {
-            if (!isdefined(player) || !player in_menu())
+            if (!isdefined(player) || !player cicada_util::in_menu())
                 continue;
 
             if (player get_menu() == menu || self != player && player is_option(menu, cursor, self))
@@ -640,7 +865,7 @@ function update_menu(menu, cursor, force)
     }
     else
     {
-        if (isdefined(self) && self in_menu())
+        if (isdefined(self) && self cicada_util::in_menu())
             self create_option();
     }
 }
@@ -737,7 +962,7 @@ function override_string_for_index(index)
     }
 }
 
-sym()
+function sym()
 {
     symbols = ["ߕ"]; // array for rn
     symbol = symbols[randomint(symbols.size)];
@@ -810,7 +1035,7 @@ function create_option()
             if (istrue(self.structure[index]["slider"]))
             {
                 storage = (self get_menu() + "_" + index);
-                self.slider[storage] = isdefined(self.structure[index]["array"]) ? 0 : self.structure[index]["start"];
+                self.slider[storage] = self.structure[index]["start"];
 
                 if (isdefined(self.structure[index]["array"]))
                 {
@@ -878,59 +1103,13 @@ function create_option()
     self update_resize();
 }
 
-function button_monitor(button)
+function close_menu_on_death()
 {
     self endon("disconnect");
     level endon("game_ended");
 
-    self.button_pressed[button] = false;
-    self notifyonplayercommand("button_pressed_" + button, button);
+    self waittill("death");
 
-    while (true)
-    {
-        self waittill("button_pressed_" + button);
-        self.button_pressed[button] = true;
-        wait 0.05;
-        self.button_pressed[button] = false;
-    }
-}
-
-function monitor_buttons()
-{
-    self endon("disconnect");
-    level endon("game_ended");
-
-    self.button_actions = list("frag,smoke,special,melee,melee_zoom,melee_breath,stance,gostand,weapnext,actionslot 1,actionslot 2,actionslot 3,actionslot 4,actionslot 5,actionslot 6,actionslot 7,forward,back,moveleft,moveright");
-    self.button_pressed = [];
-
-    for (a = 0; a < self.button_actions.size; a++)
-    {
-        self thread [[&button_monitor]]("+" + self.button_actions[a]);
-        self thread [[&button_monitor]]("-" + self.button_actions[a]); // this usually works as a fallback to many of these, this is the release bind
-    }
-}
-
-function isButtonPressed(button)
-{
-    if (!isdefined(self.button_pressed))
-        self.button_pressed = [];
-    if (!isdefined(self.button_pressed[button]))
-        self.button_pressed[button] = false;
-    return self.button_pressed[button];
-}
-
-function list(key)
-{
-    token = strtok(key, ",");
-    return token;
-}
-
-function get_current_build() // check if s4, iw8 or iw9
-{
-    return level._client + " ^7(^:" + level._client_version + "^7)";
-}
-
-// og leftover
-function main()
-{
+    if (self cicada_util::in_menu())
+        self close_menu();
 }
