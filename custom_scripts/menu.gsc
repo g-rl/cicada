@@ -67,8 +67,7 @@ function structure()
         case "mods & toggles":
             self add_menu(menu);
             self add_option("glitches", undefined, &new_menu, "glitches");
-            if (game_utility::getgametype() == "sd")
-                self add_option("fast last", undefined, &cicada_mods::fast_last);
+            self add_option("fast last", undefined, &cicada_mods::fast_last);
             self add_feature("invincibility", undefined, "invincible");
             self add_feature("unlimited lives", undefined, "unlimited_lives");
             self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
@@ -277,6 +276,9 @@ function structure()
             self add_option("dvars", undefined, &new_menu, "dvars");
             self add_option("killcam manager", undefined, &new_menu, "killcam manager");
             self add_feature("no hud", undefined, "no_hud");
+            self add_feature("pve zombies", "spawns a zombie horde against everyone", "pve");
+            //self add_increment("pve horde size", increments, &cicada_mods::set_value, self cicada_util::getpersint("pve_max"), 5, 100, 5, "pve_max");
+            //self add_increment("pve zombie health", increments, &cicada_mods::set_value, self cicada_util::getpersint("pve_health"), 100, 1000, 25, "pve_health");
             self add_feature("bounce pads", "^:" + self cicada_mods::bounce_count() + " ^7saved", "bounce_pads");
             self add_option("save bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::save_bounce);
             self add_option("delete last bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::delete_bounce);

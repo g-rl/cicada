@@ -12,6 +12,7 @@
 #using custom_scripts\killcam;
 #using custom_scripts\loadout;
 #using custom_scripts\movement;
+#using custom_scripts\pve;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
 
@@ -39,6 +40,7 @@ function init()
     register("no_hud", &hide_hud, &show_hud);
     register("no_oob", &disable_oob, &enable_oob);
     register("no_barriers", &remove_barriers, &restore_barriers);
+    register("pve", &cicada_pve::start, &cicada_pve::stop);
     register("clean_killcam", &cicada_killcam::clean);
 }
 
@@ -1149,6 +1151,9 @@ function apply_defaults()
     self cicada_util::initpers("camera_bezier_speed", 5);
     self cicada_util::initpers("camera_linear_time", 10);
     self cicada_util::initpers("camera_rotation", 0);
+
+    self cicada_util::initpers("pve_max", 40);
+    self cicada_util::initpers("pve_health", 300);
 
     self cicada_util::initpers("bolt_speed", 1);
     self cicada_util::initpers("bot_bolt_speed", 1);
