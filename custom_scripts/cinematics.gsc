@@ -3,21 +3,15 @@
 
 #namespace cicada_cinematics;
 
-// bezier weights lose precision past roughly a dozen control points, so the node list is
-// capped where the interpolation still tracks the saved path.
+// bezier weights lose precision past roughly a dozen control points so the node list is capped
 function max_nodes()
 {
     return 12;
 }
 
-function node_model()
-{
-    return "axis_guide_createfx";
-}
-
 function init()
 {
-    precachemodel(node_model());
+    precachemodel("axis_guide_createfx");
 
     camera = spawnstruct();
     camera.nodes = [];
@@ -58,12 +52,7 @@ function save_node()
     camera = level.cicada_camera;
     camera.nodes[camera.nodes.size] = node;
 
-    marker = spawn("script_model", node.origin + (0, 0, 58));
-    marker setmodel(node_model());
-    marker.angles = node.angles;
-    marker hudoutlineenable("outlinefill_nodepth_green");
-    camera.markers[camera.markers.size] = marker;
-
+    refresh_marker_outlines();
     self rebuild_preview();
     self cicada_util::message("node ^:#" + node_count() + " ^7saved");
 }
@@ -84,6 +73,7 @@ function delete_last_node()
     camera.nodes[last] = undefined;
     camera.markers[last] = undefined;
 
+    refresh_marker_outlines();
     self rebuild_preview();
     self cicada_util::message("node ^:#" + (last + 1) + " ^7deleted");
 }
@@ -101,6 +91,41 @@ function clear_nodes()
 
     self clear_preview();
     self cicada_util::message("nodes ^1cleared");
+}
+
+// every marker uses the same model, so the newest one is called out by colour instead - yellow
+// for the node that will be appended to next, green for the rest of the path. an entity only
+// replicates one outline state per tick, so disabling and re-enabling in the same frame nets to
+// nothing - the marker is respawned instead, and only when its colour actually changed.
+function refresh_marker_outlines()
+{
+    camera = level.cicada_camera;
+    last = camera.nodes.size - 1;
+
+    for (i = 0; i < camera.nodes.size; i++)
+    {
+        outline = (i == last) ? "outlinefill_nodepth_yellow" : "outlinefill_nodepth_green";
+
+        if (isdefined(camera.markers[i]))
+        {
+            if (camera.markers[i].cicada_outline == outline)
+                continue;
+
+            camera.markers[i] delete();
+        }
+
+        camera.markers[i] = spawn_marker(camera.nodes[i], outline);
+    }
+}
+
+function spawn_marker(node, outline)
+{
+    marker = spawn("script_model", node.origin + (0, 0, 58));
+    marker setmodel("axis_guide_createfx");
+    marker.angles = node.angles;
+    marker hudoutlineenable(outline);
+    marker.cicada_outline = outline;
+    return marker;
 }
 
 function set_mode(value)
@@ -322,7 +347,7 @@ function rebuild_preview()
     {
         origin = bezier(origins, float(i) / (steps - 1));
         dot = spawn("script_model", origin + (0, 0, 58));
-        dot setmodel(node_model());
+        dot setmodel("axis_guide_createfx");
         dot hudoutlineenable("outlinefill_nodepth_red");
         camera.preview[camera.preview.size] = dot;
     }
