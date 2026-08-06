@@ -18,6 +18,8 @@ function private autoexec __init__system__()
 
 function private pre_main()
 {
+    setdvar("calloutmarkerping_enabled", 0);
+
     level._client = "jup";
     level._client_version = getdvar("build_version", "1.0.0");
 
