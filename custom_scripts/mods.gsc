@@ -1187,3 +1187,42 @@ function default_velocity(prefix)
     self cicada_util::initpers(prefix + "velocity_z", 250);
     self cicada_util::initpers(prefix + "velocity_step", 50);
 }
+
+function monitor_class()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    //game["strings"]["change_class"] = "";
+
+    self cicada_util::wait_prematch();
+
+    for (;;)
+    {
+        self waittill("luinotifyserver", menu, response);
+
+        if (!isalive(self))
+            continue;
+
+        if (menu != "class_select")
+            continue;
+
+        scripts\mp\class::setclass(self.pers["class"]);
+        self.tag_stowed_back = undefined;
+        self.tag_stowed_hip = undefined;
+        scripts\mp\class::giveloadout(self.pers["team"], self.pers["class"]);
+        //self handle_camo(); // TODO
+
+        // also give the super each class change
+        super = supers::getcurrentsuper();
+        if (isdefined(super)) // supers = field upgrade
+        {
+            self thread [[&supers::givesuperweapon]](super);
+            self thread [[&supers::givesuperpoints]](supers::getsuperpointsneeded());
+        }
+
+        // give fast perks too (i dont think i want this or if i do, i want it as a pers in class options)
+        // self thread give_perks();
+        wait 0.05;
+    }
+}

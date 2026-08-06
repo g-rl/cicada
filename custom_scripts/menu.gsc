@@ -49,10 +49,12 @@ function structure()
     increments = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider (^5no jump^7)";
     sliders = "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to use slider, ^5[{+gostand}]^7 to select";
     credits = "made with ^1<3^7 by ^:nyli^7 & ^:mikey";
+    gametype = scripts\mp\utility\game::getgametype();
 
     switch (menu)
     {
         case "cicada":
+            self.bind_index = false;
             self add_menu("cicada ^5" + cicada_util::get_current_build());
             self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
             self add_option("binds", credits, &new_menu, "bind settings");
@@ -65,20 +67,26 @@ function structure()
             break;
 
         case "mods & toggles":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("glitches", undefined, &new_menu, "glitches");
-            self add_option("fast last", undefined, &cicada_mods::fast_last);
+            if (gametype == "dm") 
+                self add_option("fast last", undefined, &cicada_mods::fast_last);
             self add_feature("invincibility", undefined, "invincible");
             self add_feature("unlimited lives", undefined, "unlimited_lives");
             self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
+
+            // engine toggles
             self add_dvar_toggle("instashoots", undefined, "pan_instashoots");
             self add_dvar_toggle("always canswap", undefined, "pan_alwayscanswap");
             self add_dvar_toggle("sprint swaps", undefined, "pan_sprintswaps");
             self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
             self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
             self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
-            self add_feature("always nac", "[{+weapnext}] to swap", "always_nac");
+
+            self add_feature("always nac", "[{+weapnext}] to easily swap", "always_nac");
             self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");
+            // alt swaps
             self add_feature("instaswaps", "[{+frag}] to swap", "instaswaps");
             self add_feature("auto prone", undefined, "auto_prone");
             self add_feature("auto reload", undefined, "auto_reload");
@@ -88,18 +96,22 @@ function structure()
             break;
 
         case "glitches":
+            self.bind_index = false;
             self add_menu(menu);
-            self add_option("one handed gun", "shoot after the swap", &cicada_mods::one_handed_gun);
+            self add_option("one handed gun", undefined, &cicada_mods::one_handed_gun);
             self add_option("switch to equipment", "^:" + cicada_catalog::count("equipment") + " ^7equipment available", &new_menu, "switch to equipment");
             break;
 
+        // extension of glitches
         case "switch to equipment":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (item in cicada_catalog::get("equipment"))
                 self add_option(item.name, "^:" + item.id, &cicada_loadout::give_equipment, item.id);
             break;
 
         case "cinematics":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("start camera path", self cicada_cinematics::summary(), &cicada_cinematics::start_path);
             self add_option("stop camera path", self cicada_cinematics::summary(), &cicada_cinematics::stop_path);
@@ -116,6 +128,7 @@ function structure()
             break;
 
         case "position":
+            self.bind_index = false;
             self add_menu(menu);
             self add_array("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "crosshair");
             self add_feature("freeze bots", undefined, "frozen_bots");
@@ -129,6 +142,7 @@ function structure()
             break;
 
         case "bot paths":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("start path movement", self cicada_movement::summary("path"), &cicada_movement::start_bot_path);
             self add_option("save point", self cicada_movement::summary("path"), &cicada_movement::save_point, "path");
@@ -136,14 +150,16 @@ function structure()
             break;
 
         case "aimbot settings":
+            self.bind_index = false;
             self add_menu(menu);
-            self add_feature("aimbot", "fires on snipers and marksman rifles", "aimbot");
+            self add_feature("aimbot", "snipers and marksman rifles only", "aimbot");
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
             self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
             self add_option("effect manager", undefined, &new_menu, "edit effects");
             break;
 
         case "edit effects":
+            self.bind_index = false;
             self add_menu(menu);
             self add_state("kill effects", "current: ^:" + self cicada_util::getpers("kill_effect"), "kill_effects");
             self add_array("kill effect", sliders, &cicada_mods::set_value, cicada_mods::effect_list(), self cicada_util::getpers("kill_effect"), "kill_effect");
@@ -153,6 +169,7 @@ function structure()
             break;
 
         case "edit tracers":
+            self.bind_index = false;
             self add_menu(menu);
             self add_feature("tracer rounds", "current: ^:" + self cicada_util::getpers("tracer_effect"), "tracers");
             self add_increment("effect count", increments, &cicada_mods::set_value, self cicada_util::getpersint("tracer_count"), 1, 10, 1, "tracer_count");
@@ -161,12 +178,14 @@ function structure()
             break;
 
         case "binds":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (name in level.cicada_bind_names)
                 self add_option(name, self bind_summary(name), &new_menu, name);
             break;
 
         case "bind settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("choose bind", "^:" + level.cicada_bind_names.size + " ^7actions available", &new_menu, "binds");
             self add_option("edit record movement", self cicada_movement::summary("record"), &new_menu, "record movement settings");
@@ -189,12 +208,14 @@ function structure()
             break;
 
         case "equipment bind":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (item in cicada_catalog::get("equipment"))
                 self add_option(item.name, "^:" + item.id, &cicada_mods::set_value, item.id, "equipment_weapon");
             break;
 
         case "bolt movement settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("bot bolt movement", self cicada_movement::summary("bot_bolt"), &new_menu, "bot bolt movement settings");
             self add_increment("bolt speed", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bolt_speed"), 0.1, 10, 0.1, "bolt_speed");
@@ -204,6 +225,7 @@ function structure()
             break;
 
         case "bot bolt movement settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_increment("bot bolt speed", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bot_bolt_speed"), 0.1, 10, 0.1, "bot_bolt_speed");
             self add_option("save bot bolt", self cicada_movement::summary("bot_bolt"), &cicada_movement::save_point, "bot_bolt");
@@ -212,6 +234,7 @@ function structure()
             break;
 
         case "record movement settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("record movement", self cicada_movement::summary("record"), &cicada_movement::record_movement);
             self add_option("delete last point", self cicada_movement::summary("record"), &cicada_movement::delete_point, "record");
@@ -220,6 +243,7 @@ function structure()
             break;
 
         case "class change settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_increment("class wrap", increments, &cicada_mods::set_value, self cicada_util::getpersint("class_wrap"), 1, 10, 1, "class_wrap");
             self add_state("one bullet left", undefined, "class_one_bullet");
@@ -229,16 +253,19 @@ function structure()
             break;
 
         case "edit velocity":
+            self.bind_index = false;
             self add_menu(menu);
             self velocity_options("", increments);
             break;
 
         case "edit bot velocity":
+            self.bind_index = false;
             self add_menu(menu);
             self velocity_options("bot_", increments);
             break;
 
         case "class manager":
+            self.bind_index = false;
             self add_menu(menu);
             self add_feature("infinite equipment", undefined, "inf_equipment");
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
@@ -255,23 +282,27 @@ function structure()
 
         case "primaries":
         case "secondaries":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (category in level.cicada_groups[menu])
                 self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons available", &new_menu, category);
             break;
 
         case "streaks":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("give streak", "^:" + cicada_catalog::count("streaks") + " ^7streaks available", &new_menu, "give streaks");
             break;
 
         case "give streaks":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (streak in cicada_catalog::get("streaks"))
                 self add_option(streak.name, "^:" + streak.id, &cicada_loadout::give_streak, streak.id);
             break;
 
         case "game settings":
+            self.bind_index = false;
             self add_menu(menu);
             self add_option("dvars", undefined, &new_menu, "dvars");
             self add_option("killcam manager", undefined, &new_menu, "killcam manager");
@@ -292,11 +323,13 @@ function structure()
             break;
 
         case "dvars":
+            self.bind_index = false;
             self add_menu(menu);
             self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
             break;
 
         case "killcam manager":
+            self.bind_index = false;
             self add_menu(menu);
             self add_feature("allow hud edits", "allow editing killcam elems", "clean_killcam");
             self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 10, 1);
@@ -309,12 +342,14 @@ function structure()
             break;
 
         case "manage clients":
+            self.bind_index = false;
             self add_menu(menu);
             foreach (player in level.players)
                 self add_option(player cicada_util::player_name(), cicada_util::is_bot(player) ? "^:bot" : "^:player", &new_menu, "player option");
             break;
 
         case "player option":
+            self.bind_index = false;
             self player_options(self.select_player, sliders);
             break;
 
@@ -882,6 +917,7 @@ function open_menu(menu)
         self.slider = [];
 
     self.menu["hud"]["title"]        = self create_text("MP/NEURA_TITLE_" + self get_title(), "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 1.75), self.color[4], 1, 10);
+    self.menu["hud"]["index"]        = self create_text("MP/NEURA_INDEX_[]", "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 217), (self.y_offset + 1.75), self.color[4], 1, 10);
     // outline
     self.menu["hud"]["background"][0] = self create_shader("white", "TOP_LEFT", "TOPCENTER", self.x_offset, (self.y_offset - 1), 222, 34, self.current_menu_color, 0.6, 1);
     // top bar
@@ -1115,6 +1151,14 @@ function create_summary(summary)
     }
 }
 
+function update_index()
+{
+    if (!isdefined(self.menu["hud"]["index"]))
+        return;
+
+    self.menu["hud"]["index"] set_text("MP/NEURA_INDEX_[" + (self get_cursor() + 1) + "/" + self.structure.size + "]");
+}
+
 function create_option()
 {
     self clear_option();
@@ -1224,6 +1268,7 @@ function create_option()
             self set_cursor((self.structure.size - 1));
     }
 
+    self update_index();
     self update_resize();
 }
 
