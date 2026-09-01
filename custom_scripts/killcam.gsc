@@ -2,8 +2,7 @@
 
 #namespace cicada_killcam;
 
-// scripts\mp\killcam writes the attachment slots as "...attachment" + index + 1, which
-// concatenates rather than adds. both spellings are cleared so the hide holds either way.
+// scripts\mp\killcam writes the attachment slots as attachment + index + 1
 function clean(key)
 {
     self endon("disconnect");

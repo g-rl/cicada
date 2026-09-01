@@ -83,8 +83,6 @@ function clear_camo()
     self cicada_util::message("camo ^1cleared");
 }
 
-// the current weapon keeps the old camo until it is re-drawn, so the stowed weapon is
-// rebuilt first and the held one second.
 function apply_camo()
 {
     camo = self camo();

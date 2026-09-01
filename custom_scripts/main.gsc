@@ -13,16 +13,17 @@
 
 function private autoexec __init__system__()
 {
-    system::register(#"cicada", undefined, &pre_main, undefined);
+    system::register(#"cicada", undefined, &init, undefined);
 }
 
-function private pre_main()
+function private init()
 {
-    setdvar("calloutmarkerping_enabled", 0);
-
     level._client = "jup";
     level._client_version = getdvar("build_version", "1.0.0");
 
+    setdvar("calloutmarkerping_enabled", 0);
+
+    // functions
     cicada_catalog::init();
     cicada_cinematics::init();
     cicada_movement::init();
@@ -39,11 +40,9 @@ function private on_player_spawned(params)
     if (cicada_util::is_bot(self))
         return;
 
-    // a fast restart kills the level thread started in pre_main without re-running it
     level thread [[&cicada_mods::skip_prematch]]();
 
     self cicada_menu::print_controls();
-
     self cicada_mods::apply_defaults();
 
     if (!isdefined(self.cicada_ready))

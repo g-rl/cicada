@@ -10,6 +10,12 @@
 
 #using custom_scripts\util;
 
+/*
+
+    cicada pve is a attempt to make a fun Zombies PvPvE mode inside of JUP
+
+*/
+
 #namespace cicada_pve;
 
 function start(key)
@@ -152,14 +158,12 @@ function private setup_threat_groups()
         }
     }
 
-    // aiKilledScoreEventsEnabled gates the kill score an agent death awards the killer. zeroing it
-    // denies kill credit; the on_killed hook records the final killcam instead.
+    // aiKilledScoreEventsEnabled gates the kill score an agent death awards the killer
     level.cicada_pve_aiscore_orig = level.var_3749fd90367bc366;
     level.var_3749fd90367bc366 = 0;
 }
 
-// zombie_on_damaged runs before the stock damage handler (dispatched by unittype). a player wielding
-// a sniper-class weapon one-taps a pve zombie; everything else delegates to the original handler.
+// damage handler
 function private zombie_on_damaged(einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, timeoffset, modelindex, partname, objweapon)
 {
     if (!isdefined(objweapon))
@@ -168,9 +172,9 @@ function private zombie_on_damaged(einflictor, eattacker, idamage, idflags, smea
     if (istrue(self.cicada_pve_zombie) && isplayer(eattacker) && isdefined(objweapon) && isdefined(objweapon.basename) && weaponclass(objweapon.basename) == "sniper")
         idamage = self.health + 1;
 
-    orig = level.cicada_pve_ondamage_orig[self.unittype];
-    if (isdefined(orig))
-        self [[ orig ]](einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, timeoffset, modelindex, partname, objweapon);
+    original = level.cicada_pve_ondamage_orig[self.unittype];
+    if (isdefined(original))
+        [[ original ]](einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, timeoffset, modelindex, partname, objweapon);
 }
 
 function private zombie_on_killed(einflictor, eattacker, idamage, smeansofdeath, objweapon, vdir, shitloc, timeoffset, deathanimduration)
@@ -178,13 +182,12 @@ function private zombie_on_killed(einflictor, eattacker, idamage, smeansofdeath,
     if (istrue(self.cicada_pve_zombie) && isplayer(eattacker))
         record_zombie_finalkillcam(eattacker, einflictor, objweapon, smeansofdeath, timeoffset);
 
-    orig = level.cicada_pve_onkilled_orig[self.unittype];
-    if (isdefined(orig))
-        self [[ orig ]](einflictor, eattacker, idamage, smeansofdeath, objweapon, vdir, shitloc, timeoffset, deathanimduration);
+    original = level.cicada_pve_onkilled_orig[self.unittype];
+    if (isdefined(original))
+        [[ original ]](einflictor, eattacker, idamage, smeansofdeath, objweapon, vdir, shitloc, timeoffset, deathanimduration);
 }
 
-// mirrors the setup in playerkilled_killcamsetup: agent deaths never reach it, so the final killcam
-// is granted here instead. direct gun shots give no killcamentity, which the engine also expects.
+// mirrors playerkilled_killcamsetup
 function private record_zombie_finalkillcam(attacker, einflictor, objweapon, smeansofdeath, timeoffset)
 {
     if (!level.recordfinalkillcam || istrue(level.disable_killcam))
@@ -255,7 +258,7 @@ function private spawn_zombie(aitype, origin)
     if (issubstr(aitype, "zombie"))
         zombie setperk("specialty_radarblip", 1);
 
-    make_sprinter(zombie);
+    //make_sprinter(zombie);
 
     zombie setthreatbiasgroup("pve_zombie");
 
@@ -264,9 +267,6 @@ function private spawn_zombie(aitype, origin)
     zombie thread [[&watch_damage]](zombie);
 }
 
-// sprinting comes from the movetype plus the anim-threshold speed, the same two things the
-// zombie_utils setmovespeed shared func writes when escort_horde marks a sprinter. some aitypes
-// have no sprint threshold (hellhound, armored), so a floor is applied so every zombie commits.
 function private make_sprinter(zombie)
 {
     zombie._blackboard.movetype = "sprint";
@@ -281,8 +281,7 @@ function private make_sprinter(zombie)
     zombie aisettargetspeed(speed);
 }
 
-// agents notify "pain" whenever a damage hit lands while alive, so the running hit total and
-// current health can be printed off that signal alone, no per-shot callback needed.
+// TODO: remove
 function private watch_damage(zombie)
 {
     level endon("game_ended");

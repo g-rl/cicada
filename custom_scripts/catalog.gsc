@@ -2,12 +2,12 @@
 
 #namespace cicada_catalog;
 
-// every id below appears verbatim in the mwiii script dump. the game ships no master
-// weapon table, so this list is what the shipped scripts actually reference.
+// every id below appears in the mwiii script dump
 function init()
 {
     level.cicada_weapon_classes = [];
-    // same token set scripts\cp_mp\weapon::getweaponrootname splits ids on
+
+    // same token set as scripts\cp_mp\weapon::getweaponrootname
     foreach (code in cicada_util::list("ar,sm,lm,sh,sn,dm,pi,la,me,br"))
         level.cicada_weapon_classes[code] = true;
 
@@ -26,7 +26,6 @@ function init()
 
     entries("launchers", "jup_jp22_la_dromeo,jup_jp26_la_cluster,iw9_la_gromeo_mp,iw9_la_juliet_mp,iw9_la_kgolf_mp,iw9_la_mike32_mp,iw9_la_rpapa7_mp");
     entries("pistols", "jup_cp24_pi_glima21,jup_jp07_pi_uzulum,jup_jp12_pi_mike93,jup_jp14_pi_rsierra12,jup_jp32_pi_mpapa9,iw9_pi_decho_mp,iw9_pi_golf17_mp,iw9_pi_golf18_mp,iw9_pi_papa220_mp,iw9_pi_swhiskey_mp");
-    // the compiler caps a single string literal, so the longer lists arrive in chunks
     entries("misc", "jup_jp23_me_knife,jup_jp23_me_spear,jup_me_shotel,jup_pi_goldengun_mp,jup_pi_raygun_mp,jup_la_humangun_mp,jup_la_plasmagun_mp");
     entries("misc", "iw9_me_riotshield_mp,iw9_me_knife_mp,iw9_me_fists_mp,iw9_me_kamas_mp,iw9_me_sword01_mp,iw9_me_tonfa_mp,iw9_me_buzzsaw_mp,iw9_pi_stimpistol_mp");
 
@@ -98,8 +97,6 @@ function count(category)
     return get(category).size;
 }
 
-// ids carry no display name, so the readable half is the codename the id is built from:
-// "jup_jp35_sn_moscar" -> "moscar", "at_mine_mp" -> "at mine".
 function label(id)
 {
     parts = strtok(id, "_");

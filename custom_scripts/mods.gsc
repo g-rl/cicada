@@ -597,7 +597,6 @@ function toggle_freeze(player_)
     player_ thread [[&hold_freeze]]();
 }
 
-// respawning clears freezecontrols, so the state has to be reapplied on a loop
 function hold_freeze()
 {
     self endon("disconnect");
@@ -863,7 +862,6 @@ function restore_timescale()
     setslowmotion(scale, scale, 0);
 }
 
-// gamelogic::prematchperiod reads level.prematchperiodend once, right before the and calls matchstarttimerskip when it is 0. the
 function skip_prematch()
 {
     level notify("cicada_skip_prematch"); // end old thread if it exists

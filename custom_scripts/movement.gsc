@@ -72,7 +72,6 @@ function clear_points(key)
 }
 
 // bolt & record playback ----------------------------------------------------
-
 function play_bolt()
 {
     self ride_points("bolt", self, self cicada_util::getpersfloat("bolt_speed"));
@@ -174,7 +173,6 @@ function record_movement()
 }
 
 // bot paths -----------------------------------------------------------------
-
 function start_bot_path()
 {
     self endon("disconnect");

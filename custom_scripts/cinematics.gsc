@@ -3,9 +3,9 @@
 
 #namespace cicada_cinematics;
 
-// bezier weights lose precision past roughly a dozen control points so the node list is capped
 function max_nodes()
 {
+    // bezier weights lose precision past roughly a dozen control points so the node list is capped
     return 12;
 }
 
@@ -93,10 +93,6 @@ function clear_nodes()
     self cicada_util::message("nodes ^1cleared");
 }
 
-// every marker uses the same model, so the newest one is called out by colour instead - yellow
-// for the node that will be appended to next, green for the rest of the path. an entity only
-// replicates one outline state per tick, so disabling and re-enabling in the same frame nets to
-// nothing - the marker is respawned instead, and only when its colour actually changed.
 function refresh_marker_outlines()
 {
     camera = level.cicada_camera;
@@ -331,7 +327,6 @@ function clone_self()
 }
 
 // preview -------------------------------------------------------------------
-
 function rebuild_preview()
 {
     self clear_preview();
@@ -386,7 +381,6 @@ function set_visible(visible)
 }
 
 // bezier --------------------------------------------------------------------
-
 function bezier(points, t)
 {
     x = 0;
@@ -437,8 +431,6 @@ function node_origins()
     return origins;
 }
 
-// yaw wrapping across 0/360 makes the interpolated angle spin the long way around, so the
-// saved angles are unrolled into a continuous run. the nodes keep their original values.
 function unwound_angles()
 {
     camera = level.cicada_camera;
