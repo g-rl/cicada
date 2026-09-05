@@ -925,6 +925,9 @@ function skip_prematch()
     level endon("cicada_skip_prematch");
     level endon("game_ended");
 
+    if (scripts\mp\utility\game::getbasegametype() != "dm")
+        return;
+
     setdvar("scr_game_matchstarttime", 0);
 
     while (!istrue(level.prematchstarted))
@@ -960,7 +963,9 @@ function cancel_countdown()
 
 function fast_restart()
 {
-    setdvar("scr_game_matchstarttime", 0);
+    if (scripts\mp\utility\game::getbasegametype() != "sd")
+        setdvar("scr_game_matchstarttime", 0);
+
     map_restart(1);
 }
 
