@@ -99,7 +99,16 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("one handed gun", undefined, &cicada_mods::one_handed_gun);
+            self add_option("anim override", "force a viewmodel animation by id", &new_menu, "anim override");
             self add_option("switch to equipment", "^:" + cicada_catalog::count("equipment") + " ^7equipment available", &new_menu, "switch to equipment");
+            break;
+
+        case "anim override":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_increment("anim id", increments, &cicada_mods::set_anim, self cicada_util::getpersint("anim_id"), 0, 100, 1);
+            self add_array("hands", sliders, &cicada_mods::set_anim_hands, cicada_util::list("right,both"), self cicada_util::getpers("anim_hands"));
+            self add_option("release override", "stop the override and restore normal anims", &cicada_mods::clear_anim);
             break;
 
         // extension of glitches

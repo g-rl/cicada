@@ -1168,6 +1168,35 @@ function one_handed_gun()
     self reload_class();
 }
 
+function set_anim(id)
+{
+    self cicada_util::setpers("anim_id", id);
+    self apply_anim();
+}
+
+function set_anim_hands(mode)
+{
+    self cicada_util::setpers("anim_hands", mode);
+    self apply_anim();
+}
+
+function apply_anim()
+{
+    id = self cicada_util::getpersint("anim_id");
+
+    if (self cicada_util::getpers("anim_hands") == "both")
+        self nengine_set_anim(id, 1);
+    else
+        self nengine_set_anim(id);
+}
+
+function clear_anim()
+{
+    self cicada_util::setpers("anim_id", 0);
+    self nengine_set_anim(-1);
+    self cicada_util::message("^5anim override released");
+}
+
 function apply_defaults()
 {
     self cicada_util::initpers("messages", true);
@@ -1175,6 +1204,8 @@ function apply_defaults()
 
     self cicada_util::initpers("instaswaps_time", 0.3);
     self cicada_util::initpers("auto_prone_mode", "air");
+    self cicada_util::initpers("anim_id", 0);
+    self cicada_util::initpers("anim_hands", "right");
     self cicada_util::initpers("class_wrap", 5);
 
     self cicada_util::initpers("aimbot_range", 1500);
