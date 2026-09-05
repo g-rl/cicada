@@ -21,7 +21,10 @@ function private init()
     level._client = "jup";
     level._client_version = getdvar("build_version", "1.0.0");
 
-    setdvar("calloutmarkerping_enabled", 0);
+    setdvar("calloutmarkerping_enabled", 0); // remove warzone ping
+    setdvar("r_mbEnable", 0); // remove all motion blur
+    setdvar("camera_thirdPerson", 0); // disable third person just in case
+    setdvar("jump_slowdownEnable", 0); // jump slowdown
 
     // functions
     cicada_catalog::init();

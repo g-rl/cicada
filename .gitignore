@@ -9,5 +9,6 @@ scripts
 custom_scripts/compiled/
 
 final/
+tools/
 
 gsclsp.*
