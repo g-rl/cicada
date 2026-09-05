@@ -971,7 +971,7 @@ function create_text(text, override, font, font_scale, alignment, relative, x_of
         element.archived       = false; // should_archive
 
         element.foreground     = true;
-        element.hidewheninmenu = false;
+        element.hidewheninmenu = true;
         element.showinkillcam = 0;
 
         element hud_util::setpoint(alignment, relative, x_offset, y_offset);
@@ -979,7 +979,6 @@ function create_text(text, override, font, font_scale, alignment, relative, x_of
 
         self.element_count++;
     }
-
     return element;
 }
 
