@@ -1232,6 +1232,11 @@ function apply_defaults()
     self cicada_util::initpers("hide_equipment", true);
     self cicada_util::initpers("hide_field_upgrade", true);
 
+    self cicada_util::initpers("invincible", true);
+    self cicada_util::initpers("ufo_mode", true);
+    self cicada_util::initpers("save_load_binds", true);
+    self cicada_util::initpers("aimbot", true);
+
     self default_velocity("");
     self default_velocity("bot_");
 
