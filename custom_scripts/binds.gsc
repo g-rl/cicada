@@ -68,7 +68,8 @@ function assigned_bind(slot)
 
 function has_bind(name, slot)
 {
-    return self assigned_bind(slot) == name;
+    assigned = self assigned_bind(slot);
+    return isdefined(name) && isdefined(assigned) && assigned == name;
 }
 
 function slot_icon(slot)
@@ -78,6 +79,9 @@ function slot_icon(slot)
 
 function assign(name, slot)
 {
+    if (!isdefined(name) || !isdefined(level.cicada_binds[name]))
+        return;
+
     if (self has_bind(name, slot))
     {
         self cicada_util::setpers(slot_key(slot), undefined);

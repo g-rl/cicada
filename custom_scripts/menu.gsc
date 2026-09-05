@@ -386,7 +386,7 @@ function bind_summary(name)
 function add_bind_slots(name)
 {
     for (slot = 1; slot <= 4; slot++)
-        self add_toggle("actionslot " + slot, "run ^:" + name + " ^7on release", self cicada_binds::has_bind(name, slot), &cicada_binds::assign, name, slot);
+        self add_toggle("actionslot " + slot + " ^5(" + cicada_binds::slot_icon(slot) + ")^7", "run ^:" + name + " ^7on release", self cicada_binds::has_bind(name, slot), &cicada_binds::assign, name, slot);
 }
 
 function position_options(increments)
