@@ -64,6 +64,7 @@ function structure()
             self add_option("class", credits, &new_menu, "class manager");
             self add_option("game", credits, &new_menu, "game settings");
             self add_option("clients", credits, &new_menu, "manage clients");
+            self add_option("^1map restart", credits, &nengine_map_restart);
             break;
 
         case "mods & toggles":
@@ -1299,4 +1300,9 @@ function close_menu_on_death()
 
     if (self cicada_util::in_menu())
         self close_menu();
+}
+
+function private nengine_map_restart()
+{
+    nengine_mr();
 }
