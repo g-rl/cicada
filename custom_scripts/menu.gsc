@@ -305,15 +305,25 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("dvars", undefined, &new_menu, "dvars");
+
+            self add_option("spawn bot", "^:" + self cicada_util::getpers("bot_difficulty") + " ^7on ^:" + self cicada_util::getpers("bot_team"), &cicada_mods::spawn_bot);
+            self add_array("bot team", sliders, &cicada_mods::set_value, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
+            self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
+
             self add_option("killcam manager", undefined, &new_menu, "killcam manager");
             self add_feature("no hud", undefined, "no_hud");
-            self add_feature("pve zombies", "spawns a zombie horde against everyone", "pve");
+            
+            // TODO: come back to it some day
+            //self add_feature("pve zombies", "spawns a zombie horde against everyone", "pve");
             //self add_increment("pve horde size", increments, &cicada_mods::set_value, self cicada_util::getpersint("pve_max"), 5, 100, 5, "pve_max");
             //self add_increment("pve zombie health", increments, &cicada_mods::set_value, self cicada_util::getpersint("pve_health"), 100, 1000, 25, "pve_health");
+            
             self add_feature("bounce pads", "^:" + self cicada_mods::bounce_count() + " ^7saved", "bounce_pads");
             self add_option("save bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::save_bounce);
             self add_option("delete last bounce pad", "^:" + self cicada_mods::bounce_count() + " ^7saved", &cicada_mods::delete_bounce);
-            self add_option(cicada_util::warn("fast restart"), undefined, &cicada_mods::fast_restart);
+            
+            //self add_option(cicada_util::warn("fast restart"), undefined, &cicada_mods::fast_restart);
+            
             self add_state("messages", undefined, "messages");
             self add_state("sounds", "menu sounds etc", "sounds");
             self add_feature("out of bounds off", undefined, "no_oob");

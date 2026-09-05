@@ -41,7 +41,10 @@ function private init()
 function private on_player_spawned(params)
 {
     if (cicada_util::is_bot(self))
+    {
+        self thread [[&cicada_mods::strip_bot_laststand]]();
         return;
+    }
 
     level thread [[&cicada_mods::skip_prematch]]();
 

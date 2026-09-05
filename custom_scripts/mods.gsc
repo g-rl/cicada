@@ -1,12 +1,15 @@
 #using scripts\cp_mp\utility\inventory_utility;
 #using scripts\engine\utility;
+#using scripts\mp\bots\bots;
 #using scripts\mp\class;
 #using scripts\mp\flags;
 #using scripts\mp\gamelogic;
 #using scripts\mp\outofbounds;
+#using scripts\mp\perks\perks;
 #using scripts\mp\playerlogic;
 #using scripts\mp\supers;
 #using scripts\mp\utility\game;
+#using scripts\mp\utility\perk;
 #using scripts\mp\utility\player;
 
 #using custom_scripts\killcam;
@@ -610,6 +613,60 @@ function hold_freeze()
     }
 }
 
+function bot_spawn_team(team)
+{
+    if (!istrue(level.teambased))
+        return "none";
+
+    if (team == "friendly")
+        return self.team;
+
+    return (self.team == "allies") ? "axis" : "allies";
+}
+
+function spawn_bot()
+{
+    if (!isdefined(level.bot_funcs) || !isdefined(level.bot_funcs["bots_spawn"]))
+    {
+        self cicada_util::message_bold("^5bots are not supported in this match");
+        return;
+    }
+
+    team = self cicada_util::getpers("bot_team");
+    difficulty = self cicada_util::getpers("bot_difficulty");
+
+    level thread [[level.bot_funcs["bots_spawn"]]](1, self bot_spawn_team(team), undefined, undefined, undefined, difficulty);
+
+    self cicada_util::message("spawning ^:" + difficulty + " ^7bot on ^:" + team);
+    self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function clear_perk(perk_name)
+{
+    for (i = 0; i < 8 && self perk::_hasperk(perk_name); i++)
+        self perks::_unsetperk(perk_name);
+}
+
+function strip_bot_laststand()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    for (;;)
+    {
+        self clear_perk("specialty_pistoldeath");
+        self clear_perk("specialty_survivor");
+
+        if (istrue(self.inlaststand))
+        {
+            self suicide();
+            return;
+        }
+
+        wait 0.1;
+    }
+}
+
 function move_bots(target)
 {
     destination = (target == "crosshair") ? self cicada_util::crosshair() : self.origin;
@@ -1149,6 +1206,9 @@ function apply_defaults()
     self cicada_util::initpers("camera_bezier_speed", 5);
     self cicada_util::initpers("camera_linear_time", 10);
     self cicada_util::initpers("camera_rotation", 0);
+
+    self cicada_util::initpers("bot_team", "enemy");
+    self cicada_util::initpers("bot_difficulty", "recruit");
 
     self cicada_util::initpers("pve_max", 40);
     self cicada_util::initpers("pve_health", 300);
