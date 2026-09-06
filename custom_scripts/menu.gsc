@@ -100,16 +100,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("one handed gun", undefined, &cicada_mods::one_handed_gun);
-            self add_option("anim override", "force a viewmodel animation by id", &new_menu, "anim override");
             self add_option("switch to equipment", "^:" + cicada_catalog::count("equipment") + " ^7equipment available", &new_menu, "switch to equipment");
-            break;
-
-        case "anim override":
-            self.bind_index = false;
-            self add_menu(menu);
-            self add_increment("anim id", increments, &cicada_mods::set_anim, self cicada_util::getpersint("anim_id"), 0, 100, 1);
-            self add_array("hands", sliders, &cicada_mods::set_anim_hands, cicada_util::list("right,both"), self cicada_util::getpers("anim_hands"));
-            self add_option("release override", "stop the override and restore normal anims", &cicada_mods::clear_anim);
             break;
 
         // extension of glitches
@@ -383,7 +374,7 @@ function structure()
             else if (isdefined(level.cicada_binds[menu]))
             {
                 self add_menu(menu);
-                self add_bind_slots(menu);
+                self add_bind_slots(menu, increments, sliders);
             }
             else
             {
@@ -403,10 +394,42 @@ function bind_summary(name)
     return "not bound";
 }
 
-function add_bind_slots(name)
+function add_bind_slots(name, increments, sliders)
 {
     for (slot = 1; slot <= 4; slot++)
-        self add_toggle("actionslot " + slot + " ^5(" + cicada_binds::slot_icon(slot) + ")^7", "run ^:" + name + " ^7on release", self cicada_binds::has_bind(name, slot), &cicada_binds::assign, name, slot);
+        self add_toggle(
+            "actionslot " + slot + " ^5(" + cicada_binds::slot_icon(slot) + ")^7",
+            "run ^:" + name + " ^7on release",
+            self cicada_binds::has_bind(name, slot),
+            &cicada_binds::assign,
+            name,
+            slot
+        );
+
+    // meant specifically for doing animation settings
+    if (name == "play anim")
+    {
+        self add_increment(
+            "anim id",
+            "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
+            &cicada_mods::set_anim,
+            self cicada_util::getpersint("anim_id"),
+            0,
+            100,
+            1,
+            undefined,
+            undefined,
+            &cicada_mods::play_anim_once
+        );
+
+        self add_array(
+            "hands",
+            sliders,
+            &cicada_mods::set_anim_hands,
+            cicada_util::list("right,both"),
+            self cicada_util::getpers("anim_hands")
+        );
+    }
 }
 
 function position_options(increments)
@@ -539,20 +562,21 @@ function add_state(text, summary, key)
     self add_toggle(text, summary, self cicada_util::getpers(key), &cicada_util::flippers, key);
 }
 
-function add_increment(text, summary, func, start, minimum, maximum, step, argument_1, argument_2)
+function add_increment(text, summary, func, start, minimum, maximum, step, argument_1, argument_2, select_function)
 {
-    option                 = [];
-    option["text"]         = text;
-    option["summary"]      = summary;
-    option["function"]     = func;
-    option["slider"]       = true;
-    option["is_increment"] = true;
-    option["start"]        = start;
-    option["minimum"]      = minimum;
-    option["maximum"]      = maximum;
-    option["increment"]    = step;
-    option["argument_1"]   = argument_1;
-    option["argument_2"]   = argument_2;
+    option                    = [];
+    option["text"]            = text;
+    option["summary"]         = summary;
+    option["function"]        = func;
+    option["slider"]          = true;
+    option["is_increment"]    = true;
+    option["start"]           = start;
+    option["minimum"]         = minimum;
+    option["maximum"]         = maximum;
+    option["increment"]       = step;
+    option["argument_1"]      = argument_1;
+    option["argument_2"]      = argument_2;
+    option["select_function"] = select_function;
 
     self.structure[self.structure.size] = option;
 }
@@ -679,6 +703,8 @@ function initial_monitor()
                                 self thread [[&execute_function]](self.structure[cursor]["function"], isdefined(self.structure[cursor]["array"]) ? self.structure[cursor]["array"][self.slider[menu + "_" + cursor]] : self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"], self.structure[cursor]["argument_3"]);
                                 //self thread [[ &play_sound ]]("recondrone_tag");
                             }
+                            else if (isdefined(self.structure[cursor]["select_function"]))
+                                self thread [[&execute_function]](self.structure[cursor]["select_function"], self.slider[menu + "_" + cursor], self.structure[cursor]["argument_1"], self.structure[cursor]["argument_2"]);
                             else
                             {
                                 self iprintlnbold("use the ^2slider controls^7, not the jump button!");

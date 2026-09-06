@@ -16,6 +16,7 @@ function init()
     level.cicada_binds = [];
     level.cicada_bind_names = [];
 
+    register("play anim", &cicada_mods::play_anim_once);
     register("nac", &nac);
     register("instaswap", &instaswap);
     register("canswap", &canswap);

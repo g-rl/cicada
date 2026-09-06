@@ -1171,30 +1171,11 @@ function one_handed_gun()
 function set_anim(id)
 {
     self cicada_util::setpers("anim_id", id);
-    self apply_anim();
 }
 
 function set_anim_hands(mode)
 {
     self cicada_util::setpers("anim_hands", mode);
-    self apply_anim();
-}
-
-function apply_anim()
-{
-    id = self cicada_util::getpersint("anim_id");
-
-    if (self cicada_util::getpers("anim_hands") == "both")
-        self nengine_set_anim(id, 1);
-    else
-        self nengine_set_anim(id);
-}
-
-function clear_anim()
-{
-    self cicada_util::setpers("anim_id", 0);
-    self nengine_set_anim(-1);
-    self cicada_util::message("^5anim override released");
 }
 
 function apply_defaults()
@@ -1324,4 +1305,19 @@ function monitor_class()
         // self thread give_perks();
         wait 0.05;
     }
+}
+
+function play_anim_once(id)
+{
+    if (!isdefined(id))
+        id = self cicada_util::getpersint("anim_id");
+
+    if (self cicada_util::getpers("anim_hands") == "both")
+        self nengine_set_anim(id, 1);
+    else
+        self nengine_set_anim(id);
+
+    wait 0.05;
+
+    self nengine_set_anim(-1);
 }
