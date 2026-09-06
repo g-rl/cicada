@@ -346,7 +346,6 @@ function structure()
         case "killcam manager":
             self.bind_index = false;
             self add_menu(menu);
-            self add_feature("allow hud edits", "allow editing killcam elems", "clean_killcam");
             self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 10, 1);
             self add_state("hide weapon & items", undefined, "hide_weapon");
             self add_state("hide victim", undefined, "hide_victim");

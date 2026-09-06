@@ -2,12 +2,9 @@
 
 #namespace cicada_killcam;
 
-// scripts\mp\killcam writes the attachment slots as attachment + index + 1
-function clean(key)
+function clean()
 {
     self endon("disconnect");
-    self endon(cicada_util::stop_event(key));
-    level endon("game_ended");
 
     for (;;)
     {
@@ -23,17 +20,12 @@ function clean(key)
             self setclientomnvar("ui_killcam_victim_id", -1);
 
         if (istrue(self cicada_util::getpers("hide_perks")))
-            for (i = 0; i < 6; i++)
+            for (i = 0; i < 7; i++)
                 self setclientomnvar("ui_killcam_killedby_perk" + i, "none");
 
         if (istrue(self cicada_util::getpers("hide_attachments")))
-        {
             for (i = 0; i < 8; i++)
-            {
-                self setclientomnvar("ui_killcam_killedby_attachment" + i + 1, -1);
                 self setclientomnvar("ui_killcam_killedby_attachment" + (i + 1), -1);
-            }
-        }
 
         if (istrue(self cicada_util::getpers("hide_equipment")))
         {

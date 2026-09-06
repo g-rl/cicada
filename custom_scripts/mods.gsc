@@ -12,7 +12,6 @@
 #using scripts\mp\utility\perk;
 #using scripts\mp\utility\player;
 
-#using custom_scripts\killcam;
 #using custom_scripts\loadout;
 #using custom_scripts\movement;
 #using custom_scripts\pve;
@@ -44,7 +43,6 @@ function init()
     register("no_oob", &disable_oob, &enable_oob);
     register("no_barriers", &remove_barriers, &restore_barriers);
     register("pve", &cicada_pve::start, &cicada_pve::stop);
-    register("clean_killcam", &cicada_killcam::clean);
     register("freeze_timer", &freeze_timer, &unfreeze_timer);
 }
 
