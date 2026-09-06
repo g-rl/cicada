@@ -17,6 +17,7 @@ function init()
     level.cicada_bind_names = [];
 
     register("play anim", &cicada_mods::play_anim_once);
+    register("smooth anim", &smooth_anim);
     register("nac", &nac);
     register("instaswap", &instaswap);
     register("canswap", &canswap);
@@ -122,6 +123,11 @@ function monitor(slot)
 
         self thread [[level.cicada_binds[name]]]();
     }
+}
+
+function smooth_anim()
+{
+    self cicada_mods::play_anim_once(1, true);
 }
 
 function nac()

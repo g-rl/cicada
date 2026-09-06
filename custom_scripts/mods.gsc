@@ -1330,12 +1330,15 @@ function monitor_class()
     }
 }
 
-function play_anim_once(id)
+function play_anim_once(id, both_hands)
 {
     if (!isdefined(id))
         id = self cicada_util::getpersint("anim_id");
 
-    if (self cicada_util::getpers("anim_hands") == "both")
+    if (!isdefined(both_hands))
+        both_hands = (self cicada_util::getpers("anim_hands") == "both");
+
+    if (both_hands)
         self nengine_set_anim(id, 1);
     else
         self nengine_set_anim(id);
