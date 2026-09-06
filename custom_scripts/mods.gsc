@@ -1245,6 +1245,7 @@ function apply_defaults()
     self cicada_util::initpers("camera_rotation", 0);
 
     self cicada_util::initpers("freeze_timer", true);
+    self cicada_util::initpers("frozen_bots", scripts\mp\utility\game::getbasegametype() == "sd");
 
     self cicada_util::initpers("bot_team", "enemy");
     self cicada_util::initpers("bot_difficulty", "recruit");
