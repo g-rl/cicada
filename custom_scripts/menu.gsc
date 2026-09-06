@@ -122,6 +122,7 @@ function structure()
             else
                 self add_increment("set linear time", increments, &cicada_mods::set_value, self cicada_util::getpersint("camera_linear_time"), 1, 20, 1, "camera_linear_time");
             self add_increment("set camera rotation", increments, &cicada_cinematics::set_rotation, self cicada_util::getpersint("camera_rotation"), 0, 360, 1);
+            self add_increment("set camera fov", "^:0 ^7uses your own fov, ^5[{+gostand}]^7 to preview", &cicada_cinematics::set_fov, self cicada_cinematics::fov(), 0, 120, 1, undefined, undefined, &cicada_cinematics::preview_fov);
             self add_option("save node", self cicada_cinematics::summary(), &cicada_cinematics::save_node);
             self add_option("delete last node", self cicada_cinematics::summary(), &cicada_cinematics::delete_last_node);
             self add_option("clone self", undefined, &cicada_cinematics::clone_self);

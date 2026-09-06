@@ -1260,6 +1260,7 @@ function apply_defaults()
     self cicada_util::initpers("camera_bezier_speed", 5);
     self cicada_util::initpers("camera_linear_time", 10);
     self cicada_util::initpers("camera_rotation", 0);
+    self cicada_util::initpers("camera_fov", 0);
 
     self cicada_util::initpers("freeze_timer", true);
     self cicada_util::initpers("super_charge_rate", 10);

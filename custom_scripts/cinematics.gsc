@@ -138,6 +138,71 @@ function set_rotation(value)
     self thread [[&reset_roll]]();
 }
 
+function fov()
+{
+    return self cicada_util::getpersint("camera_fov");
+}
+
+function set_fov(value)
+{
+    self cicada_util::setpers("camera_fov", value);
+}
+
+function preview_fov(value)
+{
+    if (istrue(level.cicada_camera.running))
+        return;
+
+    self set_fov(value);
+    self apply_fov(0.05);
+    self notify("cicada_camera_fov");
+    self thread [[&reset_fov_preview]]();
+}
+
+function apply_fov(time)
+{
+    value = self fov();
+    if (!value)
+    {
+        self reset_fov();
+        return;
+    }
+
+    self.cicada_camera_fov = true;
+
+    self lerpfovscalefactor(0, 0);
+    self lerpfov(value, time);
+}
+
+function reset_fov()
+{
+    if (!isdefined(self.cicada_camera_fov))
+        return;
+
+    self.cicada_camera_fov = undefined;
+    self lerpfov(base_fov(), 0.25);
+    self lerpfovbypreset("default_2seconds");
+    self lerpfovscalefactor(1, 0.25);
+}
+
+function base_fov()
+{
+    return 65;
+}
+
+function reset_fov_preview()
+{
+    self endon("disconnect");
+    self endon("cicada_camera_fov");
+
+    wait 3;
+
+    if (istrue(level.cicada_camera.running))
+        return;
+
+    self reset_fov();
+}
+
 function roll_view(roll)
 {
     angles = self getplayerangles();
@@ -182,6 +247,7 @@ function start_path()
     camera.running = true;
 
     self roll_view(self cicada_util::getpersint("camera_rotation"));
+    self apply_fov(0.05);
     self playerlinktodelta(rig, "tag_origin", 1, 0, 0, 0, 0, true);
     self cicada_util::message_bold("^:" + type + " ^7path - ^:" + node_count() + " ^7nodes");
 
@@ -271,6 +337,7 @@ function stop_path()
     camera.rig = undefined;
 
     self roll_view(0);
+    self reset_fov();
     self restore_loadout();
 }
 
