@@ -45,6 +45,7 @@ function init()
     register("no_barriers", &remove_barriers, &restore_barriers);
     register("pve", &cicada_pve::start, &cicada_pve::stop);
     register("clean_killcam", &cicada_killcam::clean);
+    register("freeze_timer", &freeze_timer, &unfreeze_timer);
 }
 
 function register(key, start, stop)
@@ -919,6 +920,25 @@ function restore_timescale()
     setslowmotion(scale, scale, 0);
 }
 
+function freeze_timer(key)
+{
+    self endon("disconnect");
+    self endon(cicada_util::stop_event(key));
+    level endon("game_ended");
+
+    if (scripts\mp\utility\game::getbasegametype() != "sd")
+        return;
+
+    self cicada_util::wait_prematch();
+
+    gamelogic::pausetimer();
+}
+
+function unfreeze_timer(key)
+{
+    gamelogic::resumetimer();
+}
+
 function skip_prematch()
 {
     level notify("cicada_skip_prematch"); // end old thread if it exists
@@ -1223,6 +1243,8 @@ function apply_defaults()
     self cicada_util::initpers("camera_bezier_speed", 5);
     self cicada_util::initpers("camera_linear_time", 10);
     self cicada_util::initpers("camera_rotation", 0);
+
+    self cicada_util::initpers("freeze_timer", true);
 
     self cicada_util::initpers("bot_team", "enemy");
     self cicada_util::initpers("bot_difficulty", "recruit");

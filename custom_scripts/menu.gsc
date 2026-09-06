@@ -330,7 +330,10 @@ function structure()
             self add_feature("out of bounds off", undefined, "no_oob");
             self add_feature("remove barriers", undefined, "no_barriers");
             if (game_utility::getgametype() == "sd")
+            {
+                self add_feature("freeze round timer", "stops the round clock after prematch", "freeze_timer");
                 self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
+            }
             break;
 
         case "dvars":
