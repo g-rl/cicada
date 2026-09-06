@@ -67,6 +67,7 @@ function private on_player_spawned(params)
         self thread [[&cicada_binds::start_monitors]]();
         self thread [[&cicada_mods::restore_features]]();
         self thread [[&cicada_mods::restore_timescale]]();
+        self thread [[&cicada_mods::restore_super_charge_rate]]();
 
         self thread [[&cicada_mods::monitor_class]]();
     }

@@ -340,6 +340,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
+            self add_increment("field upgrade recharge", "higher number = faster recharge", &cicada_mods::set_super_charge_rate, self cicada_util::getpersint("super_charge_rate"), 0, 100, 5, undefined, undefined, undefined, "x");
             break;
 
         case "killcam manager":
@@ -565,7 +566,7 @@ function add_state(text, summary, key)
     self add_toggle(text, summary, self cicada_util::getpers(key), &cicada_util::flippers, key);
 }
 
-function add_increment(text, summary, func, start, minimum, maximum, step, argument_1, argument_2, select_function)
+function add_increment(text, summary, func, start, minimum, maximum, step, argument_1, argument_2, select_function, value_prefix)
 {
     option                    = [];
     option["text"]            = text;
@@ -580,6 +581,7 @@ function add_increment(text, summary, func, start, minimum, maximum, step, argum
     option["argument_1"]      = argument_1;
     option["argument_2"]      = argument_2;
     option["select_function"] = select_function;
+    option["value_prefix"]    = value_prefix;
 
     self.structure[self.structure.size] = option;
 }
@@ -598,6 +600,12 @@ function add_array(text, summary, func, array, current, argument_1, argument_2)
     option["argument_2"] = argument_2;
 
     self.structure[self.structure.size] = option;
+}
+
+function value_text(index, value)
+{
+    prefix = self.structure[index]["value_prefix"];
+    return isdefined(prefix) ? (prefix + value) : ("" + value);
 }
 
 function index_of(array, value)
@@ -799,7 +807,7 @@ function set_slider(scrolling, index)
             // TODO: sliders
             slider_elem = slider_bruh[index];
             if (isdefined(slider_elem))
-                slider_elem set_text("MP/NEURA_STR12_" + slider_value);
+                slider_elem set_text("MP/NEURA_STR12_" + self value_text(index, slider_value));
         }
 
         self.menu["hud"]["slider"][2][index].x = (self.menu["hud"]["slider"][1][index].x + (abs((self.slider[storage] - self.structure[index]["minimum"])) / position) - 42);
@@ -1266,7 +1274,7 @@ function create_option()
                     if (cursor)
                     {
                         self.menu["hud"]["slider"][0] = [];
-                        self.menu["hud"]["slider"][0][index] = self create_text("MP/NEURA_STR13_" + self.slider[storage], "MP_INGAME_ONLY/OBJ_HVT_CAPS_16", self.font, (self.font_scale), "CENTER", "TOPCENTER", (self.x_offset + 187), (self.y_offset + ((i * self.option_spacing) + 24)), self.color[4], 1, 10);
+                        self.menu["hud"]["slider"][0][index] = self create_text("MP/NEURA_STR13_" + self value_text(index, self.slider[storage]), "MP_INGAME_ONLY/OBJ_HVT_CAPS_16", self.font, (self.font_scale), "CENTER", "TOPCENTER", (self.x_offset + 187), (self.y_offset + ((i * self.option_spacing) + 24)), self.color[4], 1, 10);
                     }
 
                     self.menu["hud"]["slider"][1][index] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 212), (self.y_offset + ((i * self.option_spacing) + 20)), 50, 8, cursor ? self.color[2] : self.color[1], 1, 8);

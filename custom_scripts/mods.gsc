@@ -909,6 +909,25 @@ function set_timescale(value)
     setslowmotion(scale, scale, 0);
 }
 
+function set_super_charge_rate(value)
+{
+    rate = int(value);
+    self cicada_util::setpers("super_charge_rate", rate);
+
+    setdvar("scr_game_superfastchargerate", rate);
+    level.superfastchargerate = rate;
+}
+
+function restore_super_charge_rate()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    self cicada_util::wait_prematch();
+
+    self set_super_charge_rate(self cicada_util::getpersint("super_charge_rate"));
+}
+
 function restore_timescale()
 {
     self endon("disconnect");
@@ -1245,6 +1264,7 @@ function apply_defaults()
     self cicada_util::initpers("camera_rotation", 0);
 
     self cicada_util::initpers("freeze_timer", true);
+    self cicada_util::initpers("super_charge_rate", 10);
     self cicada_util::initpers("frozen_bots", scripts\mp\utility\game::getbasegametype() == "sd");
 
     self cicada_util::initpers("bot_team", "enemy");
