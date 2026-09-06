@@ -1,6 +1,8 @@
 #using scripts\cp_mp\utility\game_utility;
 #using scripts\cp_mp\utility\inventory_utility;
+#using scripts\mp\equipment;
 #using scripts\mp\killstreaks\killstreaks;
+#using scripts\mp\perks\perkpackage;
 
 #using custom_scripts\catalog;
 #using custom_scripts\util;
@@ -43,7 +45,28 @@ function give_weapon(id)
 
 function give_equipment(id)
 {
-    self cicada_weapon::nacto(id, true);
+    weapon = makeweapon(id);
+
+    if (!isdefined(weapon) || isnullweapon(weapon))
+    {
+        self cicada_util::message("^1unable to build ^7" + id);
+        return;
+    }
+
+    self cicada_weapon::nacto(weapon, true);
+}
+
+// scripts\mp\dev::devgivefieldupgradethink
+function give_field_upgrade(ref)
+{
+    self scripts\mp\perks\perkpackage::perkpackage_givedebug(ref, 0);
+    self cicada_util::sound("ui_killstreak_select");
+}
+
+function set_equipment(ref, slot)
+{
+    self scripts\mp\equipment::giveequipment(ref, slot);
+    self cicada_util::sound("ui_mp_weapon_pickup");
 }
 
 function give_bot_shield(player_)

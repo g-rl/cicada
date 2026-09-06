@@ -163,7 +163,7 @@ function one_bullet()
 function pull_equipment()
 {
     previous = self getcurrentweapon();
-    self cicada_weapon::nacto(self cicada_util::getpers("equipment_weapon"), true);
+    self cicada_loadout::give_equipment(self cicada_util::getpers("equipment_weapon"));
 
     if (!istrue(self cicada_util::getpers("equipment_putaway")))
         return;

@@ -156,7 +156,7 @@ function structure()
             self add_feature("aimbot", "snipers and marksman rifles only", "aimbot");
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
             self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
-            self add_option("effect manager", undefined, &new_menu, "edit effects");
+            self add_option("effect ^1manager", undefined, &new_menu, "edit effects");
             break;
 
         case "edit effects":
@@ -268,16 +268,19 @@ function structure()
         case "class manager":
             self.bind_index = false;
             self add_menu(menu);
-            self add_feature("infinite equipment", undefined, "inf_equipment");
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
             self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
+
+            self add_feature("infinite equipment", undefined, "inf_equipment");
+
             self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
             self add_state("replace weapon", "replace current when giving weapon", "replace_weapon");
             self add_option("primaries", "^:" + level.cicada_groups["primaries"].size + " ^7categories", &new_menu, "primaries");
             self add_option("secondaries", "^:" + level.cicada_groups["secondaries"].size + " ^7categories", &new_menu, "secondaries");
-            self add_option("streak manager", undefined, &new_menu, "streaks");
-            self add_option("apply random camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::randomize_camo);
+            self add_option("streak ^1manager^7", undefined, &new_menu, "streaks");
+            self add_option("equipment ^1manager^7", undefined, &new_menu, "equipment manager");
+            self add_option("apply ^:random camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::randomize_camo);
             self add_option("clear camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::clear_camo);
             break;
 
@@ -289,16 +292,47 @@ function structure()
                 self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons available", &new_menu, category);
             break;
 
+        case "equipment manager":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("replace ^2lethal^7", "^:" + cicada_catalog::equipment_refs("primary").size + " ^7lethals loaded", &new_menu, "replace lethal");
+            self add_option("replace ^1tactical^7", "^:" + cicada_catalog::equipment_refs("secondary").size + " ^7tacticals loaded", &new_menu, "replace tactical");
+            self add_option("give ^5field upgrade^7", "^:" + cicada_catalog::super_refs().size + " ^7upgrades loaded", &new_menu, "give field upgrade");
+            break;
+
+        case "replace lethal":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (ref in cicada_catalog::equipment_refs("primary"))
+                self add_option(cicada_catalog::pretty(ref, "equip"), "^:" + ref, &cicada_loadout::set_equipment, ref, "primary");
+            break;
+
+        case "replace tactical":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (ref in cicada_catalog::equipment_refs("secondary"))
+                self add_option(cicada_catalog::pretty(ref, "equip"), "^:" + ref, &cicada_loadout::set_equipment, ref, "secondary");
+            break;
+
+        case "give field upgrade":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (ref in cicada_catalog::super_refs())
+                self add_option(cicada_catalog::pretty(ref, "super"), "^:" + ref, &cicada_loadout::give_field_upgrade, ref);
+            break;
+
         case "streaks":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("give streak", "^:" + cicada_catalog::count("streaks") + " ^7streaks available", &new_menu, "give streaks");
+            self add_option("mp streaks", "^:" + cicada_catalog::count("streaks") + " ^7streaks available", &new_menu, "mp streakss");
+            self add_option("warzone extras", "^:" + cicada_catalog::count("warzone extras") + " ^7streaks available", &new_menu, "warzone extras");
             break;
 
-        case "give streaks":
+        case "mp streaks":
+        case "warzone extras":
             self.bind_index = false;
             self add_menu(menu);
-            foreach (streak in cicada_catalog::get("streaks"))
+            foreach (streak in cicada_catalog::get(menu == "warzone extras" ? "warzone extras" : "mp streaks"))
                 self add_option(streak.name, cicada_catalog::streak_summary(streak), &cicada_loadout::give_streak, streak.id);
             break;
 
@@ -311,7 +345,7 @@ function structure()
             self add_array("bot team", sliders, &cicada_mods::set_value, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
             self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
 
-            self add_option("killcam manager", undefined, &new_menu, "killcam manager");
+            self add_option("killcam ^1manager", undefined, &new_menu, "killcam manager");
             self add_feature("no hud", undefined, "no_hud");
             
             // TODO: come back to it some day
@@ -482,7 +516,7 @@ function player_options(player, sliders)
     self add_option("look at me", undefined, &cicada_mods::look_at_me, player);
     self add_option("give my weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::give_bot_weapon, player, self getcurrentweapon());
     self add_option("give shield", undefined, &cicada_loadout::give_bot_shield, player);
-    self add_option("apply random camo", "currently set: ^:" + player cicada_loadout::camo(), &cicada_loadout::randomize_camo, player);
+    self add_option("apply ^:random camo", "currently set: ^:" + player cicada_loadout::camo(), &cicada_loadout::randomize_camo, player);
 }
 
 function get_cursor()

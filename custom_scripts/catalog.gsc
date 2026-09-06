@@ -33,6 +33,9 @@ function init()
     entries("equipment", "decoy_grenade_mp,cluster_grenade_mp,gas_grenade_mp,emp_grenade_mp,trophy_mp,at_mine_mp,shock_stick_mp,tac_camera_mp");
     entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_smoke_grenade_mp,jup_semtex_mike32_mp");
 
+    entries("equipment", "briefcase_bomb_mp,bunkerbuster_mp,bunkerbuster_burrowed_mp,bunkerbuster_not_burrowed_mp,sonar_pulse_mp,throwstar_mp,gas_mp");
+    entries("equipment", "interrogation_tools_mp,ks_gesture_phone_mp,ks_remote_device_mp,remotemissile_projectile_mp,emp_pulse_device_mp,support_box_mp,emp_drone_player_mp");
+
     // names passed to killstreaks::registerkillstreak across the dump
     streak("uav", "uav", 4, "reveals enemies on the minimap");
     streak("loitering_munition", "loitering munition", 4, "circles the launch point, dive bombs and explodes");
@@ -63,6 +66,13 @@ function init()
 
     // warzone & mwii leftovers
     streak("drone_swarm", "drone swarm", undefined, "warzone swarm of attack drones");
+    streak("missile_drone", "missile drone", undefined, "drone that fires missiles at marked targets");
+    streak("dna_nuke", "dna nuke", undefined, "warzone dna bomb");
+    streak("juggernaut_mutant", "juggernaut (mutant)", undefined, "event juggernaut variant");
+    streak("specialist_perk_1", "specialist perk 1", undefined, "specialist bonus perk slot");
+    streak("specialist_perk_2", "specialist perk 2", undefined, "specialist bonus perk slot");
+    streak("specialist_perk_3", "specialist perk 3", undefined, "specialist bonus perk slot");
+    streak("specialist_perk_bonus", "specialist bonus", undefined, "specialist package completion bonus");
     streak("ims", "ims", undefined, "i.m.s. proximity mine launcher");
     streak("uav_bigmap", "uav (big map)", undefined, "warzone sized uav sweep");
     streak("sentry_gun", "sentry gun", undefined, "classic auto turret, mwii style");
@@ -101,7 +111,8 @@ function init()
 
 function streak(id, name, cost, summary)
 {
-    list = isdefined(level.cicada_catalog["streaks"]) ? level.cicada_catalog["streaks"] : [];
+    category = isdefined(cost) ? "streaks" : "warzone extras";
+    list = isdefined(level.cicada_catalog[category]) ? level.cicada_catalog[category] : [];
 
     entry = spawnstruct();
     entry.id = id;
@@ -110,7 +121,49 @@ function streak(id, name, cost, summary)
     entry.summary = summary;
     list[list.size] = entry;
 
-    level.cicada_catalog["streaks"] = list;
+    level.cicada_catalog[category] = list;
+}
+
+function equipment_refs(slot)
+{
+    refs = [];
+
+    if (!isdefined(level.equipment) || !isdefined(level.equipment.table))
+        return refs;
+
+    foreach (ref, info in level.equipment.table)
+        if (isdefined(info.defaultslot) && info.defaultslot == slot)
+            refs[refs.size] = ref;
+
+    return refs;
+}
+
+function super_refs()
+{
+    refs = [];
+
+    if (!isdefined(level.superglobals) || !isdefined(level.superglobals.staticsuperdata))
+        return refs;
+
+    foreach (ref, data in level.superglobals.staticsuperdata)
+        refs[refs.size] = ref;
+
+    return refs;
+}
+
+function pretty(ref, prefix)
+{
+    text = "";
+
+    foreach (part in strtok(ref, "_"))
+    {
+        if (text == "" && isdefined(prefix) && part == prefix)
+            continue;
+
+        text = (text == "") ? part : text + " " + part;
+    }
+
+    return (text == "") ? ref : text;
 }
 
 function camos(ids)
@@ -152,7 +205,7 @@ function streak_summary(entry)
     text = isdefined(entry.cost) ? "^:" + entry.cost + " kills ^7| " : "";
     if (isdefined(entry.summary))
         text = text + entry.summary + " ";
-    return text + "^:(" + entry.id + ")";
+    return text;
 }
 
 function count(category)
