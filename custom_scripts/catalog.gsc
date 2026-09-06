@@ -34,10 +34,51 @@ function init()
     entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_smoke_grenade_mp,jup_semtex_mike32_mp");
 
     // names passed to killstreaks::registerkillstreak across the dump
-    entries("streaks", "uav,counter_uav,directional_uav,uav_bigmap,precision_airstrike,multi_airstrike,fuel_airstrike,cluster_spike,toma_strike,cruise_predator");
-    entries("streaks", "sentry_gun,pac_sentry,manual_turret,remote_turret,remote_mg_turret,assault_drone,auto_drone,radar_drone_overwatch,radar_drone_recon,scrambler_drone_guard");
-    entries("streaks", "hover_jet,chopper_gunner,chopper_support,gunship,juggernaut,death_switch,airdrop,airdrop_multiple,airdrop_escort,supply_sweep");
-    entries("streaks", "emp,white_phosphorus,nuke,nuke_multi,nuke_select_location,circle_peek");
+    streak("uav", "uav", 4, "reveals enemies on the minimap");
+    streak("loitering_munition", "loitering munition", 4, "circles the launch point, dive bombs and explodes");
+    streak("switchblade_drone", "mosquito drone", 4, "drone that launches directly like a projectile");
+    streak("missile_turret", "sam turret", 4, "turret that fires missiles at air vehicles");
+    streak("assault_drone", "bomb drone", 4, "remote drone carrying a c4 charge");
+    streak("lrad", "guardian-sc", 5, "beam that stuns, slows and blinds enemies inside it");
+    //streak("scrambler_drone_guard", "counter uav", 5, "minimap scrambler"); // counter-uav
+    streak("airdrop", "care package", 5, "random streak crate at your location");
+    streak("counter_uav", "counter uav", 5, "scrambles every enemy minimap");
+    streak("cluster_spike", "cluster mine", 6, "thrown device that scatters smaller mines");
+    streak("precision_airstrike", "precision airstrike", 6, "twin jets strike along a painted path");
+    streak("cruise_predator", "cruise missile", 6, "player controlled missile with boost");
+    streak("remote_turret", "remote turret", 7, "auto turret firing incendiary rounds");
+    streak("toma_strike", "mortar strike", 7, "several waves of mortars on a location");
+    streak("multi_airstrike", "sae", 7, "trio of jets drop explosives on marked targets");
+    streak("juggernaut_recon", "juggernaut recon", 8, "recon jugg crate: riot shield, haymaker, enemy radar");
+    streak("pac_sentry", "wheelson-hs", 8, "remote amphibious vehicle with auto sentry");
+    streak("radar_drone_overwatch", "overwatch helo", 8, "escort helo pings then engages enemies");
+    streak("auto_drone", "carpet bomb", 10, "bomber lays a long line of explosives along its path");
+    streak("hover_jet", "vtol jet", 10, "drops bombs then guards a chosen location");
+    streak("airdrop_multiple", "emergency airdrop", 10, "three random streak crates");
+    //streak("fuel_airstrike", "carpet bomb?", 10, "bomber lays a long line of explosives"); // SAE
+    streak("directional_uav", "advanced uav", 12, "orbital uav showing enemy facing in real time");
+    streak("chopper_gunner", "chopper gunner", 12, "controllable chopper with turret and missiles");
+    streak("gunship", "gunship", 12, "40mm / 25mm cannons plus a laser guided missile");
+    streak("juggernaut", "juggernaut", 15, "assault juggernaut suit dropped in a crate");
+
+    // warzone & mwii leftovers
+    streak("drone_swarm", "drone swarm", undefined, "warzone swarm of attack drones");
+    streak("ims", "ims", undefined, "i.m.s. proximity mine launcher");
+    streak("uav_bigmap", "uav (big map)", undefined, "warzone sized uav sweep");
+    streak("sentry_gun", "sentry gun", undefined, "classic auto turret, mwii style");
+    streak("manual_turret", "manual turret", undefined, "player operated mounted turret");
+    streak("remote_mg_turret", "remote mg turret", undefined, "remote machine gun turret");
+    streak("radar_drone_recon", "recon drone", undefined, "juggernaut recon crate / recon drone");
+    streak("chopper_support", "support helo", undefined, "ai helo that patrols and engages");
+    streak("airdrop_escort", "escort airdrop", undefined, "crate guarded by an escort helo");
+    streak("supply_sweep", "supply sweep", undefined, "warzone supply run drop");
+    streak("death_switch", "death switch", undefined, "detonates around you on death");
+    streak("emp", "emp", undefined, "disables enemy electronics and hud");
+    streak("white_phosphorus", "white phosphorus", undefined, "burning smoke that blinds and damages");
+    streak("nuke", "tactical nuke", undefined, "ends the match");
+    streak("nuke_multi", "nuke (multi)", undefined, "multi warhead nuke variant");
+    streak("nuke_select_location", "nuke (placed)", undefined, "nuke on a chosen location");
+    streak("circle_peek", "circle peek", undefined, "warzone next circle recon");
 
     // taken from scripts\mp\gametypes\arena::function_3dd5b16653c57b45
     level.cicada_camos = [];
@@ -56,6 +97,20 @@ function init()
     camos("camo_a_13,camo_b_13,camo_c_13,camo_d_13,camo_e_13,camo_f_13,camo_g_13,camo_h_13,camo_i_13,camo_j_13,camo_k_13,camo_l_13,camo_m_13,camo_n_13,camo_o_13");
     camos("camo_a_14,camo_b_14,camo_c_14,camo_d_14,camo_e_14,camo_f_14,camo_g_14,camo_h_14,camo_i_14,camo_j_14,camo_k_14,camo_l_14,camo_m_14,camo_n_14,camo_o_14");
     camos("camo_a_15,camo_b_15,camo_c_15,camo_d_15,camo_e_15,camo_f_15,camo_g_15,camo_h_15,camo_i_15,camo_j_15,camo_k_15,camo_l_15,camo_m_15,camo_n_15");
+}
+
+function streak(id, name, cost, summary)
+{
+    list = isdefined(level.cicada_catalog["streaks"]) ? level.cicada_catalog["streaks"] : [];
+
+    entry = spawnstruct();
+    entry.id = id;
+    entry.name = name;
+    entry.cost = cost;
+    entry.summary = summary;
+    list[list.size] = entry;
+
+    level.cicada_catalog["streaks"] = list;
 }
 
 function camos(ids)
@@ -90,6 +145,14 @@ function get(category)
         return [];
 
     return level.cicada_catalog[category];
+}
+
+function streak_summary(entry)
+{
+    text = isdefined(entry.cost) ? "^:" + entry.cost + " kills ^7| " : "";
+    if (isdefined(entry.summary))
+        text = text + entry.summary + " ";
+    return text + "^:(" + entry.id + ")";
 }
 
 function count(category)

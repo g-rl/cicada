@@ -299,7 +299,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             foreach (streak in cicada_catalog::get("streaks"))
-                self add_option(streak.name, "^:" + streak.id, &cicada_loadout::give_streak, streak.id);
+                self add_option(streak.name, cicada_catalog::streak_summary(streak), &cicada_loadout::give_streak, streak.id);
             break;
 
         case "game settings":
