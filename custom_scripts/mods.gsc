@@ -1353,6 +1353,11 @@ function apply_defaults()
 
     self cicada_util::initpers("kill_effect", effects[0]);
     self cicada_util::initpers("tracer_effect", effects[0]);
+
+    self cicada_util::initpers("inf_equipment", true);
+    self cicada_util::initpers("no_oob", true);
+    self cicada_util::initpers("no_barriers", true);
+    self cicada_util::initpers("unlimited_lives", true);
 }
 
 function default_velocity(prefix)
