@@ -64,7 +64,7 @@ function structure()
             self add_option("class ^1manager", credits, &new_menu, "class manager");
             self add_option("game ^1settings", credits, &new_menu, "game settings");
             self add_option("clients", credits, &new_menu, "manage clients");
-            self add_option("^:map restart", credits, &nengine_map_restart);
+            self add_option("^2map_restart", credits, &nengine_map_restart);
             break;
 
         case "mods & toggles":
@@ -510,7 +510,7 @@ function player_options(player, sliders)
     self add_option("respawn", undefined, &cicada_mods::respawn_player, player);
     self add_option("change team", undefined, &cicada_mods::change_team, player);
     self add_toggle("freeze controls", undefined, cicada_mods::is_frozen(player), &cicada_mods::toggle_freeze, player);
-    self add_array("teleport", sliders, &cicada_mods::manage_teleport, cicada_util::list("crosshair,me,them"), "crosshair", player);
+    self add_array("teleport", sliders, &cicada_mods::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "crosshair", player);
 
     if (!cicada_util::is_bot(player))
         return;

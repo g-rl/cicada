@@ -678,7 +678,7 @@ function move_bots(target)
         if (!cicada_util::is_bot(player_) || player_.sessionstate != "playing")
             continue;
 
-        player_ setorigin(destination);
+        place_player(player_, destination);
     }
 
     self cicada_util::message("bots moved to ^:" + destination);
@@ -1129,27 +1129,51 @@ function change_team(player_)
     player_ player::updatesessionstate("playing");
 }
 
+function place_player(target, destination)
+{
+    target setorigin(destination);
+
+    if (!cicada_util::is_bot(target))
+        return;
+
+    target cicada_util::setpers("position", destination);
+    target cicada_util::setpers("angles", target getplayerangles());
+}
+
 function teleport_player(target, destination)
 {
     if (target.sessionstate != "playing")
         return;
 
-    target setorigin(destination);
+    place_player(target, destination);
     self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function restore_bot_position()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    wait 0.05;
+
+    if (self has_position())
+        self load_position();
 }
 
 function manage_teleport(where, player_)
 {
     switch (where)
     {
-        case "crosshair":
+        case "to crosshair":
             self teleport_player(player_, self cicada_util::crosshair());
             break;
-        case "me":
+        case "to me":
             self teleport_player(player_, self.origin);
             break;
-        case "them":
+        case "to them":
             self teleport_player(self, player_.origin);
+            break;
+        default:
             break;
     }
 }

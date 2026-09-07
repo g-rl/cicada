@@ -44,6 +44,7 @@ function private on_player_spawned(params)
     if (cicada_util::is_bot(self))
     {
         self thread [[&cicada_mods::strip_bot_laststand]]();
+        self thread [[&cicada_mods::restore_bot_position]]();
 
         if (cicada_mods::anyone_using("frozen_bots"))
             self freezecontrols(1);
