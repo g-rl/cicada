@@ -29,6 +29,27 @@ function init()
     entries("misc", "jup_jp23_me_knife,jup_jp23_me_spear,jup_me_shotel,jup_pi_goldengun_mp,jup_pi_raygun_mp,jup_la_humangun_mp,jup_la_plasmagun_mp");
     entries("misc", "iw9_me_riotshield_mp,iw9_me_knife_mp,iw9_me_fists_mp,iw9_me_kamas_mp,iw9_me_sword01_mp,iw9_me_tonfa_mp,iw9_me_buzzsaw_mp,iw9_pi_stimpistol_mp");
 
+    level.cicada_attachment_slots = [];
+    level.cicada_attachment_odds = [];
+
+    slot_tokens("dual wield", "akimbo");
+    slot_tokens("laser", "lsr,laserir");
+    slot_tokens("grip", "grp,ubr,fgrip,rgrip");
+    slot_tokens("muzzle", "mzl,silencer,supp");
+    slot_tokens("barrel", "bar");
+    slot_tokens("magazine", "mag");
+    slot_tokens("stock", "stk");
+
+    attachment_chance("pistols", "dual wield", 55);
+    attachment_chance("pistols", "laser", 35);
+    attachment_chance("shotguns", "grip", 70);
+    attachment_chance("shotguns", "laser", 40);
+    attachment_chance("snipers", "laser", 80);
+    attachment_chance("snipers", "barrel", 25);
+    attachment_chance("assault rifles,battle rifles,sub machine guns,light machine guns", "grip", 35);
+    attachment_chance("assault rifles,battle rifles,sub machine guns,light machine guns", "laser", 30);
+    attachment_chance("assault rifles,battle rifles,sub machine guns,light machine guns", "muzzle", 20);
+
     entries("equipment", "frag_grenade_mp,semtex_mp,molotov_mp,thermite_mp,c4_mp,claymore_mp,throwingknife_mp,flash_grenade_mp,concussion_grenade_mp,smoke_grenade_mp,snapshot_grenade_mp");
     entries("equipment", "decoy_grenade_mp,cluster_grenade_mp,gas_grenade_mp,emp_grenade_mp,trophy_mp,at_mine_mp,shock_stick_mp,tac_camera_mp");
     entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_smoke_grenade_mp,jup_semtex_mike32_mp");
@@ -245,4 +266,45 @@ function with_random(options)
 function random_camo()
 {
     return level.cicada_camos[randomint(level.cicada_camos.size)];
+}
+
+function slot_tokens(slot, tokens)
+{
+    level.cicada_attachment_slots[slot] = cicada_util::list(tokens);
+}
+
+function attachment_chance(categories, slot, chance)
+{
+    foreach (category in cicada_util::list(categories))
+    {
+        list = isdefined(level.cicada_attachment_odds[category]) ? level.cicada_attachment_odds[category] : [];
+
+        entry = spawnstruct();
+        entry.slot = slot;
+        entry.chance = chance;
+        list[list.size] = entry;
+
+        level.cicada_attachment_odds[category] = list;
+    }
+}
+
+function attachment_odds(category)
+{
+    if (!isdefined(level.cicada_attachment_odds[category]))
+        return [];
+    return level.cicada_attachment_odds[category];
+}
+
+function in_slot(name, slot)
+{
+    tokens = level.cicada_attachment_slots[slot];
+
+    if (!isdefined(tokens))
+        return false;
+
+    foreach (token in tokens)
+        if (issubstr(name, token))
+            return true;
+
+    return false;
 }

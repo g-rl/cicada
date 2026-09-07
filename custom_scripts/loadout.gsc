@@ -11,12 +11,18 @@
 
 #namespace cicada_loadout;
 
-function build(id, camo)
+function build(id, camo, attachments, variantid)
 {
     if (!isdefined(camo))
         camo = "none";
 
-    return scripts\cp_mp\weapon::buildweapon(id, [], camo, "none", -1, undefined, undefined, undefined, game_utility::isnightmap());
+    if (!isdefined(attachments))
+        attachments = [];
+
+    if (!isdefined(variantid))
+        variantid = -1;
+
+    return scripts\cp_mp\weapon::buildweapon(id, attachments, camo, "none", variantid, undefined, undefined, undefined, game_utility::isnightmap());
 }
 
 function give_weapon(id)
@@ -185,19 +191,93 @@ function random_choice(key, options)
     return random_entry(options);
 }
 
-function random_weapon_id(group, key)
+// level.weaponlootmapdata is keyed "<root>|<variantid>" by scripts\cp_mp\weapon
+function blueprint_id(id)
 {
-    category = self random_choice(key, level.cicada_groups[group]);
-    entry = random_entry(cicada_catalog::get(category));
-    return isdefined(entry) ? entry.id : undefined;
+    if (!istrue(self cicada_util::getpers("random_class_blueprints")))
+        return -1;
+
+    if (!isdefined(level.weaponlootmapdata))
+        return -1;
+
+    variants = [];
+
+    foreach (key, data in level.weaponlootmapdata)
+    {
+        parts = strtok(key, "|");
+
+        if (parts.size != 2 || parts[0] != id)
+            continue;
+
+        if (!isdefined(data.variantid) || data.variantid <= 0)
+            continue;
+
+        variants[variants.size] = data.variantid;
+    }
+
+    if (!variants.size)
+        return -1;
+
+    return variants[randomint(variants.size)];
 }
 
-function give_class_weapon(id)
+function attachment_names(weapon, slot)
+{
+    names = [];
+
+    foreach (name, lootid in level.weaponattachments)
+    {
+        if (!cicada_catalog::in_slot(name, slot))
+            continue;
+
+        if (!weapon canuseattachment(name))
+            continue;
+
+        names[names.size] = name;
+    }
+
+    return names;
+}
+
+function random_attachments(id, category)
+{
+    if (!istrue(self cicada_util::getpers("random_class_attachments")))
+        return [];
+
+    if (!isdefined(level.weaponattachments))
+        return [];
+
+    base = build(id);
+
+    if (!isdefined(base) || isnullweapon(base))
+        return [];
+
+    picked = [];
+    foreach (entry in cicada_catalog::attachment_odds(category))
+    {
+        if (picked.size >= 5)
+            break;
+
+        if (randomint(100) >= entry.chance)
+            continue;
+
+        name = random_entry(attachment_names(base, entry.slot));
+
+        if (isdefined(name))
+            picked[picked.size] = name;
+    }
+    return picked;
+}
+
+function give_class_weapon(id, category)
 {
     if (!isdefined(id))
         return undefined;
 
-    weapon = build(id, self camo());
+    weapon = build(id, self camo(), self random_attachments(id, category), self blueprint_id(id));
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        weapon = build(id, self camo());
+
     if (!isdefined(weapon) || isnullweapon(weapon))
         return undefined;
 
@@ -205,6 +285,17 @@ function give_class_weapon(id)
     self cicada_weapon::refill(weapon);
 
     return weapon;
+}
+
+function random_class_weapon(group, key)
+{
+    category = self random_choice(key, level.cicada_groups[group]);
+    entry = random_entry(cicada_catalog::get(category));
+
+    if (!isdefined(entry))
+        return undefined;
+
+    return self give_class_weapon(entry.id, category);
 }
 
 function random_streaks()
@@ -250,8 +341,8 @@ function random_class()
 
     self takeallweapons();
 
-    primary = self give_class_weapon(self random_weapon_id("primaries", "random_primary"));
-    self give_class_weapon(self random_weapon_id("secondaries", "random_secondary"));
+    primary = self random_class_weapon("primaries", "random_primary");
+    self random_class_weapon("secondaries", "random_secondary");
 
     lethal = self random_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
     if (isdefined(lethal))

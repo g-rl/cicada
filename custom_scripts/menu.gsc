@@ -303,6 +303,8 @@ function structure()
             //self add_state("give streaks", undefined,, "random_class_streaks");
             self add_state("give field upgrade", undefined, "random_class_super");
             self add_state("quick-grip gloves", "faster weapon swap on the class", "random_class_gloves");
+            self add_state("use blueprints", "rolls a blueprint variant of each weapon", "random_class_blueprints");
+            self add_state("random attachments", "adds attachments that suit the weapon class", "random_class_attachments");
             self add_state("random camo", "currently set: ^:" + self cicada_loadout::camo(), "random_class_camo");
             self add_array("primary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["primaries"]), self cicada_util::getpers("random_primary"), "random_primary");
             self add_array("secondary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["secondaries"]), self cicada_util::getpers("random_secondary"), "random_secondary");

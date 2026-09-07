@@ -1296,6 +1296,8 @@ function apply_defaults()
     self cicada_util::initpers("random_class_super", false);
     self cicada_util::initpers("random_class_camo", false);
     self cicada_util::initpers("random_class_gloves", true);
+    self cicada_util::initpers("random_class_blueprints", false);
+    self cicada_util::initpers("random_class_attachments", true);
 
     self cicada_util::initpers("damage_amount", 50);
     self cicada_util::initpers("flash_amount", 1);
