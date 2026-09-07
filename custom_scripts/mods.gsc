@@ -98,6 +98,9 @@ function refresh_on_spawn()
     self cicada_movement::stop_ride();
     self cicada_loadout::apply_camo();
 
+    if (istrue(self cicada_util::getpers("no_hud")))
+        self hide_hud("no_hud");
+
     if (istrue(self cicada_util::getpers("invincible")))
     {
         self enableinvulnerability();
@@ -1135,8 +1138,6 @@ function give_bot_weapon(player_, weapon)
     player_ switchtoweapon(weapon);
 }
 
-// acts lexes "class" as a keyword, so self.class cannot be written directly.
-// giveloadout syncs self.class from self.gamemode_chosenclass, then clears it.
 function set_class(newclass)
 {
     self.pers["class"] = newclass;
@@ -1148,7 +1149,7 @@ function reload_class()
     scripts\mp\class::setclass(self.pers["class"]);
     self.tag_stowed_back = undefined;
     self.tag_stowed_hip = undefined;
-    scripts\mp\class::giveloadout(self.team, self.pers["class"]);
+    scripts\mp\class::giveloadout(self.team, self.pers["class"], undefined, 1);
 
     super = supers::getcurrentsuper();
     if (!isdefined(super))
@@ -1332,7 +1333,7 @@ function monitor_class()
         scripts\mp\class::setclass(self.pers["class"]);
         self.tag_stowed_back = undefined;
         self.tag_stowed_hip = undefined;
-        scripts\mp\class::giveloadout(self.pers["team"], self.pers["class"]);
+        scripts\mp\class::giveloadout(self.pers["team"], self.pers["class"], undefined, 1);
         //self handle_camo(); // TODO
 
         // also give the super each class change
