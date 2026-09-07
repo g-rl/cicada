@@ -453,7 +453,7 @@ function add_bind_slots(name, increments, sliders)
             &cicada_mods::set_anim,
             self cicada_util::getpersint("anim_id"),
             0,
-            100,
+            255, // max anims usually
             1,
             undefined,
             undefined,
