@@ -58,20 +58,31 @@ function register(name, action)
     level.cicada_bind_names[level.cicada_bind_names.size] = name;
 }
 
-function slot_key(slot)
+function bind_key(name)
 {
-    return "bind_slot_" + slot;
+    return "bind_" + name;
 }
 
-function assigned_bind(slot)
+function assigned_slot(name)
 {
-    return self cicada_util::getpers(slot_key(slot));
+    return self cicada_util::getpers(bind_key(name));
 }
 
 function has_bind(name, slot)
 {
-    assigned = self assigned_bind(slot);
-    return isdefined(name) && isdefined(assigned) && assigned == name;
+    assigned = self assigned_slot(name);
+    return isdefined(assigned) && assigned == slot;
+}
+
+function binds_on_slot(slot)
+{
+    names = [];
+
+    foreach (name in level.cicada_bind_names)
+        if (self has_bind(name, slot))
+            names[names.size] = name;
+
+    return names;
 }
 
 function slot_icon(slot)
@@ -86,16 +97,12 @@ function assign(name, slot)
 
     if (self has_bind(name, slot))
     {
-        self cicada_util::setpers(slot_key(slot), undefined);
+        self cicada_util::setpers(bind_key(name), undefined);
         self cicada_util::message(slot_icon(slot) + " ^7unbound from ^:" + name);
         return;
     }
 
-    for (i = 1; i <= 4; i++)
-        if (self has_bind(name, i))
-            self cicada_util::setpers(slot_key(i), undefined);
-
-    self cicada_util::setpers(slot_key(slot), name);
+    self cicada_util::setpers(bind_key(name), slot);
     self cicada_util::message(slot_icon(slot) + " ^7bound to ^:" + name);
 }
 
@@ -117,11 +124,8 @@ function monitor(slot)
         if (self cicada_util::in_menu())
             continue;
 
-        name = self assigned_bind(slot);
-        if (!isdefined(name) || !isdefined(level.cicada_binds[name]))
-            continue;
-
-        self thread [[level.cicada_binds[name]]]();
+        foreach (name in self binds_on_slot(slot))
+            self thread [[level.cicada_binds[name]]]();
     }
 }
 

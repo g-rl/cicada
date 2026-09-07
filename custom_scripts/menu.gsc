@@ -61,10 +61,10 @@ function structure()
             self add_option("position", credits, &new_menu, "position");
             self add_option("cinematics", credits, &new_menu, "cinematics");
             self add_option("aimbot", credits, &new_menu, "aimbot settings");
-            self add_option("class", credits, &new_menu, "class manager");
-            self add_option("game", credits, &new_menu, "game settings");
+            self add_option("class ^1manager", credits, &new_menu, "class manager");
+            self add_option("game ^1settings", credits, &new_menu, "game settings");
             self add_option("clients", credits, &new_menu, "manage clients");
-            self add_option("^1map restart", credits, &nengine_map_restart);
+            self add_option("^:map restart", credits, &nengine_map_restart);
             break;
 
         case "mods & toggles":
