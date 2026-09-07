@@ -375,6 +375,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
+            self add_array("timescale mode", sliders, &cicada_mods::set_timescale_mode, cicada_util::list("normal,round end,start of killcam"), self cicada_util::getpers("timescale_mode"));
             self add_increment("field upgrade recharge", "higher number = faster recharge", &cicada_mods::set_super_charge_rate, self cicada_util::getpersint("super_charge_rate"), 0, 100, 5, undefined, undefined, undefined, "x");
             break;
 

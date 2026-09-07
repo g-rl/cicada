@@ -910,6 +910,30 @@ function set_timescale(value)
     setslowmotion(scale, scale, 0);
 }
 
+function set_timescale_mode(value)
+{
+    self cicada_util::setpers("timescale_mode", value);
+    self notify("cicada_timescale_mode");
+    self thread [[&watch_timescale_reset]]();
+}
+
+function watch_timescale_reset()
+{
+    self endon("disconnect");
+    self endon("cicada_timescale_mode");
+
+    mode = self cicada_util::getpers("timescale_mode");
+
+    if (mode == "round end")
+        level waittill("game_ended");
+    else if (mode == "start of killcam")
+        self waittill("showing_final_killcam");
+    else
+        return;
+
+    setslowmotion(1, 1, 0);
+}
+
 function set_super_charge_rate(value)
 {
     rate = int(value);
@@ -938,6 +962,9 @@ function restore_timescale()
 
     scale = self cicada_util::getpersfloat("timescale");
     setslowmotion(scale, scale, 0);
+
+    self notify("cicada_timescale_mode");
+    self thread [[&watch_timescale_reset]]();
 }
 
 function freeze_timer(key)
@@ -1235,6 +1262,7 @@ function apply_defaults()
     self cicada_util::initpers("position_step", 10);
     self cicada_util::initpers("bounce_count", 0);
     self cicada_util::initpers("timescale", 1.0);
+    self cicada_util::initpers("timescale_mode", "normal");
 
     self cicada_util::initpers("damage_amount", 50);
     self cicada_util::initpers("flash_amount", 1);
