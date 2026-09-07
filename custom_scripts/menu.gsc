@@ -269,6 +269,9 @@ function structure()
         case "class manager":
             self.bind_index = false;
             self add_menu(menu);
+
+            self add_option("^:random ^7class^7", "roll a full loadout", &new_menu, "random class");
+
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
             self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
@@ -281,7 +284,7 @@ function structure()
             self add_option("secondaries", "^:" + level.cicada_groups["secondaries"].size + " ^7categories", &new_menu, "secondaries");
             self add_option("streak ^1manager^7", undefined, &new_menu, "streaks");
             self add_option("equipment ^1manager^7", undefined, &new_menu, "equipment manager");
-            self add_option("apply ^:random camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::randomize_camo);
+            self add_option("^:random camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::randomize_camo);
             self add_option("clear camo", "currently set: ^:" + self cicada_loadout::camo(), &cicada_loadout::clear_camo);
             break;
 
@@ -291,6 +294,20 @@ function structure()
             self add_menu(menu);
             foreach (category in level.cicada_groups[menu])
                 self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons available", &new_menu, category);
+            break;
+
+        case "random class":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("give ^:random ^7class", undefined, &cicada_loadout::random_class);
+            //self add_state("give streaks", undefined,, "random_class_streaks");
+            self add_state("give field upgrade", undefined, "random_class_super");
+            self add_state("quick-grip gloves", "faster weapon swap on the class", "random_class_gloves");
+            self add_state("random camo", "currently set: ^:" + self cicada_loadout::camo(), "random_class_camo");
+            self add_array("primary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["primaries"]), self cicada_util::getpers("random_primary"), "random_primary");
+            self add_array("secondary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["secondaries"]), self cicada_util::getpers("random_secondary"), "random_secondary");
+            self add_array("lethal type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(cicada_catalog::equipment_refs("primary")), self cicada_util::getpers("random_lethal"), "random_lethal");
+            self add_array("tactical type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(cicada_catalog::equipment_refs("secondary")), self cicada_util::getpers("random_tactical"), "random_tactical");
             break;
 
         case "equipment manager":

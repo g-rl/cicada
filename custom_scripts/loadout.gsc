@@ -3,6 +3,7 @@
 #using scripts\mp\equipment;
 #using scripts\mp\killstreaks\killstreaks;
 #using scripts\mp\perks\perkpackage;
+#using scripts\mp\utility\perk;
 
 #using custom_scripts\catalog;
 #using custom_scripts\util;
@@ -167,6 +168,115 @@ function load_class()
 
     self apply_camo();
     self inventory_utility::_switchtoweaponimmediate(self.cicada_class[0]);
+}
+
+function random_entry(options)
+{
+    if (!isdefined(options) || !options.size)
+        return undefined;
+    return options[randomint(options.size)];
+}
+
+function random_choice(key, options)
+{
+    stored = self cicada_util::getpers(key);
+    if (isdefined(stored) && stored != "random")
+        return stored;
+    return random_entry(options);
+}
+
+function random_weapon_id(group, key)
+{
+    category = self random_choice(key, level.cicada_groups[group]);
+    entry = random_entry(cicada_catalog::get(category));
+    return isdefined(entry) ? entry.id : undefined;
+}
+
+function give_class_weapon(id)
+{
+    if (!isdefined(id))
+        return undefined;
+
+    weapon = build(id, self camo());
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        return undefined;
+
+    self inventory_utility::_giveweapon(weapon);
+    self cicada_weapon::refill(weapon);
+
+    return weapon;
+}
+
+function random_streaks()
+{
+    streaks = cicada_catalog::get("mp streaks");
+    if (!streaks.size)
+        return;
+
+    index = randomint(streaks.size);
+
+    for (i = 0; i < 3 && i < streaks.size; i++)
+    {
+        self killstreaks::awardkillstreak(streaks[index].id, "other");
+
+        index++;
+        if (index >= streaks.size)
+            index = 0;
+
+        wait 0.05;
+    }
+
+    self cicada_util::sound("ui_killstreak_select");
+}
+
+function set_random_type(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self cicada_util::message(cicada_catalog::pretty(key, "random") + " type set to ^:" + value);
+}
+
+function give_class_perks()
+{
+    self scripts\mp\utility\perk::giveperk("specialty_ultra_light_boots");
+
+    if (istrue(self cicada_util::getpers("random_class_gloves")))
+        self scripts\mp\utility\perk::giveperk("specialty_custom_gloves");
+}
+
+function random_class()
+{
+    if (istrue(self cicada_util::getpers("random_class_camo")))
+        self cicada_util::setpers("camo", cicada_catalog::random_camo());
+
+    self takeallweapons();
+
+    primary = self give_class_weapon(self random_weapon_id("primaries", "random_primary"));
+    self give_class_weapon(self random_weapon_id("secondaries", "random_secondary"));
+
+    lethal = self random_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
+    if (isdefined(lethal))
+        self scripts\mp\equipment::giveequipment(lethal, "primary");
+
+    tactical = self random_choice("random_tactical", cicada_catalog::equipment_refs("secondary"));
+    if (isdefined(tactical))
+        self scripts\mp\equipment::giveequipment(tactical, "secondary");
+
+    if (istrue(self cicada_util::getpers("random_class_super")))
+    {
+        super = random_entry(cicada_catalog::super_refs());
+        if (isdefined(super))
+            self scripts\mp\perks\perkpackage::perkpackage_givedebug(super, 0);
+    }
+
+    self give_class_perks();
+
+    if (isdefined(primary))
+        self inventory_utility::_switchtoweaponimmediate(primary);
+
+    self cicada_util::sound("ui_mp_weapon_pickup");
+
+    if (istrue(self cicada_util::getpers("random_class_streaks")))
+        self random_streaks();
 }
 
 function manage_class(action)

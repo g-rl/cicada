@@ -231,6 +231,17 @@ function label(id)
     return text;
 }
 
+function with_random(options)
+{
+    list = [];
+    list[0] = "random";
+
+    foreach (option in options)
+        list[list.size] = option;
+
+    return list;
+}
+
 function random_camo()
 {
     return level.cicada_camos[randomint(level.cicada_camos.size)];

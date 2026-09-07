@@ -1288,6 +1288,15 @@ function apply_defaults()
     self cicada_util::initpers("timescale", 1.0);
     self cicada_util::initpers("timescale_mode", "normal");
 
+    self cicada_util::initpers("random_primary", "snipers");
+    self cicada_util::initpers("random_secondary", "random");
+    self cicada_util::initpers("random_lethal", "random");
+    self cicada_util::initpers("random_tactical", "random");
+    self cicada_util::initpers("random_class_streaks", false); // TODO: improve in a bit
+    self cicada_util::initpers("random_class_super", false);
+    self cicada_util::initpers("random_class_camo", false);
+    self cicada_util::initpers("random_class_gloves", true);
+
     self cicada_util::initpers("damage_amount", 50);
     self cicada_util::initpers("flash_amount", 1);
     self cicada_util::initpers("shellshock_amount", 0.25);
