@@ -111,9 +111,10 @@ function init()
 
 function streak(id, name, cost, summary)
 {
-    category = isdefined(cost) ? "streaks" : "warzone extras";
+    category = isdefined(cost) ? "mp streaks" : "warzone extras";
     list = isdefined(level.cicada_catalog[category]) ? level.cicada_catalog[category] : [];
 
+    // documenting it for future use cases
     entry = spawnstruct();
     entry.id = id;
     entry.name = name;
@@ -202,10 +203,7 @@ function get(category)
 
 function streak_summary(entry)
 {
-    text = isdefined(entry.cost) ? "^:" + entry.cost + " kills ^7| " : "";
-    if (isdefined(entry.summary))
-        text = text + entry.summary + " ";
-    return text;
+    return entry.summary;
 }
 
 function count(category)

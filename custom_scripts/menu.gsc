@@ -325,7 +325,7 @@ function structure()
         case "streaks":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("mp streaks", "^:" + cicada_catalog::count("streaks") + " ^7streaks available", &new_menu, "mp streakss");
+            self add_option("mp streaks", "^:" + cicada_catalog::count("mp streaks") + " ^7streaks available", &new_menu, "mp streaks");
             self add_option("warzone extras", "^:" + cicada_catalog::count("warzone extras") + " ^7streaks available", &new_menu, "warzone extras");
             break;
 
