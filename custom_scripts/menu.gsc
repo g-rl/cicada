@@ -405,6 +405,7 @@ function structure()
             self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
             self add_array("timescale mode", sliders, &cicada_mods::set_timescale_mode, cicada_util::list("normal,round end,start of killcam"), self cicada_util::getpers("timescale_mode"));
             self add_increment("field upgrade recharge", "higher number = faster recharge", &cicada_mods::set_super_charge_rate, self cicada_util::getpersint("super_charge_rate"), 0, 100, 5, undefined, undefined, undefined, "x");
+            self add_increment("snapshot delay", increments, &cicada_mods::set_dvar_value, getdvarint("sv_snapshotDelay", 0), 0, 5000, 100, "sv_snapshotDelay");
             break;
 
         case "killcam manager":
@@ -542,18 +543,21 @@ function add_bind_slots(name, increments, sliders)
     {
         gestures = cicada_catalog::gestures();
 
-        self add_increment(
-            "gesture id",
-            "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
-            &cicada_mods::set_gesture,
-            self cicada_util::getpersint("gesture_id"),
-            0,
-            (gestures.size > 0) ? gestures.size - 1 : 0,
-            1,
-            undefined,
-            undefined,
-            &cicada_mods::play_gesture_once
-        );
+        if (!gestures.size)
+            self add_option("^1no gestures loaded");
+        else
+            self add_increment(
+                "gesture id",
+                "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
+                &cicada_mods::set_gesture,
+                self cicada_util::getpersint("gesture_id"),
+                0,
+                gestures.size - 1,
+                1,
+                undefined,
+                undefined,
+                &cicada_mods::play_gesture_once
+            );
     }
 }
 

@@ -137,6 +137,11 @@ function toggle_dvar(dvar)
     setdvar(dvar, !istrue(getdvarint(dvar)));
 }
 
+function set_dvar_value(value, dvar)
+{
+    setdvar(dvar, value);
+}
+
 function godmode(key)
 {
     self endon("disconnect");
@@ -1492,19 +1497,48 @@ function monitor_class()
     }
 }
 
+function gesture_weapon(ref)
+{
+    weapon = makeweaponfromstring(ref);
+
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        weapon = makeweapon(ref);
+
+    return (isdefined(weapon) && !isnullweapon(weapon)) ? weapon : undefined;
+}
+
 // gestures are offhand weapons, same as the radial menu fires them
 function play_gesture_once(id)
 {
+    self endon("disconnect");
+    self endon("death");
+    level endon("game_ended");
+
     if (!isdefined(id))
         id = self cicada_util::getpersint("gesture_id");
 
     ref = cicada_catalog::gesture_ref(id);
     if (!isdefined(ref))
+    {
+        self cicada_util::message("^1no gestures loaded");
         return;
+    }
 
-    weapon = makeweapon(ref);
-    if (!isdefined(weapon) || isnullweapon(weapon))
+    weapon = gesture_weapon(ref);
+
+    if (!isdefined(weapon) && isdefined(self.loadoutgesture))
+    {
+        weapon = gesture_weapon(self.loadoutgesture);
+
+        if (isdefined(weapon))
+            self cicada_util::message("^1" + ref + " ^7not loaded, played equipped gesture");
+    }
+
+    if (!isdefined(weapon))
+    {
+        self cicada_util::message("^1unable to build ^7" + ref);
         return;
+    }
 
     self giveandfireoffhand(weapon);
 

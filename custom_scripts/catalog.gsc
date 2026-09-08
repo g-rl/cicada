@@ -286,22 +286,52 @@ function gestures()
     seen = [];
 
     for (row = 0; true; row++)
+    if (isdefined(level.gestureinfobyindex))
     {
-        ref = tablelookupbyrow("mp/gesturetable.csv", row, 0);
+        foreach (weapon in level.gestureinfobyindex)
+        {
+            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
+                continue;
 
-        if (!isdefined(ref) || ref == "")
-            break;
-
-        weapon = tablelookupbyrow("mp/gesturetable.csv", row, 1);
-
-        if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
-            continue;
-
-        seen[weapon] = true;
-        list[list.size] = weapon;
+            seen[weapon] = true;
+            list[list.size] = weapon;
+        }
     }
 
-    level.cicada_gestures = list;
+    if (!list.size && isdefined(level.gestureinfo))
+    {
+        foreach (weapon in level.gestureinfo)
+        {
+            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
+                continue;
+
+            seen[weapon] = true;
+            list[list.size] = weapon;
+        }
+    }
+
+    if (!list.size)
+    {
+        for (row = 0; true; row++)
+        {
+            ref = tablelookupbyrow("mp/gesturetable.csv", row, 0);
+
+            if (!isdefined(ref) || ref == "")
+                break;
+
+            weapon = tablelookupbyrow("mp/gesturetable.csv", row, 1);
+
+            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
+                continue;
+
+            seen[weapon] = true;
+            list[list.size] = weapon;
+        }
+    }
+
+    if (list.size)
+        level.cicada_gestures = list;
+
     return list;
 }
 
