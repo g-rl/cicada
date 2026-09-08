@@ -15,7 +15,7 @@ function private store_dvars()
         value = getdvar(name);
 
         if (value != "")
-            nengine_session_set_dvar(name, value);
+            nengine_store_set_dvar("sessions", name, value);
     }
 }
 
@@ -23,7 +23,7 @@ function private apply_dvars()
 {
     foreach (name in tracked_dvars())
     {
-        value = nengine_session_dvar(name);
+        value = nengine_store_dvar("sessions", name);
 
         if (value != "")
             setdvar(name, value);
@@ -32,7 +32,7 @@ function private apply_dvars()
 
 function private store_values()
 {
-    nengine_session_clear();
+    nengine_store_clear("sessions");
     store_dvars();
 
     if (!isdefined(self.pers) || !isdefined(self.pers["cicada"]))
@@ -44,7 +44,7 @@ function private store_values()
         if (!isdefined(value))
             continue;
 
-        nengine_session_set(key, value);
+        nengine_store_set("sessions", key, value);
         sent++;
     }
     return sent;
@@ -52,16 +52,16 @@ function private store_values()
 
 function private apply_values()
 {
-    total = nengine_session_count();
+    total = nengine_store_count("sessions");
     for (i = 0; i < total; i++)
     {
-        key = nengine_session_key(i);
-        type = nengine_session_type(key);
+        key = nengine_store_key("sessions", i);
+        type = nengine_store_type("sessions", key);
 
         if (type == 4)
-            value = (nengine_session_component(key, 0), nengine_session_component(key, 1), nengine_session_component(key, 2));
+            value = (nengine_store_component("sessions", key, 0), nengine_store_component("sessions", key, 1), nengine_store_component("sessions", key, 2));
         else if (type != 0)
-            value = nengine_session_get(key);
+            value = nengine_store_get("sessions", key);
         else
             continue;
 
@@ -75,9 +75,9 @@ function private apply_values()
 function private free_name()
 {
     used = [];
-    total = nengine_session_list_count();
+    total = nengine_store_list_count("sessions");
     for (i = 0; i < total; i++)
-        used[nengine_session_list_name(i)] = true;
+        used[nengine_store_list_name("sessions", i)] = true;
 
     for (i = 1; i <= 32; i++)
         if (!isdefined(used["session_" + i]))
@@ -88,20 +88,20 @@ function private free_name()
 
 function count()
 {
-    return nengine_session_list_count();
+    return nengine_store_list_count("sessions");
 }
 
 function name_at(index)
 {
-    if (index < 0 || index >= nengine_session_list_count())
+    if (index < 0 || index >= nengine_store_list_count("sessions"))
         return undefined;
 
-    return nengine_session_list_name(index);
+    return nengine_store_list_name("sessions", index);
 }
 
 function default_name()
 {
-    name = nengine_session_default();
+    name = nengine_store_default("sessions");
     return name.size > 0 ? name : undefined;
 }
 
@@ -110,7 +110,7 @@ function is_default(name)
     if (!isdefined(name) || name.size == 0)
         return false;
 
-    return nengine_session_default() == name;
+    return nengine_store_default("sessions") == name;
 }
 
 function summary(name)
@@ -122,7 +122,7 @@ function save(name)
 {
     self store_values();
 
-    if (nengine_session_save(name) != 1)
+    if (nengine_store_save("sessions", name) != 1)
     {
         self cicada_util::message(cicada_util::warn("could not save ^:" + name));
         return false;
@@ -134,7 +134,7 @@ function save(name)
 
 function load(name)
 {
-    if (nengine_session_load(name) != 1)
+    if (nengine_store_load("sessions", name) != 1)
     {
         self cicada_util::message(cicada_util::warn("could not load ^:" + name));
         return false;
@@ -191,7 +191,7 @@ function toggle_default()
         return;
 
     name = is_default(self.select_session) ? "" : self.select_session;
-    if (nengine_session_set_default(name) != 1)
+    if (nengine_store_set_default("sessions", name) != 1)
     {
         self cicada_util::message(cicada_util::warn("could not change the default session"));
         return;
@@ -206,7 +206,7 @@ function delete_selected()
     if (!isdefined(self.select_session))
         return;
 
-    if (nengine_session_delete(self.select_session) != 1)
+    if (nengine_store_delete("sessions", self.select_session) != 1)
     {
         self cicada_util::message(cicada_util::warn("could not delete ^:" + self.select_session));
         return;

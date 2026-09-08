@@ -12,6 +12,8 @@
 #using scripts\mp\utility\perk;
 #using scripts\mp\utility\player;
 
+#using custom_scripts\builds;
+#using custom_scripts\catalog;
 #using custom_scripts\loadout;
 #using custom_scripts\movement;
 #using custom_scripts\pve;
@@ -111,7 +113,8 @@ function refresh_on_spawn()
     if (self has_position())
         self load_position();
 
-    self cicada_loadout::spawn_class();
+    if (!self cicada_builds::spawn_apply())
+        self cicada_loadout::spawn_class();
 }
 
 function anyone_using(key)
@@ -1269,6 +1272,11 @@ function set_anim_hands(mode)
     self cicada_util::setpers("anim_hands", mode);
 }
 
+function set_gesture(id)
+{
+    self cicada_util::setpers("gesture_id", id);
+}
+
 function apply_defaults()
 {
     self cicada_util::initpers("messages", true);
@@ -1278,6 +1286,7 @@ function apply_defaults()
     self cicada_util::initpers("auto_prone_mode", "air");
     self cicada_util::initpers("anim_id", 0);
     self cicada_util::initpers("anim_hands", "right");
+    self cicada_util::initpers("gesture_id", 0);
     self cicada_util::initpers("class_wrap", 5);
 
     self cicada_util::initpers("aimbot_range", 1500);
@@ -1419,6 +1428,30 @@ function monitor_class()
         // self thread give_perks();
         wait 0.05;
     }
+}
+
+// gestures are offhand weapons, same as the radial menu fires them
+function play_gesture_once(id)
+{
+    if (!isdefined(id))
+        id = self cicada_util::getpersint("gesture_id");
+
+    ref = cicada_catalog::gesture_ref(id);
+    if (!isdefined(ref))
+        return;
+
+    weapon = makeweapon(ref);
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        return;
+
+    self giveandfireoffhand(weapon);
+
+    end = gettime() + 5000;
+    while (gettime() < end && self hasweapon(weapon))
+        wait 0.05;
+
+    if (self hasweapon(weapon))
+        self takeweapon(weapon);
 }
 
 function play_anim_once(id, both_hands)

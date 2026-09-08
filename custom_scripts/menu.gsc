@@ -272,7 +272,8 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
 
-            self add_option("^:random ^7class^7", "roll a full loadout", &new_menu, "random class");
+            self add_option("^:random ^7class^7", undefined, &new_menu, "random class");
+            self add_option("builds ^1manager", credits, &new_menu, "builds manager");
 
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
@@ -433,6 +434,26 @@ function structure()
             self add_option(cicada_util::warn("delete session"), undefined, &cicada_session::delete_selected);
             break;
 
+        case "builds manager":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("save current class", "^:" + cicada_builds::build_count() + " ^7stored", &cicada_builds::new_build);
+            for (i = 0; i < cicada_builds::build_count(); i++)
+            {
+                name = cicada_builds::build_at(i);
+                self add_option(name, cicada_builds::build_summary(name), &new_menu, "build option");
+            }
+            break;
+
+        case "build option":
+            self.bind_index = false;
+            self add_menu(self.select_build);
+            self add_option("give build", "^1replaces ^7your current weapons", &cicada_builds::give_build);
+            self add_option("save over build", undefined, &cicada_builds::save_over_build);
+            self add_toggle("give on every spawn", undefined, cicada_builds::build_is_default(self.select_build), &cicada_builds::toggle_build_default);
+            self add_option(cicada_util::warn("delete build"), undefined, &cicada_builds::delete_build);
+            break;
+
         case "manage clients":
             self.bind_index = false;
             self add_menu(menu);
@@ -509,6 +530,24 @@ function add_bind_slots(name, increments, sliders)
             &cicada_mods::set_anim_hands,
             cicada_util::list("right,both"),
             self cicada_util::getpers("anim_hands")
+        );
+    }
+
+    if (name == "play gesture")
+    {
+        gestures = cicada_catalog::gestures();
+
+        self add_increment(
+            "gesture id",
+            "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
+            &cicada_mods::set_gesture,
+            self cicada_util::getpersint("gesture_id"),
+            0,
+            (gestures.size > 0) ? gestures.size - 1 : 0,
+            1,
+            undefined,
+            undefined,
+            &cicada_mods::play_gesture_once
         );
     }
 }
@@ -1016,6 +1055,9 @@ function new_menu(menu)
 
     if (self get_menu() == "session manager")
         self.select_session = cicada_session::name_at(self get_cursor() - 1);
+
+    if (self get_menu() == "builds manager")
+        self.select_build = cicada_builds::build_at(self get_cursor() - 1);
 
     if (!isdefined(menu))
     {

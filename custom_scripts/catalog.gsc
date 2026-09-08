@@ -276,6 +276,45 @@ function with_random(options)
     return list;
 }
 
+// mp/gesturetable.csv, column 0 ref, column 1 gesture weapon
+function gestures()
+{
+    if (isdefined(level.cicada_gestures))
+        return level.cicada_gestures;
+
+    list = [];
+    seen = [];
+
+    for (row = 0; true; row++)
+    {
+        ref = tablelookupbyrow("mp/gesturetable.csv", row, 0);
+
+        if (!isdefined(ref) || ref == "")
+            break;
+
+        weapon = tablelookupbyrow("mp/gesturetable.csv", row, 1);
+
+        if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
+            continue;
+
+        seen[weapon] = true;
+        list[list.size] = weapon;
+    }
+
+    level.cicada_gestures = list;
+    return list;
+}
+
+function gesture_ref(id)
+{
+    list = gestures();
+
+    if (!list.size)
+        return undefined;
+
+    return list[id % list.size];
+}
+
 function random_camo()
 {
     return level.cicada_camos[randomint(level.cicada_camos.size)];

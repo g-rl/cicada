@@ -18,6 +18,7 @@ function init()
 
     register("play anim", &cicada_mods::play_anim_once);
     register("smooth anim", &smooth_anim);
+    register("play gesture", &cicada_mods::play_gesture_once);
     register("nac", &nac);
     register("instaswap", &instaswap);
     register("canswap", &canswap);
