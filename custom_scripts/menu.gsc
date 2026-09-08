@@ -2,6 +2,7 @@
 #using scripts\mp\hud_util;
 
 #using custom_scripts\binds;
+#using custom_scripts\builds;
 #using custom_scripts\catalog;
 #using custom_scripts\cinematics;
 #using custom_scripts\killcam;
@@ -156,7 +157,11 @@ function structure()
         case "aimbot settings":
             self.bind_index = false;
             self add_menu(menu);
-            self add_feature("aimbot", "snipers and marksman rifles only", "aimbot");
+            self add_feature("aimbot", undefined, "aimbot");
+            self add_option("aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon");
+            self add_option("second aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_2"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_2");
+            self add_option("hitmarker aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_hitmarker"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_hitmarker");
+            self add_option("clear aimbot weapons", "aimbot stays off until one is set", &cicada_mods::clear_aimbot_weapons);
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
             self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
             self add_option("effect ^1manager", undefined, &new_menu, "edit effects");
@@ -273,7 +278,7 @@ function structure()
             self add_menu(menu);
 
             self add_option("^:random ^7class^7", undefined, &new_menu, "random class");
-            self add_option("builds ^1manager", credits, &new_menu, "builds manager");
+            self add_option("builds ^1manager", undefined, &new_menu, "builds manager");
 
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");

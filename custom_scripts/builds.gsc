@@ -33,23 +33,15 @@ function private capture_build()
     nengine_store_clear("builds");
 
     stored = 0;
-    seen = 0;
 
     foreach (weapon in self getweaponslistall())
     {
-        seen++;
-
         if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
             continue;
-
-        if (seen < 4)
-            self iprintln("^2CAPTURE ^:" + weapon.basename + "^7 root ^:" + (isdefined(scripts\cp_mp\weapon::getweaponrootname(weapon)) ? scripts\cp_mp\weapon::getweaponrootname(weapon) : "<undef>"));
 
         if (store_build_weapon(stored, weapon))
             stored++;
     }
-
-    self iprintln("^2CAPTURE seen ^:" + seen + "^7 stored ^:" + stored);
 
     nengine_store_set("builds", "count", stored);
     nengine_store_set("builds", "camo", self cicada_loadout::camo());

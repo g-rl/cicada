@@ -1,3 +1,4 @@
+#using scripts\cp_mp\damagefeedback;
 #using scripts\cp_mp\utility\inventory_utility;
 #using scripts\engine\utility;
 #using scripts\mp\bots\bots;
@@ -732,6 +733,56 @@ function track_velocity(prefix)
     self cicada_util::sound("scavenger_pack_pickup");
 }
 
+function aimbot_weapon_keys()
+{
+    return cicada_util::list("aimbot_weapon,aimbot_weapon_2,aimbot_weapon_hitmarker");
+}
+
+function aimbot_weapon_name(key)
+{
+    stored = self cicada_util::getpers(key);
+    if (!isdefined(stored) || stored == "" || stored == "none")
+        return "not set";
+    return stored;
+}
+
+function set_aimbot_weapon(key)
+{
+    weapon = self getcurrentweapon();
+    if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
+        return;
+
+    self cicada_util::setpers(key, weapon.basename);
+    self cicada_util::message("aimbot weapon set to ^:" + weapon.basename);
+}
+
+function clear_aimbot_weapons()
+{
+    foreach (key in aimbot_weapon_keys())
+        self cicada_util::setpers(key, undefined);
+
+    self cicada_util::message("aimbot weapons cleared");
+}
+
+function aimbot_weapon_key(weapon)
+{
+    if (!isdefined(weapon) || !isdefined(weapon.basename))
+        return undefined;
+
+    foreach (key in aimbot_weapon_keys())
+    {
+        stored = self cicada_util::getpers(key);
+
+        if (!isdefined(stored) || stored == "" || stored == "none")
+            continue;
+
+        if (stored == weapon.basename)
+            return key;
+    }
+
+    return undefined;
+}
+
 function aimbot(key)
 {
     self endon("disconnect");
@@ -742,14 +793,16 @@ function aimbot(key)
     {
         self waittill("weapon_fired");
 
-        if (!cicada_weapon::is_ads_weapon(self getcurrentweapon()))
+        fired = self aimbot_weapon_key(self getcurrentweapon());
+
+        if (!isdefined(fired))
             continue;
 
-        self shoot_nearest_target();
+        self shoot_nearest_target(fired == "aimbot_weapon_hitmarker");
     }
 }
 
-function shoot_nearest_target()
+function shoot_nearest_target(feedback_only)
 {
     center = self cicada_util::crosshair();
     range = self cicada_util::getpersint("aimbot_range");
@@ -762,6 +815,12 @@ function shoot_nearest_target()
 
         if (delay > 0)
             wait (delay);
+
+        if (istrue(feedback_only))
+        {
+            self damagefeedback::updatedamagefeedback("standard", 0, 0, "standard", 0);
+            continue;
+        }
 
         self deal_damage(player_, 350);
 
