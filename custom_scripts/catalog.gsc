@@ -57,7 +57,7 @@ function init()
     entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_smoke_grenade_mp,jup_semtex_mike32_mp");
 
     entries("equipment", "briefcase_bomb_mp,bunkerbuster_mp,bunkerbuster_burrowed_mp,bunkerbuster_not_burrowed_mp,sonar_pulse_mp,throwstar_mp,gas_mp");
-    entries("equipment", "interrogation_tools_mp,ks_gesture_phone_mp,ks_remote_device_mp,remotemissile_projectile_mp,emp_pulse_device_mp,support_box_mp,emp_drone_player_mp");
+    entries("equipment", "interrogation_tools_mp,ks_gesture_phone_mp,ks_remote_device_mp,ks_remote_map_mp,remotemissile_projectile_mp,emp_pulse_device_mp,support_box_mp,emp_drone_player_mp");
 
     // names passed to killstreaks::registerkillstreak across the dump
     streak("uav", "uav", 4, "reveals enemies on the minimap");
