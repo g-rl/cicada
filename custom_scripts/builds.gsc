@@ -1,4 +1,7 @@
 #using scripts\cp_mp\utility\inventory_utility;
+#using scripts\mp\equipment;
+#using scripts\mp\perks\perkpackage;
+#using scripts\mp\supers;
 
 #using custom_scripts\loadout;
 #using custom_scripts\menu;
@@ -28,13 +31,25 @@ function private store_build_weapon(index, weapon)
     return true;
 }
 
+function private equipment_ref(slot)
+{
+    ref = self scripts\mp\equipment::getcurrentequipment(slot);
+    return (isdefined(ref) && ref != "none") ? ref : "";
+}
+
+function private stored_ref(key)
+{
+    value = nengine_store_get("builds", key);
+    return (isdefined(value) && value != "" && value != "none") ? value : undefined;
+}
+
 function private capture_build()
 {
     nengine_store_clear("builds");
 
     stored = 0;
 
-    foreach (weapon in self getweaponslistall())
+    foreach (weapon in self getweaponslistprimaries())
     {
         if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
             continue;
@@ -43,8 +58,13 @@ function private capture_build()
             stored++;
     }
 
+    super = supers::getcurrentsuperref();
+
     nengine_store_set("builds", "count", stored);
     nengine_store_set("builds", "camo", self cicada_loadout::camo());
+    nengine_store_set("builds", "lethal", self equipment_ref("primary"));
+    nengine_store_set("builds", "tactical", self equipment_ref("secondary"));
+    nengine_store_set("builds", "super", isdefined(super) ? super : "");
 
     return stored;
 }
@@ -84,10 +104,57 @@ function private apply_build()
         given++;
     }
 
+    self give_build_equipment();
+
     if (isdefined(first))
         self inventory_utility::_switchtoweaponimmediate(first);
 
     return given;
+}
+
+function private give_equipment_slot(slot, key)
+{
+    ref = stored_ref(key);
+
+    if (!isdefined(ref))
+        return;
+
+    self scripts\mp\equipment::giveequipment(ref, slot);
+
+    info = scripts\mp\equipment::getequipmenttableinfo(ref);
+
+    if (!isdefined(info) || !isdefined(info.objweapon) || isnullweapon(info.objweapon))
+        return;
+
+    self setweaponammoclip(info.objweapon, 1);
+    self givemaxammo(info.objweapon);
+}
+
+function private give_build_equipment()
+{
+    self give_equipment_slot("primary", "lethal");
+    self give_equipment_slot("secondary", "tactical");
+
+    super = stored_ref("super");
+    if (isdefined(super))
+    {
+        self scripts\mp\perks\perkpackage::perkpackage_givedebug(super, 0);
+        self thread [[&charge_super]]();
+    }
+
+    self cicada_loadout::give_class_perks();
+}
+
+function private charge_super()
+{
+    self endon("disconnect");
+
+    wait 0.05;
+
+    if (!isdefined(supers::getcurrentsuper()))
+        return;
+
+    self thread [[&supers::givesuperpoints]](supers::getsuperpointsneeded());
 }
 
 function private free_build_name()

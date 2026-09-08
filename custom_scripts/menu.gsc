@@ -949,17 +949,16 @@ function clear_all(array)
     if (!isdefined(array))
         return;
 
-    keys = getarraykeys(array);
-    for (i = 0; i < keys.size; i++)
+    foreach (entry in array)
     {
-        if (isarray(array[keys[i]]))
+        if (isarray(entry))
         {
-            foreach (key in array[keys[i]])
-                if (isdefined(key))
-                    key destroy_element();
+            foreach (element in entry)
+                if (isdefined(element))
+                    element destroy_element();
         }
-        else if (isdefined(array[keys[i]]))
-            array[keys[i]] destroy_element();
+        else if (isdefined(entry))
+            entry destroy_element();
     }
 }
 

@@ -885,7 +885,10 @@ function effect_list()
     if (!isdefined(level._effect))
         return [];
 
-    return getarraykeys(level._effect);
+    names = [];
+    foreach (name, effect in level._effect)
+        names[names.size] = name;
+    return names;
 }
 
 function randomize_effect(key)
