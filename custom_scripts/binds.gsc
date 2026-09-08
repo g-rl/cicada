@@ -36,6 +36,7 @@ function init()
     register("bot bolt movement", &cicada_movement::play_bot_bolt);
     register("record movement", &cicada_movement::play_record);
     register("load class", &cicada_loadout::load_class);
+    register("^:random ^7class", &cicada_loadout::random_class);
     register("start camera", &cicada_cinematics::start_path);
     register("save position", &save_position);
     register("load position", &load_position);
