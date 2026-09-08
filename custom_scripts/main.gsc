@@ -8,6 +8,7 @@
 #using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
+#using custom_scripts\session;
 #using custom_scripts\util;
 
 #namespace cicada;
@@ -53,6 +54,12 @@ function private on_player_spawned(params)
     }
 
     level thread [[&cicada_mods::skip_prematch]]();
+
+    if (!isdefined(self.cicada_session_loaded))
+    {
+        self.cicada_session_loaded = true;
+        self cicada_session::load_default();
+    }
 
     self cicada_menu::print_controls();
     self cicada_mods::apply_defaults();

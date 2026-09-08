@@ -17,6 +17,8 @@ function init()
     group("primaries", "assault rifles,battle rifles,sub machine guns,shotguns,light machine guns,snipers");
     group("secondaries", "launchers,pistols,misc");
 
+    group_union("secondary types", "secondaries,primaries");
+
     entries("assault rifles", "jup_jp01_ar_golf36,jup_jp19_ar_acharlie,jup_jp34_ar_balpha27,jup_jp36_ar_anov94,iw9_ar_akilo_mp,iw9_ar_augolf_mp,iw9_ar_mike4_mp");
     entries("battle rifles", "jup_jp02_br_bromeo2,jup_jp19_br_acharlie450,jup_cp08_br_xmike5");
     entries("sub machine guns", "jup_jp02_sm_scharlie3,jup_jp04_sm_umike,jup_cp01_sm_coscar635,iw9_sm_aviktor_mp,iw9_sm_mpapa5_mp,iw9_sm_mpapa7_mp,iw9_sm_papa90_mp");
@@ -197,6 +199,17 @@ function camos(ids)
 function group(name, categories)
 {
     level.cicada_groups[name] = cicada_util::list(categories);
+}
+
+function group_union(name, sources)
+{
+    list = [];
+
+    foreach (source in cicada_util::list(sources))
+        foreach (category in level.cicada_groups[source])
+            list[list.size] = category;
+
+    level.cicada_groups[name] = list;
 }
 
 function entries(category, ids)

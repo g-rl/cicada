@@ -8,6 +8,7 @@
 #using custom_scripts\loadout;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
+#using custom_scripts\session;
 #using custom_scripts\util;
 
 #namespace cicada_menu;
@@ -63,6 +64,7 @@ function structure()
             self add_option("aimbot", credits, &new_menu, "aimbot settings");
             self add_option("class ^1manager", credits, &new_menu, "class manager");
             self add_option("game ^1settings", credits, &new_menu, "game settings");
+            self add_option("session ^1manager", credits, &new_menu, "session manager");
             self add_option("clients", credits, &new_menu, "manage clients");
             self add_option("^2map_restart", credits, &nengine_map_restart);
             break;
@@ -300,6 +302,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("give ^:random ^7class", undefined, &cicada_loadout::random_class);
+            self add_state("give on spawn", undefined, "random_class_auto");
             //self add_state("give streaks", undefined,, "random_class_streaks");
             self add_state("give field upgrade", undefined, "random_class_super");
             self add_state("quick-grip gloves", "faster weapon swap on the class", "random_class_gloves");
@@ -307,7 +310,7 @@ function structure()
             self add_state("random attachments", "adds attachments that suit the weapon class", "random_class_attachments");
             self add_state("random camo", "currently set: ^:" + self cicada_loadout::camo(), "random_class_camo");
             self add_array("primary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["primaries"]), self cicada_util::getpers("random_primary"), "random_primary");
-            self add_array("secondary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["secondaries"]), self cicada_util::getpers("random_secondary"), "random_secondary");
+            self add_array("secondary type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(level.cicada_groups["secondary types"]), self cicada_util::getpers("random_secondary"), "random_secondary");
             self add_array("lethal type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(cicada_catalog::equipment_refs("primary")), self cicada_util::getpers("random_lethal"), "random_lethal");
             self add_array("tactical type", sliders, &cicada_loadout::set_random_type, cicada_catalog::with_random(cicada_catalog::equipment_refs("secondary")), self cicada_util::getpers("random_tactical"), "random_tactical");
             break;
@@ -408,6 +411,26 @@ function structure()
             self add_state("hide attachments", undefined, "hide_attachments");
             self add_state("hide equipment", undefined, "hide_equipment");
             self add_state("hide field upgrade", undefined, "hide_field_upgrade");
+            break;
+
+        case "session manager":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("save new session", "^:" + cicada_session::count() + " ^7stored", &cicada_session::save_new);
+            for (i = 0; i < cicada_session::count(); i++)
+            {
+                name = cicada_session::name_at(i);
+                self add_option(name, cicada_session::summary(name), &new_menu, "session option");
+            }
+            break;
+
+        case "session option":
+            self.bind_index = false;
+            self add_menu(self.select_session);
+            self add_option("load session", "^1overwrite ^7with new settings", &cicada_session::load_selected);
+            self add_option("save over session", undefined, &cicada_session::save_selected);
+            self add_toggle("auto-load session", undefined, cicada_session::is_default(self.select_session), &cicada_session::toggle_default);
+            self add_option(cicada_util::warn("delete session"), undefined, &cicada_session::delete_selected);
             break;
 
         case "manage clients":
@@ -990,6 +1013,9 @@ function new_menu(menu)
 {
     if (self get_menu() == "manage clients")
         self.select_player = level.players[self get_cursor()];
+
+    if (self get_menu() == "session manager")
+        self.select_session = cicada_session::name_at(self get_cursor() - 1);
 
     if (!isdefined(menu))
     {

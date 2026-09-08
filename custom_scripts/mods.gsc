@@ -110,6 +110,8 @@ function refresh_on_spawn()
 
     if (self has_position())
         self load_position();
+
+    self cicada_loadout::spawn_class();
 }
 
 function anyone_using(key)
@@ -1298,6 +1300,7 @@ function apply_defaults()
     self cicada_util::initpers("random_class_gloves", true);
     self cicada_util::initpers("random_class_blueprints", false);
     self cicada_util::initpers("random_class_attachments", true);
+    self cicada_util::initpers("random_class_auto", false);
 
     self cicada_util::initpers("damage_amount", 50);
     self cicada_util::initpers("flash_amount", 1);

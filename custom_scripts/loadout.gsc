@@ -1,6 +1,7 @@
 #using scripts\cp_mp\utility\game_utility;
 #using scripts\cp_mp\utility\inventory_utility;
 #using scripts\mp\equipment;
+#using scripts\mp\utility\game;
 #using scripts\mp\killstreaks\killstreaks;
 #using scripts\mp\perks\perkpackage;
 #using scripts\mp\utility\perk;
@@ -341,8 +342,15 @@ function random_class()
 
     self takeallweapons();
 
+    weapons = [];
+
     primary = self random_class_weapon("primaries", "random_primary");
-    self random_class_weapon("secondaries", "random_secondary");
+    if (isdefined(primary))
+        weapons[weapons.size] = primary;
+
+    secondary = self random_class_weapon("secondaries", "random_secondary");
+    if (isdefined(secondary))
+        weapons[weapons.size] = secondary;
 
     lethal = self random_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
     if (isdefined(lethal))
@@ -360,6 +368,7 @@ function random_class()
     }
 
     self give_class_perks();
+    self store_random_class(weapons, primary, lethal, tactical);
 
     if (isdefined(primary))
         self inventory_utility::_switchtoweaponimmediate(primary);
@@ -381,4 +390,54 @@ function manage_class(action)
 function class_count()
 {
     return self has_class() ? self.cicada_class.size : 0;
+}
+
+function store_random_class(weapons, primary, lethal, tactical)
+{
+    stored = spawnstruct();
+    stored.weapons = weapons;
+    stored.primary = primary;
+    stored.lethal = lethal;
+    stored.tactical = tactical;
+    stored.camo = self camo();
+    self.cicada_random_class = stored;
+}
+
+function load_random_class()
+{
+    stored = self.cicada_random_class;
+
+    self cicada_util::setpers("camo", stored.camo);
+    self takeallweapons();
+
+    foreach (weapon in stored.weapons)
+    {
+        self inventory_utility::_giveweapon(weapon);
+        self cicada_weapon::refill(weapon);
+    }
+
+    if (isdefined(stored.lethal))
+        self scripts\mp\equipment::giveequipment(stored.lethal, "primary");
+
+    if (isdefined(stored.tactical))
+        self scripts\mp\equipment::giveequipment(stored.tactical, "secondary");
+
+    self give_class_perks();
+
+    if (isdefined(stored.primary))
+        self inventory_utility::_switchtoweaponimmediate(stored.primary);
+}
+
+function spawn_class()
+{
+    if (!istrue(self cicada_util::getpers("random_class_auto")))
+        return;
+
+    if (isdefined(self.cicada_random_class) && scripts\mp\utility\game::getbasegametype() != "dm")
+    {
+        self load_random_class();
+        return;
+    }
+
+    self random_class();
 }
