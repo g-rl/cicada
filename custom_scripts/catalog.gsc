@@ -285,7 +285,6 @@ function gestures()
     list = [];
     seen = [];
 
-    for (row = 0; true; row++)
     if (isdefined(level.gestureinfobyindex))
     {
         foreach (weapon in level.gestureinfobyindex)
