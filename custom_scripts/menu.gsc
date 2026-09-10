@@ -584,6 +584,9 @@ function velocity_options(prefix, increments)
     self add_option("randomize values", summary, &cicada_mods::randomize_velocity, prefix);
     self add_option("track & save", summary, &cicada_mods::track_velocity, prefix);
     self add_option("play velocity", summary, prefix == "" ? &cicada_mods::play_velocity : &cicada_mods::play_bot_velocity);
+
+    if (prefix == "bot_")
+        self add_increment("teleport back time", "^:0 ^7keeps the bot where it lands", &cicada_mods::set_value, self cicada_util::getpersfloat("bot_return_time"), 0, 30, 0.5, "bot_return_time");
 }
 
 function player_options(player, sliders)

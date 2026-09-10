@@ -569,7 +569,7 @@ function freeze_bots(key)
     for (;;)
     {
         foreach (player_ in level.players)
-            if (cicada_util::is_bot(player_))
+            if (cicada_util::is_bot(player_) && !istrue(player_.cicada_launched))
                 player_ freezecontrols(1);
 
         wait 0.5;
@@ -616,7 +616,9 @@ function hold_freeze()
 
     for (;;)
     {
-        self freezecontrols(1);
+        if (!istrue(self.cicada_launched))
+            self freezecontrols(1);
+
         wait 0.5;
     }
 }
@@ -704,10 +706,61 @@ function play_velocity()
 function play_bot_velocity()
 {
     velocity = self stored_velocity("bot_");
+    delay = self cicada_util::getpersfloat("bot_return_time");
 
     foreach (player_ in level.players)
-        if (cicada_util::is_bot(player_))
-            player_ setvelocity(velocity);
+        if (cicada_util::is_bot(player_) && player_.sessionstate == "playing")
+            player_ thread [[&launch_bot]](velocity, delay);
+}
+
+function freeze_wanted(player_)
+{
+    return is_frozen(player_) || anyone_using("frozen_bots");
+}
+
+function wait_landing()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    wait 0.25;
+
+    for (i = 0; i < 200 && !self isonground(); i++)
+        wait 0.05;
+}
+
+function launch_bot(velocity, delay)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_launched))
+        return;
+
+    frozen = freeze_wanted(self);
+    started = gettime();
+
+    self.cicada_launched = true;
+
+    if (frozen)
+        self freezecontrols(0);
+
+    self setvelocity(velocity);
+    self wait_landing();
+
+    self.cicada_launched = false;
+
+    if (frozen)
+        self freezecontrols(1);
+
+    if (delay <= 0 || !self has_position())
+        return;
+
+    remaining = delay - (gettime() - started) / 1000;
+    if (remaining > 0)
+        wait remaining;
+
+    self load_position();
 }
 
 function randomize_velocity(prefix)
@@ -1250,6 +1303,8 @@ function restore_bot_position()
     self endon("disconnect");
     self endon("death");
 
+    self.cicada_launched = false;
+
     wait 0.05;
 
     if (self has_position())
@@ -1476,6 +1531,9 @@ function default_velocity(prefix)
     self cicada_util::initpers(prefix + "velocity_y", 250);
     self cicada_util::initpers(prefix + "velocity_z", 250);
     self cicada_util::initpers(prefix + "velocity_step", 50);
+
+    if (prefix == "bot_")
+        self cicada_util::initpers("bot_return_time", 0);
 }
 
 function monitor_class()
