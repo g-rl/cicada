@@ -16,6 +16,7 @@
 #using custom_scripts\builds;
 #using custom_scripts\catalog;
 #using custom_scripts\loadout;
+#using custom_scripts\menu;
 #using custom_scripts\movement;
 #using custom_scripts\pve;
 #using custom_scripts\util;
@@ -791,6 +792,39 @@ function aimbot_weapon_keys()
     return cicada_util::list("aimbot_weapon,aimbot_weapon_2,aimbot_weapon_hitmarker");
 }
 
+function aimbot_damage_keys()
+{
+    return cicada_util::list("aimbot_weapon,aimbot_weapon_2");
+}
+
+function aimbot_modes()
+{
+    return cicada_util::list("all snipers,selected weapons");
+}
+
+function hitmarker_modes()
+{
+    list = [];
+    list[0] = "all weapons";
+
+    foreach (type in cicada_catalog::weapon_types())
+        list[list.size] = type;
+
+    list[list.size] = "selected weapons";
+    return list;
+}
+
+function set_aimbot_mode(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self cicada_menu::update_menu();
+}
+
+function uses_selected_weapons()
+{
+    return self cicada_util::getpers("aimbot_mode") == "selected weapons" || self cicada_util::getpers("hitmarker_mode") == "selected weapons";
+}
+
 function aimbot_weapon_name(key)
 {
     stored = self cicada_util::getpers(key);
@@ -817,12 +851,9 @@ function clear_aimbot_weapons()
     self cicada_util::message("aimbot weapons cleared");
 }
 
-function aimbot_weapon_key(weapon)
+function weapon_in_keys(weapon, keys)
 {
-    if (!isdefined(weapon) || !isdefined(weapon.basename))
-        return undefined;
-
-    foreach (key in aimbot_weapon_keys())
+    foreach (key in keys)
     {
         stored = self cicada_util::getpers(key);
 
@@ -830,10 +861,27 @@ function aimbot_weapon_key(weapon)
             continue;
 
         if (stored == weapon.basename)
-            return key;
+            return true;
     }
 
-    return undefined;
+    return false;
+}
+
+function aimbot_matches(mode, weapon, keys)
+{
+    if (!isdefined(mode))
+        return false;
+
+    if (mode == "selected weapons")
+        return self weapon_in_keys(weapon, keys);
+
+    if (mode == "all weapons")
+        return isdefined(cicada_catalog::weapon_class(weapon));
+
+    if (mode == "all snipers")
+        return cicada_catalog::is_weapon_type(weapon, "snipers");
+
+    return cicada_catalog::is_weapon_type(weapon, mode);
 }
 
 function aimbot(key)
@@ -846,12 +894,19 @@ function aimbot(key)
     {
         self waittill("weapon_fired");
 
-        fired = self aimbot_weapon_key(self getcurrentweapon());
+        weapon = self getcurrentweapon();
 
-        if (!isdefined(fired))
+        if (!isdefined(weapon) || !isdefined(weapon.basename))
             continue;
 
-        self shoot_nearest_target(fired == "aimbot_weapon_hitmarker");
+        if (self aimbot_matches(self cicada_util::getpers("aimbot_mode"), weapon, aimbot_damage_keys()))
+        {
+            self shoot_nearest_target(false);
+            continue;
+        }
+
+        if (self aimbot_matches(self cicada_util::getpers("hitmarker_mode"), weapon, cicada_util::list("aimbot_weapon_hitmarker")))
+            self shoot_nearest_target(true);
     }
 }
 
@@ -1436,6 +1491,8 @@ function apply_defaults()
     self cicada_util::initpers("gesture_id", 0);
     self cicada_util::initpers("class_wrap", 5);
 
+    self cicada_util::initpers("aimbot_mode", "all snipers");
+    self cicada_util::initpers("hitmarker_mode", "selected weapons");
     self cicada_util::initpers("aimbot_range", 1500);
     self cicada_util::initpers("aimbot_delay", 0);
     self cicada_util::initpers("kill_effects", false);

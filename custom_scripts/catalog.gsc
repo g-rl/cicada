@@ -11,6 +11,19 @@ function init()
     foreach (code in cicada_util::list("ar,sm,lm,sh,sn,dm,pi,la,me,br"))
         level.cicada_weapon_classes[code] = true;
 
+    level.cicada_weapon_types = [];
+    level.cicada_type_tokens = [];
+
+    weapon_type("assault rifles", "ar");
+    weapon_type("battle rifles", "br");
+    weapon_type("sub machine guns", "sm");
+    weapon_type("shotguns", "sh");
+    weapon_type("light machine guns", "lm");
+    weapon_type("snipers", "sn,dm");
+    weapon_type("launchers", "la");
+    weapon_type("pistols", "pi");
+    weapon_type("melee", "me");
+
     level.cicada_catalog = [];
     level.cicada_groups = [];
 
@@ -194,6 +207,43 @@ function camos(ids)
 {
     foreach (id in cicada_util::list(ids))
         level.cicada_camos[level.cicada_camos.size] = id;
+}
+
+function weapon_type(name, tokens)
+{
+    level.cicada_weapon_types[level.cicada_weapon_types.size] = name;
+    level.cicada_type_tokens[name] = cicada_util::list(tokens);
+}
+
+function weapon_types()
+{
+    return level.cicada_weapon_types;
+}
+
+function weapon_class(weapon)
+{
+    if (!isdefined(weapon) || !isdefined(weapon.basename))
+        return undefined;
+
+    foreach (part in strtok(weapon.basename, "_"))
+        if (istrue(level.cicada_weapon_classes[part]))
+            return part;
+
+    return undefined;
+}
+
+function is_weapon_type(weapon, type)
+{
+    weapon_token = weapon_class(weapon);
+
+    if (!isdefined(weapon_token) || !isdefined(level.cicada_type_tokens[type]))
+        return false;
+
+    foreach (token in level.cicada_type_tokens[type])
+        if (token == weapon_token)
+            return true;
+
+    return false;
 }
 
 function group(name, categories)

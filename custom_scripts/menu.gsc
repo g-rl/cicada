@@ -158,10 +158,17 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_feature("aimbot", undefined, "aimbot");
-            self add_option("aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon");
-            self add_option("second aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_2"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_2");
-            self add_option("hitmarker aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_hitmarker"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_hitmarker");
-            self add_option("clear aimbot weapons", "aimbot stays off until one is set", &cicada_mods::clear_aimbot_weapons);
+            self add_array("aimbot weapons", sliders, &cicada_mods::set_aimbot_mode, cicada_mods::aimbot_modes(), self cicada_util::getpers("aimbot_mode"), "aimbot_mode");
+            if (self cicada_util::getpers("aimbot_mode") == "selected weapons")
+            {
+                self add_option("aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon");
+                self add_option("second aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_2"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_2");
+            }
+            self add_array("hitmarker aimbot weapons", sliders, &cicada_mods::set_aimbot_mode, cicada_mods::hitmarker_modes(), self cicada_util::getpers("hitmarker_mode"), "hitmarker_mode");
+            if (self cicada_util::getpers("hitmarker_mode") == "selected weapons")
+                self add_option("hitmarker aimbot weapon", "^:" + self cicada_mods::aimbot_weapon_name("aimbot_weapon_hitmarker"), &cicada_mods::set_aimbot_weapon, "aimbot_weapon_hitmarker");
+            if (self cicada_mods::uses_selected_weapons())
+                self add_option("clear aimbot weapons", "aimbot stays off until one is set", &cicada_mods::clear_aimbot_weapons);
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
             self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
             self add_option("effect ^1manager", undefined, &new_menu, "edit effects");

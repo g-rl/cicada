@@ -1,4 +1,5 @@
 #using custom_scripts\menu;
+#using custom_scripts\mods;
 #using custom_scripts\util;
 
 #namespace cicada_session;
@@ -30,23 +31,104 @@ function private apply_dvars()
     }
 }
 
+function private bot_slot_prefix()
+{
+    return "bot_slot_";
+}
+
+function private bot_slot_key(index, field)
+{
+    return cicada_util::mapkey(bot_slot_prefix() + index + "_" + field);
+}
+
+function private is_bot_slot_key(key)
+{
+    return isstartstr(key, bot_slot_prefix());
+}
+
+function private stored_vector(key)
+{
+    if (nengine_store_type("sessions", key) != 4)
+        return undefined;
+
+    return (nengine_store_component("sessions", key, 0), nengine_store_component("sessions", key, 1), nengine_store_component("sessions", key, 2));
+}
+
+function private store_bots()
+{
+    total = 0;
+
+    foreach (player_ in level.players)
+    {
+        if (!cicada_util::is_bot(player_) || !player_ cicada_mods::has_position())
+            continue;
+
+        nengine_store_set("sessions", bot_slot_key(total, "position"), player_ cicada_util::getmappers("position"));
+
+        angles = player_ cicada_util::getmappers("angles");
+        if (isdefined(angles))
+            nengine_store_set("sessions", bot_slot_key(total, "angles"), angles);
+
+        total++;
+    }
+
+    nengine_store_set("sessions", cicada_util::mapkey(bot_slot_prefix() + "count"), total);
+    return total;
+}
+
+function private apply_bots()
+{
+    key = cicada_util::mapkey(bot_slot_prefix() + "count");
+
+    if (nengine_store_type("sessions", key) == 0)
+        return 0;
+
+    total = int(nengine_store_get("sessions", key));
+    index = 0;
+
+    foreach (player_ in level.players)
+    {
+        if (index >= total)
+            break;
+
+        if (!cicada_util::is_bot(player_))
+            continue;
+
+        origin = stored_vector(bot_slot_key(index, "position"));
+        angles = stored_vector(bot_slot_key(index, "angles"));
+        index++;
+
+        if (!isdefined(origin))
+            continue;
+
+        player_ cicada_util::setmappers("position", origin);
+
+        if (isdefined(angles))
+            player_ cicada_util::setmappers("angles", angles);
+    }
+
+    return index;
+}
+
 function private store_values()
 {
     nengine_store_clear("sessions");
     store_dvars();
 
     if (!isdefined(self.pers) || !isdefined(self.pers["cicada"]))
-        return 0;
+        return store_bots();
 
     sent = 0;
     foreach (key, value in self.pers["cicada"])
     {
-        if (!isdefined(value))
+        if (!isdefined(value) || is_bot_slot_key(key))
             continue;
 
         nengine_store_set("sessions", key, value);
         sent++;
     }
+
+    store_bots();
     return sent;
 }
 
@@ -58,6 +140,9 @@ function private apply_values()
         key = nengine_store_key("sessions", i);
         type = nengine_store_type("sessions", key);
 
+        if (is_bot_slot_key(key))
+            continue;
+
         if (type == 4)
             value = (nengine_store_component("sessions", key, 0), nengine_store_component("sessions", key, 1), nengine_store_component("sessions", key, 2));
         else if (type != 0)
@@ -68,6 +153,7 @@ function private apply_values()
         self cicada_util::setpers(key, value);
     }
 
+    apply_bots();
     apply_dvars();
     return total;
 }
@@ -132,6 +218,16 @@ function save(name)
     return true;
 }
 
+function private restore_positions()
+{
+    if (self cicada_mods::has_position())
+        self cicada_mods::load_position();
+
+    foreach (player_ in level.players)
+        if (cicada_util::is_bot(player_) && player_ cicada_mods::has_position())
+            player_ cicada_mods::load_position();
+}
+
 function load(name)
 {
     if (nengine_store_load("sessions", name) != 1)
@@ -141,6 +237,7 @@ function load(name)
     }
 
     self apply_values();
+    self restore_positions();
     self cicada_util::message("session ^:" + name + " ^7loaded");
     return true;
 }
