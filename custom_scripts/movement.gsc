@@ -16,12 +16,12 @@ function limit(key)
 
 function count(key)
 {
-    return self cicada_util::getpersint(key + "_count");
+    return self cicada_util::getmappersint(key + "_count");
 }
 
 function point(key, index)
 {
-    return self cicada_util::getpers(key + "_point_" + index);
+    return self cicada_util::getmappers(key + "_point_" + index);
 }
 
 function summary(key)
@@ -44,8 +44,8 @@ function save_point(key)
 function store_point(key)
 {
     total = self count(key);
-    self cicada_util::setpers(key + "_point_" + total, self.origin);
-    self cicada_util::setpers(key + "_count", total + 1);
+    self cicada_util::setmappers(key + "_point_" + total, self.origin);
+    self cicada_util::setmappers(key + "_count", total + 1);
 }
 
 function delete_point(key)
@@ -57,17 +57,17 @@ function delete_point(key)
         return;
     }
 
-    self cicada_util::setpers(key + "_point_" + (total - 1), undefined);
-    self cicada_util::setpers(key + "_count", total - 1);
+    self cicada_util::setmappers(key + "_point_" + (total - 1), undefined);
+    self cicada_util::setmappers(key + "_count", total - 1);
     self cicada_util::message("point ^:#" + total + " ^7deleted");
 }
 
 function clear_points(key)
 {
     for (i = 0; i < self count(key); i++)
-        self cicada_util::setpers(key + "_point_" + i, undefined);
+        self cicada_util::setmappers(key + "_point_" + i, undefined);
 
-    self cicada_util::setpers(key + "_count", 0);
+    self cicada_util::setmappers(key + "_count", 0);
     self cicada_util::message("points ^1cleared");
 }
 

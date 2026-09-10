@@ -405,7 +405,7 @@ function structure()
             self add_increment("timescale", increments, &cicada_mods::set_timescale, self cicada_util::getpersfloat("timescale"), 0.25, 5, 0.25);
             self add_array("timescale mode", sliders, &cicada_mods::set_timescale_mode, cicada_util::list("normal,round end,start of killcam"), self cicada_util::getpers("timescale_mode"));
             self add_increment("field upgrade recharge", "higher number = faster recharge", &cicada_mods::set_super_charge_rate, self cicada_util::getpersint("super_charge_rate"), 0, 100, 5, undefined, undefined, undefined, "x");
-            self add_increment("snapshot delay", increments, &cicada_mods::set_dvar_value, getdvarint("sv_snapshotDelay", 0), 0, 5000, 100, "sv_snapshotDelay");
+            self add_increment("snapshot delay", increments, &cicada_mods::set_snapshot_delay, self cicada_util::getpersint("snapshot_delay"), 0, 5000, 100);
             break;
 
         case "killcam manager":
@@ -563,7 +563,7 @@ function add_bind_slots(name, increments, sliders)
 
 function position_options(increments)
 {
-    origin = self cicada_util::getpers("position");
+    origin = self cicada_util::getmappers("position");
     step = self cicada_util::getpersfloat("position_step");
 
     self add_increment("change x", increments, &cicada_mods::nudge_position, origin[0], -100000, 100000, step, "x");

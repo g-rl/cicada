@@ -137,11 +137,6 @@ function toggle_dvar(dvar)
     setdvar(dvar, !istrue(getdvarint(dvar)));
 }
 
-function set_dvar_value(value, dvar)
-{
-    setdvar(dvar, value);
-}
-
 function godmode(key)
 {
     self endon("disconnect");
@@ -425,7 +420,7 @@ function bounce_pads(key)
     {
         for (i = 0; i < self bounce_count(); i++)
         {
-            if (distance(self.origin, self cicada_util::getpers("bounce_" + i)) < 90)
+            if (distance(self.origin, self cicada_util::getmappers("bounce_" + i)) < 90)
                 self bounce();
         }
 
@@ -445,14 +440,14 @@ function bounce()
 
 function bounce_count()
 {
-    return self cicada_util::getpersint("bounce_count");
+    return self cicada_util::getmappersint("bounce_count");
 }
 
 function save_bounce()
 {
     count = self bounce_count();
-    self cicada_util::setpers("bounce_" + count, self.origin);
-    self cicada_util::setpers("bounce_count", count + 1);
+    self cicada_util::setmappers("bounce_" + count, self.origin);
+    self cicada_util::setmappers("bounce_count", count + 1);
     self cicada_util::message("bounce ^:#" + count + " ^7saved");
 }
 
@@ -465,8 +460,8 @@ function delete_bounce()
         return;
     }
 
-    self cicada_util::setpers("bounce_" + (count - 1), undefined);
-    self cicada_util::setpers("bounce_count", count - 1);
+    self cicada_util::setmappers("bounce_" + (count - 1), undefined);
+    self cicada_util::setmappers("bounce_count", count - 1);
     self cicada_util::message("bounce ^:#" + (count - 1) + " ^7deleted");
 }
 
@@ -493,13 +488,13 @@ function crouch_bind(button, action)
 
 function has_position()
 {
-    return isdefined(self cicada_util::getpers("position"));
+    return isdefined(self cicada_util::getmappers("position"));
 }
 
 function save_position()
 {
-    self cicada_util::setpers("position", self.origin);
-    self cicada_util::setpers("angles", self getplayerangles());
+    self cicada_util::setmappers("position", self.origin);
+    self cicada_util::setmappers("angles", self getplayerangles());
     self cicada_util::sound("scavenger_pack_pickup");
 }
 
@@ -515,14 +510,14 @@ function load_position()
         return;
 
     self setvelocity((0, 0, 0));
-    self setorigin(self cicada_util::getpers("position"));
-    self setplayerangles(self cicada_util::getpers("angles"));
+    self setorigin(self cicada_util::getmappers("position"));
+    self setplayerangles(self cicada_util::getmappers("angles"));
 }
 
 function reset_position()
 {
-    self cicada_util::setpers("position", undefined);
-    self cicada_util::setpers("angles", undefined);
+    self cicada_util::setmappers("position", undefined);
+    self cicada_util::setmappers("angles", undefined);
     self cicada_util::message("position ^1cleared");
 }
 
@@ -547,7 +542,7 @@ function nudge_position(value, axis)
     if (!self has_position())
         return;
 
-    origin = self cicada_util::getpers("position");
+    origin = self cicada_util::getmappers("position");
 
     if (axis == "x")
         origin = (float(value), origin[1], origin[2]);
@@ -556,7 +551,7 @@ function nudge_position(value, axis)
     else
         origin = (origin[0], origin[1], float(value));
 
-    self cicada_util::setpers("position", origin);
+    self cicada_util::setmappers("position", origin);
 }
 
 function unstuck()
@@ -1006,6 +1001,35 @@ function watch_timescale_reset()
     setslowmotion(1, 1, 0);
 }
 
+function set_snapshot_delay(value)
+{
+    delay = int(value);
+    self cicada_util::setpers("snapshot_delay", delay);
+    setdvar("sv_snapshotDelay", delay);
+}
+
+function watch_snapshot()
+{
+    self endon("disconnect");
+    self endon("cicada_snapshot_mode");
+
+    self waittill("showing_final_killcam");
+    setdvar("sv_snapshotDelay", 0);
+}
+
+function restore_snapshot()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    self cicada_util::wait_prematch();
+
+    setdvar("sv_snapshotDelay", self cicada_util::getpersint("snapshot_delay"));
+
+    self notify("cicada_snapshot_mode");
+    self thread [[&watch_snapshot]]();
+}
+
 function set_super_charge_rate(value)
 {
     rate = int(value);
@@ -1208,8 +1232,8 @@ function place_player(target, destination)
     if (!cicada_util::is_bot(target))
         return;
 
-    target cicada_util::setpers("position", destination);
-    target cicada_util::setpers("angles", target getplayerangles());
+    target cicada_util::setmappers("position", destination);
+    target cicada_util::setmappers("angles", target getplayerangles());
 }
 
 function teleport_player(target, destination)
@@ -1348,6 +1372,7 @@ function apply_defaults()
 {
     self cicada_util::initpers("messages", true);
     self cicada_util::initpers("sounds", true);
+    self cicada_util::initpers("snapshot_delay", 0);
 
     self cicada_util::initpers("instaswaps_time", 0.3);
     self cicada_util::initpers("auto_prone_mode", "air");
@@ -1362,7 +1387,6 @@ function apply_defaults()
     self cicada_util::initpers("tracer_count", 3);
 
     self cicada_util::initpers("position_step", 10);
-    self cicada_util::initpers("bounce_count", 0);
     self cicada_util::initpers("timescale", 1.0);
     self cicada_util::initpers("timescale_mode", "normal");
 
@@ -1406,7 +1430,7 @@ function apply_defaults()
     self cicada_util::initpers("camera_fov", 0);
 
     self cicada_util::initpers("freeze_timer", true);
-    self cicada_util::initpers("super_charge_rate", 10);
+    self cicada_util::initpers("super_charge_rate", 55);
     self cicada_util::initpers("frozen_bots", scripts\mp\utility\game::getbasegametype() == "sd");
 
     self cicada_util::initpers("bot_team", "enemy");
@@ -1417,10 +1441,6 @@ function apply_defaults()
 
     self cicada_util::initpers("bolt_speed", 1);
     self cicada_util::initpers("bot_bolt_speed", 1);
-    self cicada_util::initpers("bolt_count", 0);
-    self cicada_util::initpers("bot_bolt_count", 0);
-    self cicada_util::initpers("record_count", 0);
-    self cicada_util::initpers("path_count", 0);
 
     self cicada_util::initpers("hide_weapon", true);
     self cicada_util::initpers("hide_victim", true);

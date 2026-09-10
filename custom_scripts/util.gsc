@@ -45,6 +45,26 @@ function getpersfloat(key)
     return isdefined(value) ? float(value) : 0;
 }
 
+function mapkey(key)
+{
+    return key + "@" + getdvar("g_mapname");
+}
+
+function getmappers(key)
+{
+    return self getpers(mapkey(key));
+}
+
+function setmappers(key, value)
+{
+    self setpers(mapkey(key), value);
+}
+
+function getmappersint(key)
+{
+    return self getpersint(mapkey(key));
+}
+
 function list(text)
 {
     return strtok(text, ",");
