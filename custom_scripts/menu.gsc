@@ -1370,6 +1370,21 @@ function structure()
             self prop_collision_options(self.select_prop, increments);
             break;
 
+        case "model head":
+            self.bind_index = false;
+            self prop_head_options(self.select_prop, sliders);
+            break;
+
+        case "model head list":
+            self.bind_index = false;
+            self add_menu(self.select_head_group);
+            for (i = 0; i < cicada_props::head_count(self.select_head_group); i++)
+            {
+                name = cicada_props::head_at(self.select_head_group, i);
+                self add_option(cicada_props::head_label(name), "^:attaches to the model", &cicada_props::set_head, name, self.select_prop);
+            }
+            break;
+
         case "model paths":
             self.bind_index = false;
             self add_menu(menu);
@@ -1987,9 +2002,29 @@ function prop_options(prop, increments, sliders)
     self add_toggle("spin", "turns the model on the spot", cicada_props::is_spinning(prop), &cicada_props::toggle_spin, prop);
     self add_toggle("solid", "model blocks bullets", cicada_props::is_solid(prop), &cicada_props::toggle_solid, prop);
     self add_option("collision", cicada_props::has_collision(prop) ? ("^:" + cicada_props::clip_count(prop) + " ^7clips - ^:" + cicada_props::clip_kind(prop)) : "^1no collision", &new_menu, "model collision");
+    self add_option("head", cicada_props::head_summary(prop), &new_menu, "model head");
     self add_toggle("carry", "holds it in front of you", cicada_props::is_linked(prop), &cicada_props::toggle_link, prop);
     self add_toggle("path movement", self cicada_movement::summary("prop_path"), cicada_props::is_moving(prop), &cicada_props::start_prop_path, prop);
     self add_option(cicada_util::warn("delete model"), cicada_props::prop_summary(prop), &cicada_props::delete_prop, prop);
+}
+
+function prop_head_options(prop, sliders)
+{
+    if (!isdefined(prop))
+    {
+        self add_menu("error");
+        self add_option("^1that model is gone");
+        return;
+    }
+
+    self add_menu(cicada_props::prop_name(prop));
+    self add_array("how to pick", sliders, &cicada_props::set_head_mode, cicada_props::head_modes(), cicada_props::head_mode(prop), prop);
+    self add_option("what it found", cicada_props::head_label(cicada_props::head_for_body(prop.cicada_prop_model)), &cicada_props::set_head_mode, "automatic", prop);
+    self add_option("^:random ^7head", cicada_props::head_summary(prop), &cicada_props::random_head, prop);
+    self add_option(cicada_util::warn("no head"), undefined, &cicada_props::clear_head, prop);
+
+    foreach (group in cicada_props::head_groups())
+        self add_option(group, "^:" + cicada_props::head_count(group) + " ^7loaded", &new_menu, "model head list");
 }
 
 function prop_collision_options(prop, increments)
@@ -2703,6 +2738,9 @@ function new_menu(menu)
 
     if (self get_menu() == "manage models")
         self.select_prop = cicada_props::prop_at(self get_cursor());
+
+    if (self get_menu() == "model head")
+        self.select_head_group = cicada_props::head_groups()[(self get_cursor() - 4) % cicada_props::head_groups().size];
 
     if (self get_menu() == "station events")
         self.select_event = cicada_stations::kind_events(self cicada_util::getpers("station_kind"))[self get_cursor()];

@@ -265,27 +265,39 @@ function make_hint(station)
     if (!isdefined(station) || !isdefined(station.model))
         return;
 
-    station.model makeusable();
-    station.model setcursorhint("HINT_NOICON");
-    station.model setuserange(station.radius);
-    station.model sethintdisplayrange(station.radius);
-    station.model setusefov(360);
-    station.model sethintdisplayfov(90);
-    station.model sethintstring(hint_text(station));
+    drop_hint(station);
+
+    hint = spawn("script_model", station.model.origin + (0, 0, 32));
+    hint setmodel("tag_origin");
+    hint makeusable();
+    hint setcursorhint("HINT_BUTTON");
+    hint sethintstring(hint_text(station));
+    hint setusepriority(0);
+    hint setuseholdduration("duration_none");
+    hint sethintonobstruction("show");
+    hint sethintdisplayrange(station.radius);
+    hint sethintdisplayfov(120);
+    hint setuserange(station.radius);
+    hint setusefov(120);
+    hint enableplayeruseforallplayers();
+
+    station.hint = hint;
 }
 
 function drop_hint(station)
 {
-    if (!isdefined(station) || !isdefined(station.model))
+    if (!isdefined(station) || !isdefined(station.hint))
         return;
 
-    station.model sethintstring("");
-    station.model makeunusable();
+    station.hint sethintstring("");
+    station.hint makeunusable();
+    station.hint delete();
+    station.hint = undefined;
 }
 
 function refresh_hint(station)
 {
-    if (!isdefined(station) || !isdefined(station.model))
+    if (!isdefined(station) || !isdefined(station.hint))
         return;
 
     if (station.uses > 0 && isdefined(station.left) && station.left < 1)
@@ -294,7 +306,7 @@ function refresh_hint(station)
         return;
     }
 
-    station.model sethintstring(hint_text(station));
+    station.hint sethintstring(hint_text(station));
 }
 
 function place_station(kind)
