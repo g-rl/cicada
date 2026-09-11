@@ -2,12 +2,10 @@
 
 #namespace cicada_catalog;
 
-// every id below appears in the mwiii script dump
 function init()
 {
     level.cicada_weapon_classes = [];
 
-    // same token set as scripts\cp_mp\weapon::getweaponrootname
     foreach (code in cicada_util::list("ar,sm,lm,sh,sn,dm,pi,la,me,br"))
         level.cicada_weapon_classes[code] = true;
 
@@ -23,6 +21,12 @@ function init()
     weapon_type("launchers", "la");
     weapon_type("pistols", "pi");
     weapon_type("melee", "me");
+
+    level.cicada_blocked_refs = [];
+
+    // this stuff crashes the game lol
+    block_refs("equip_adrenaline,equip_battlerage,equip_gas_grenade,equip_advanced_vehicle_drop,equip_deployable_kiosk_drop_jup");
+    block_refs("equip_armor_onehanded,equip_armor_onehanded_quick,equip_mutation_shield,equip_mutation_give_shield,equip_mutant_ability_5,equip_mutant_ability_6");
 
     level.cicada_catalog = [];
     level.cicada_groups = [];
@@ -49,11 +53,15 @@ function init()
 
     slot_tokens("dual wield", "akimbo");
     slot_tokens("laser", "lsr,laserir");
-    slot_tokens("grip", "grp,ubr,fgrip,rgrip");
-    slot_tokens("muzzle", "mzl,silencer,supp");
-    slot_tokens("barrel", "bar");
-    slot_tokens("magazine", "mag");
-    slot_tokens("stock", "stk");
+    slot_tokens("optic", "opt,scope,reflex,holo,thermal,acog,sight,snprscope");
+    slot_tokens("muzzle", "mzl,silencer,supp,brake,comp");
+    slot_tokens("underbarrel", "ubr,grenade_launcher,shotgun_under");
+    slot_tokens("rear grip", "rgrip,grip_rear,tape");
+    slot_tokens("grip", "grp,fgrip,guard_");
+    slot_tokens("barrel", "bar,slide_");
+    slot_tokens("magazine", "mag,xmags,drums,box_,rack,cal");
+    slot_tokens("ammunition", "ammo_,rounds");
+    slot_tokens("stock", "stk,back_");
 
     attachment_chance("pistols", "dual wield", 55);
     attachment_chance("pistols", "laser", 35);
@@ -65,21 +73,19 @@ function init()
     attachment_chance("assault rifles,battle rifles,sub machine guns,light machine guns", "laser", 30);
     attachment_chance("assault rifles,battle rifles,sub machine guns,light machine guns", "muzzle", 20);
 
-    entries("equipment", "frag_grenade_mp,semtex_mp,molotov_mp,thermite_mp,c4_mp,claymore_mp,throwingknife_mp,flash_grenade_mp,concussion_grenade_mp,smoke_grenade_mp,snapshot_grenade_mp");
+    entries("equipment", "frag_grenade_mp,semtex_mp,molotov_mp,thermite_mp,c4_mp,claymore_mp,throwingknife_mp,flash_grenade_mp,concussion_grenade_mp,snapshot_grenade_mp");
     entries("equipment", "decoy_grenade_mp,cluster_grenade_mp,gas_grenade_mp,emp_grenade_mp,trophy_mp,at_mine_mp,shock_stick_mp,tac_camera_mp");
-    entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_smoke_grenade_mp,jup_semtex_mike32_mp");
+    entries("equipment", "jup_frag_grenade_mp,jup_c4_mp,jup_claymore_mp,jup_semtex_mike32_mp");
 
     entries("equipment", "briefcase_bomb_mp,bunkerbuster_mp,bunkerbuster_burrowed_mp,bunkerbuster_not_burrowed_mp,sonar_pulse_mp,throwstar_mp,gas_mp");
     entries("equipment", "interrogation_tools_mp,ks_gesture_phone_mp,ks_remote_device_mp,ks_remote_map_mp,remotemissile_projectile_mp,emp_pulse_device_mp,support_box_mp,emp_drone_player_mp");
 
-    // names passed to killstreaks::registerkillstreak across the dump
     streak("uav", "uav", 4, "reveals enemies on the minimap");
     streak("loitering_munition", "loitering munition", 4, "circles the launch point, dive bombs and explodes");
     streak("switchblade_drone", "mosquito drone", 4, "drone that launches directly like a projectile");
     streak("missile_turret", "sam turret", 4, "turret that fires missiles at air vehicles");
     streak("assault_drone", "bomb drone", 4, "remote drone carrying a c4 charge");
     streak("lrad", "guardian-sc", 5, "beam that stuns, slows and blinds enemies inside it");
-    //streak("scrambler_drone_guard", "counter uav", 5, "minimap scrambler"); // counter-uav
     streak("airdrop", "care package", 5, "random streak crate at your location");
     streak("counter_uav", "counter uav", 5, "scrambles every enemy minimap");
     streak("cluster_spike", "cluster mine", 6, "thrown device that scatters smaller mines");
@@ -126,8 +132,9 @@ function init()
     streak("nuke_select_location", "nuke (placed)", undefined, "nuke on a chosen location");
     streak("circle_peek", "circle peek", undefined, "warzone next circle recon");
 
-    // taken from scripts\mp\gametypes\arena::function_3dd5b16653c57b45
     level.cicada_camos = [];
+    level.cicada_camo_sets = [];
+    level.cicada_camo_families = [];
     camos("camo_a_01,camo_b_01,camo_c_01,camo_d_01,camo_e_01,camo_f_01,camo_g_01,camo_h_01,camo_i_01,camo_j_01,camo_k_01,camo_l_01,camo_m_01,camo_n_01,camo_o_01,camo_p_01,camo_r_01,camo_comp_01");
     camos("camo_a_02,camo_b_02,camo_c_02,camo_d_02,camo_e_02,camo_f_02,camo_g_02,camo_h_02,camo_i_02,camo_j_02,camo_k_02,camo_l_02,camo_m_02,camo_n_02,camo_o_02,camo_p_02,camo_r_02,camo_comp_02");
     camos("camo_a_03,camo_b_03,camo_c_03,camo_d_03,camo_e_03,camo_f_03,camo_g_03,camo_h_03,camo_i_03,camo_j_03,camo_k_03,camo_l_03,camo_m_03,camo_n_03,camo_o_03,camo_p_03,camo_comp_03");
@@ -143,6 +150,14 @@ function init()
     camos("camo_a_13,camo_b_13,camo_c_13,camo_d_13,camo_e_13,camo_f_13,camo_g_13,camo_h_13,camo_i_13,camo_j_13,camo_k_13,camo_l_13,camo_m_13,camo_n_13,camo_o_13");
     camos("camo_a_14,camo_b_14,camo_c_14,camo_d_14,camo_e_14,camo_f_14,camo_g_14,camo_h_14,camo_i_14,camo_j_14,camo_k_14,camo_l_14,camo_m_14,camo_n_14,camo_o_14");
     camos("camo_a_15,camo_b_15,camo_c_15,camo_d_15,camo_e_15,camo_f_15,camo_g_15,camo_h_15,camo_i_15,camo_j_15,camo_k_15,camo_l_15,camo_m_15,camo_n_15");
+
+    level.cicada_visions = [];
+    visions("black_bw,end_game,focus,thermal_vision,nuke_deathblur,nuke_global_aftermath,cer_gas_mp");
+    visions("battlerage-full-health,battlerage-low-health,flir_2_color_gradient,flir_0_black_to_white_heavy_damage");
+    visions("proto_apache_flir_mp,recon_drone_color_mp,iw9_mp_nvg_base_color,aviCougarGunner,tacCam");
+    visions("mp_core_infil,mp_core_infil_2,respawn_camera,respawn_camera_night,wp_flare,pe_auavscan_flash");
+    visions("mp_jup_killstreak_dna,tac_ops_slamzoom,infil_spear_pm,cruise_intro_shipment,mp_jup_estate_helicopter_intro");
+    visions("mp_jup_invasion_jltv_infil_2,mp_frontend_mgl_lobby,mp_frontend_jup_01_lobby,mp_frontend_mgl_lethal,mp_frontend_mgl_tactical");
 }
 
 function streak(id, name, cost, summary)
@@ -161,6 +176,17 @@ function streak(id, name, cost, summary)
     level.cicada_catalog[category] = list;
 }
 
+function block_refs(refs)
+{
+    foreach (ref in cicada_util::list(refs))
+        level.cicada_blocked_refs[ref] = true;
+}
+
+function is_blocked(ref)
+{
+    return isdefined(level.cicada_blocked_refs) && istrue(level.cicada_blocked_refs[ref]);
+}
+
 function equipment_refs(slot)
 {
     refs = [];
@@ -169,7 +195,7 @@ function equipment_refs(slot)
         return refs;
 
     foreach (ref, info in level.equipment.table)
-        if (isdefined(info.defaultslot) && info.defaultslot == slot)
+        if (isdefined(info.defaultslot) && info.defaultslot == slot && !is_blocked(ref))
             refs[refs.size] = ref;
 
     return refs;
@@ -183,7 +209,8 @@ function super_refs()
         return refs;
 
     foreach (ref, data in level.superglobals.staticsuperdata)
-        refs[refs.size] = ref;
+        if (!is_blocked(ref))
+            refs[refs.size] = ref;
 
     return refs;
 }
@@ -206,7 +233,165 @@ function pretty(ref, prefix)
 function camos(ids)
 {
     foreach (id in cicada_util::list(ids))
+    {
         level.cicada_camos[level.cicada_camos.size] = id;
+
+        family = camo_family(id);
+
+        if (!isdefined(level.cicada_camo_sets[family]))
+        {
+            level.cicada_camo_sets[family] = [];
+            level.cicada_camo_families[level.cicada_camo_families.size] = family;
+        }
+
+        set = level.cicada_camo_sets[family];
+        set[set.size] = id;
+        level.cicada_camo_sets[family] = set;
+    }
+}
+
+// camo_<family>_<number>
+function camo_family(id)
+{
+    parts = strtok(id, "_");
+    return (parts.size > 2) ? ("camo set " + parts[1]) : id;
+}
+
+function camo_families()
+{
+    return level.cicada_camo_families;
+}
+
+function camos_in(family)
+{
+    if (!isdefined(level.cicada_camo_sets[family]))
+        return [];
+
+    return level.cicada_camo_sets[family];
+}
+
+function visions(ids)
+{
+    foreach (id in cicada_util::list(ids))
+        level.cicada_visions[level.cicada_visions.size] = id;
+}
+
+function vision_refs()
+{
+    return level.cicada_visions;
+}
+
+function killstreak_vision_refs()
+{
+    refs = [];
+
+    if (!isdefined(level.killstreakvisionsets))
+        return refs;
+
+    foreach (name, data in level.killstreakvisionsets)
+        refs[refs.size] = name;
+
+    return refs;
+}
+
+function streak_hud_ready()
+{
+    return isdefined(level.killstreak_visbilityomnvarlist);
+}
+
+function streak_hud_labels()
+{
+    labels = [];
+    labels[0] = "off";
+
+    if (!streak_hud_ready())
+        return labels;
+
+    foreach (streak, states in level.killstreak_visbilityomnvarlist)
+        foreach (state, value in states)
+            labels[labels.size] = streak + " - " + state;
+
+    return labels;
+}
+
+function streak_hud_count()
+{
+    return streak_hud_labels().size - 1;
+}
+
+function streak_hud_value(label)
+{
+    if (!isdefined(label) || label == "off" || !streak_hud_ready())
+        return 0;
+
+    foreach (streak, states in level.killstreak_visbilityomnvarlist)
+        foreach (state, value in states)
+            if ((streak + " - " + state) == label)
+                return value;
+
+    return 0;
+}
+
+function private streak_first_value(streak)
+{
+    states = level.killstreak_visbilityomnvarlist[streak];
+
+    if (!isdefined(states))
+        return 0;
+
+    if (isdefined(states["on"]))
+        return states["on"];
+
+    foreach (state, value in states)
+        return value;
+
+    return 0;
+}
+
+function streak_hud_guess(vision)
+{
+    if (!isdefined(vision) || vision == "" || !streak_hud_ready())
+        return 0;
+
+    pairs = cicada_util::list("chopper:chopper_gunner,gunship:gunship,cruise:cruise_predator,manual_turret:manual_turret,turret:remote_turret,sentry:pac_sentry,tank:pac_sentry,missile:missile_drone,jugg:juggernaut,mask:juggernaut");
+
+    foreach (pair in pairs)
+    {
+        mark = cicada_util::before_mark(pair, ":");
+
+        if (!issubstr(vision, mark))
+            continue;
+
+        value = streak_first_value(cicada_util::after_mark(pair, ":"));
+
+        if (value)
+            return value;
+    }
+
+    return 0;
+}
+
+function streak_hud_label_for(value)
+{
+    if (!value || !streak_hud_ready())
+        return "off";
+
+    foreach (streak, states in level.killstreak_visbilityomnvarlist)
+        foreach (state, other in states)
+            if (other == value)
+                return streak + " - " + state;
+
+    return "off";
+}
+
+function vision_label(name)
+{
+    text = "";
+
+    foreach (part in strtok(name, "_"))
+        text = (text == "") ? part : text + " " + part;
+
+    return (text == "") ? name : text;
 }
 
 function weapon_type(name, tokens)
@@ -260,6 +445,11 @@ function group_union(name, sources)
             list[list.size] = category;
 
     level.cicada_groups[name] = list;
+}
+
+function weapon_categories()
+{
+    return cicada_util::list("assault rifles,battle rifles,sub machine guns,shotguns,light machine guns,snipers,pistols,launchers,misc,equipment");
 }
 
 function entries(category, ids)
@@ -326,7 +516,18 @@ function with_random(options)
     return list;
 }
 
-// mp/gesturetable.csv, column 0 ref, column 1 gesture weapon
+// mp/gesturetable.csv
+function private add_gesture(list, seen, weapon)
+{
+    if (!isdefined(weapon) || weapon == "" || weapon == "none" || istrue(seen[weapon]))
+        return list;
+
+    seen[weapon] = true;
+    list[list.size] = weapon;
+
+    return list;
+}
+
 function gestures()
 {
     if (isdefined(level.cicada_gestures))
@@ -335,53 +536,33 @@ function gestures()
     list = [];
     seen = [];
 
+    if (isdefined(level.gestureinfo))
+        foreach (ref, weapon in level.gestureinfo)
+            list = add_gesture(list, seen, weapon);
+
     if (isdefined(level.gestureinfobyindex))
+        foreach (index, weapon in level.gestureinfobyindex)
+            list = add_gesture(list, seen, weapon);
+
+    for (row = 0; row < 1024; row++)
     {
-        foreach (weapon in level.gestureinfobyindex)
-        {
-            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
-                continue;
+        ref = tablelookupbyrow("mp/gesturetable.csv", row, 0);
 
-            seen[weapon] = true;
-            list[list.size] = weapon;
-        }
-    }
+        if (!isdefined(ref) || ref == "")
+            break;
 
-    if (!list.size && isdefined(level.gestureinfo))
-    {
-        foreach (weapon in level.gestureinfo)
-        {
-            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
-                continue;
-
-            seen[weapon] = true;
-            list[list.size] = weapon;
-        }
-    }
-
-    if (!list.size)
-    {
-        for (row = 0; true; row++)
-        {
-            ref = tablelookupbyrow("mp/gesturetable.csv", row, 0);
-
-            if (!isdefined(ref) || ref == "")
-                break;
-
-            weapon = tablelookupbyrow("mp/gesturetable.csv", row, 1);
-
-            if (!isdefined(weapon) || weapon == "" || istrue(seen[weapon]))
-                continue;
-
-            seen[weapon] = true;
-            list[list.size] = weapon;
-        }
+        list = add_gesture(list, seen, tablelookupbyrow("mp/gesturetable.csv", row, 1));
     }
 
     if (list.size)
         level.cicada_gestures = list;
 
     return list;
+}
+
+function gesture_count()
+{
+    return gestures().size;
 }
 
 function gesture_ref(id)
@@ -419,6 +600,20 @@ function attachment_chance(categories, slot, chance)
     }
 }
 
+function slot_names()
+{
+    return cicada_util::list("optic,muzzle,barrel,underbarrel,magazine,ammunition,stock,grip,rear grip,laser,dual wield,other");
+}
+
+function slot_of(name)
+{
+    foreach (slot in slot_names())
+        if (slot != "other" && in_slot(name, slot))
+            return slot;
+
+    return "other";
+}
+
 function attachment_odds(category)
 {
     if (!isdefined(level.cicada_attachment_odds[category]))
@@ -438,4 +633,287 @@ function in_slot(name, slot)
             return true;
 
     return false;
+}
+
+function sound_groups()
+{
+    return cicada_util::list("interface,multiplayer,jupiter,killstreaks,weapons,zombies,events,warzone,vehicles,ambient,shared,misc");
+}
+
+function private add_sounds(list, text)
+{
+    foreach (name in cicada_util::list(text))
+        if (soundexists(name))
+            list[list.size] = name;
+
+    return list;
+}
+
+function private sounds_interface()
+{
+    list = [];
+
+    list = add_sounds(list, "ui_chyron_firstline,ui_chyron_plusminus,ui_menu_ability_hover,ui_mp_fire_sale_timer,ui_mp_suitcasebomb_timer,ui_mp_suitcasebomb_timer_urgent");
+    list = add_sounds(list, "ui_mp_timer_countdown,ui_mp_timer_countdown_half_sec,ui_restock_lethals,ui_restock_tactical,ui_select_purchase_confirm,ui_select_purchase_deny");
+    list = add_sounds(list, "ui_stealth_threat_hud_periph_vision,ui_team_wipe_splash,ui_text_type,uin_ammomod_proc_to_player_2d,uin_firingrange_target_fall");
+    list = add_sounds(list, "uin_firingrange_target_move,uin_hvt_ally_downed,uin_hvt_ally_killed,uin_hvt_ally_spawned,uin_hvt_enemy_downed,uin_hvt_enemy_killed");
+    list = add_sounds(list, "uin_hvt_enemy_spawned,uin_iw9_ftue_tip_generic,uin_iw9_lockdown_zone_exit,uin_jup_br_perk_combat_scout_marking_resist,uin_mp_flag_ally_captured");
+    list = add_sounds(list, "uin_mp_flag_ally_pickup,uin_mp_flag_ally_returned,uin_mp_flag_enemy_captured,uin_mp_flag_enemy_pickup,uin_mp_flag_enemy_returned,uin_ping_confirm");
+    list = add_sounds(list, "uin_ping_enemy,uin_ping_wheel_announce_help,uin_splash_bounty_unmarked,uin_tip_appearance");
+
+    return list;
+}
+
+function private sounds_multiplayer()
+{
+    list = [];
+
+    list = add_sounds(list, "mp_altered_strain_dna_pickup_ally,mp_altered_strain_dna_pickup_enemy,mp_bodycount_tick_negative,mp_bodycount_tick_negative_final");
+    list = add_sounds(list, "mp_bodycount_tick_positive,mp_bodycount_tick_positive_final,mp_bomb_defuse,mp_bomb_pickup,mp_bomb_raise_noise,mp_bombplaced_enemy");
+    list = add_sounds(list, "mp_bombplaced_friendly,mp_camera_intro_whoosh,mp_care_package_high_impact,mp_care_package_retrieve_mesh_net,mp_cmd_camera_zoom_in");
+    list = add_sounds(list, "mp_cmd_camera_zoom_out,mp_codball_pulse_npc,mp_codball_pulse_plr,mp_codball_pulse_ready_npc,mp_codball_pulse_ready_plr,mp_combat_outpost_activateobj");
+    list = add_sounds(list, "mp_countdown_dna_pickup_ally,mp_countdown_dna_pickup_enemy,mp_dmz_alrm_star,mp_dmz_hostage_unzip,mp_dmz_phone_pickup,mp_dom_flag_captured");
+    list = add_sounds(list, "mp_dom_flag_captured_all,mp_dom_flag_lost,mp_dom_flag_lost_all,mp_dropzone_captured_negative,mp_dropzone_captured_positive,mp_dropzone_obj_new");
+    list = add_sounds(list, "mp_elevator_button_press,mp_elevator_open,mp_enemy_obj_captured,mp_equip_box_destroyed,mp_equip_destroyed,mp_grind_token_pickup");
+    list = add_sounds(list, "mp_hardpoint_captured_negative,mp_hardpoint_captured_positive,mp_hit_alert_final_npc,mp_hq_deactivate_sfx,mp_hq_respawn_disabled");
+    list = add_sounds(list, "mp_jugg_mus_toggle_button,mp_jup_bait_duck_game_start,mp_jup_control_capturing_negative,mp_jup_control_capturing_positive");
+    list = add_sounds(list, "mp_jup_control_defending_negative,mp_jup_control_defending_positive,mp_jup_point_captured,mp_jup_point_lost,mp_jup_secure_ally_hack_screen");
+    list = add_sounds(list, "mp_jup_secure_ally_hack_timer_beep,mp_jup_secure_ally_hack_timer_complete,mp_jup_secure_ally_hack_timer_start,mp_jup_secure_enemy_hack_screen");
+    list = add_sounds(list, "mp_jup_secure_enemy_hack_timer_beep,mp_jup_secure_enemy_hack_timer_complete,mp_jup_secure_enemy_hack_timer_start,mp_jup_secure_hack_screens_popup");
+    list = add_sounds(list, "mp_jup_slam_deathmatch_takedown_crowd,mp_jup_training_objective_success,mp_jup_training_target_down,mp_jup_training_target_fail");
+    list = add_sounds(list, "mp_jup_training_target_success,mp_jup_training_target_up,mp_kill_alert,mp_kill_alert_quiet,mp_killconfirm_tags_pickup,mp_killstreak_apache_death_plr");
+    list = add_sounds(list, "mp_killstreak_disappear,mp_killstreak_transition_whoosh,mp_obj_captured,mp_obj_returned,mp_obj_taken,mp_oic_ammo_pickup,mp_overcharge_off");
+    list = add_sounds(list, "mp_overcharge_on,mp_parachute_land_ally,mp_walla_invasion_charge_individual");
+
+    return list;
+}
+
+function private sounds_jupiter()
+{
+    list = [];
+
+    list = add_sounds(list, "jup_arcade_powerup_expire,jup_arcade_powerup_pickup_ally,jup_arcade_powerup_pickup_enemy,jup_arcade_weapon_pickup_ally,jup_arcade_weapon_pickup_enemy");
+    list = add_sounds(list, "jup_bounty_hvt_killed_negative,jup_bounty_hvt_killed_positive,jup_bounty_hvt_killed_positive_player,jup_bounty_hvt_marked_enemy");
+    list = add_sounds(list, "jup_bounty_hvt_marked_player,jup_bounty_hvt_marked_team,jup_bounty_hvt_new_target_splash,jup_br_interrogation_pda_ui_ally_0");
+    list = add_sounds(list, "jup_br_interrogation_pda_ui_enemy_0,jup_cache_obj_pickup_allies,jup_cache_spawn_lrg,jup_cache_spawn_med,jup_cache_spawn_sml,jup_confv_perk_durability");
+    list = add_sounds(list, "jup_confv_perk_super_speed,jup_confv_perk_super_strength,jup_confv_vile_pickup_ally,jup_confv_vile_pickup_enemy,jup_cranked_timer_refill");
+    list = add_sounds(list, "jup_cranked_timer_refill_assist,jup_cranked_timer_start,jup_cranked_timer_tick,jup_cranked_timer_tick_half,jup_cranked_timer_tick_last");
+    list = add_sounds(list, "jup_cranked_timer_warning,jup_ctf_obj_captured_allies,jup_ctf_obj_captured_enemy,jup_ctf_obj_captured_player,jup_ctf_obj_drop_allies");
+    list = add_sounds(list, "jup_ctf_obj_drop_enemy,jup_ctf_obj_drop_player,jup_ctf_obj_pickup_allies,jup_ctf_obj_pickup_enemy,jup_ctf_obj_pickup_player");
+    list = add_sounds(list, "jup_ctf_obj_returned_allies,jup_ctf_obj_returned_enemy,jup_ctf_obj_returned_player,jup_ctf_obj_returned_time_allies,jup_ctf_obj_returned_time_enemy");
+    list = add_sounds(list, "jup_gethigh_checkpoint_reached,jup_gethigh_checkpoint_respawn,jup_gethigh_death,jup_gethigh_falling_land,jup_gethigh_score_100");
+    list = add_sounds(list, "jup_gethigh_score_completed,jup_gethigh_score_timeout,jup_gethigh_target_hit,jup_hordepoint_bone_pickup_ally,jup_hordepoint_bone_pickup_enemy");
+    list = add_sounds(list, "jup_hordepoint_elite_splash,jup_hordepoint_pap_weapon_pickup,jup_hordepoint_skull_dog_pickup_ally,jup_hordepoint_skull_dog_pickup_enemy");
+    list = add_sounds(list, "jup_hordepoint_skull_elite_pickup_ally,jup_hordepoint_skull_elite_pickup_enemy,jup_hordepoint_skull_helmet_pickup_ally");
+    list = add_sounds(list, "jup_hordepoint_skull_helmet_pickup_enemy,jup_infected_enemy_last_stand,jup_infected_player_death_pulse,jup_infected_player_last_stand");
+    list = add_sounds(list, "jup_infected_player_spawn,jup_infected_player_team_killed,jup_infil_blima_lr,jup_infil_c17_shot_01_lr,jup_infil_c17_shot_02_lr");
+    list = add_sounds(list, "jup_infil_c17_shot_03_lr,jup_infil_dpv_preinfil_start,jup_infil_dpv_vehicle_01_brake,jup_infil_dpv_vehicle_02_brake,jup_infil_elevator_bell");
+    list = add_sounds(list, "jup_infil_elevator_quad_lr,jup_infil_jltv_preinfil_start,jup_infil_mi8_heli_int_lr,jup_infil_palfa_estate_lr,jup_infil_palfa_lr,jup_kls_lrad_pickup");
+    list = add_sounds(list, "jup_machine_gun_explode,jup_machine_gun_smoke,jup_maestro_drone_activate_launch,jup_maestro_drone_damaged,jup_maestro_drone_destroyed");
+    list = add_sounds(list, "jup_mode_gun_rank_down,jup_mode_gun_rank_up,jup_mode_gunfight_newloadout_fade_in,jup_mode_gunfight_newloadout_fade_out,jup_mode_havoc_mod_timer_start");
+    list = add_sounds(list, "jup_mode_havoc_mod_timer_tick,jup_mode_team_gun_rank_timer_0,jup_mode_team_gun_rank_up_gain,jup_mode_team_gun_rank_up_splash");
+    list = add_sounds(list, "jup_mode_wm_pds_ally_drop,jup_mode_wm_pds_ally_pickup,jup_mode_wm_pds_ally_placed,jup_mode_wm_pds_enemy_drop,jup_mode_wm_pds_enemy_pickup");
+    list = add_sounds(list, "jup_mode_wm_pds_enemy_placed,jup_mp_mode_mutation_acid_blast,jup_mp_mode_mutation_sludge_expl_vo,jup_revive_teammate_success");
+    list = add_sounds(list, "jup_shared_bomb_defuse_start,jup_shared_team_revived,jup_shared_zone_defended,jup_shared_zone_spawned,jup_skydiving_geiger_high");
+    list = add_sounds(list, "jup_skydiving_geiger_low,jup_skydiving_laser_armed,jup_skydiving_pds_capture_lp_start,jup_skydiving_pds_capture_lp_stop");
+    list = add_sounds(list, "jup_wm_bombsite_recovered_ally,jup_wm_bombsite_recovered_enemy,jup_wm_bombsite_start_ally,jup_wm_bombsite_start_enemy,jup_wm_hack_beep_ally");
+    list = add_sounds(list, "jup_wm_hack_beep_enemy,jup_wm_hack_complete_ally,jup_wm_hack_complete_enemy,jup_wm_hack_init_ally,jup_wm_hack_init_enemy,jup_wm_hack_recovered_ally");
+    list = add_sounds(list, "jup_wm_hack_recovered_enemy,jup_wm_hack_start_ally,jup_wm_hack_start_enemy,jup_wz_purgatory_teleport_3d");
+
+    return list;
+}
+
+function private sounds_killstreaks()
+{
+    list = [];
+
+    list = add_sounds(list, "kls_jup_missile_drone_105mm_mp_reload,kls_jup_missile_drone_damage_light,kls_jup_missile_drone_exp_radio_hellfire_dist,kls_jup_missile_drone_zoom_in");
+    list = add_sounds(list, "kls_jup_missile_drone_zoom_out,kls_location_select,kls_loitering_munition_fire,kls_remote_turret_pickup,kls_sam_turret_pickup,recondrone_damaged");
+    list = add_sounds(list, "recondrone_destroyed,recondrone_lockon,recondrone_tag,recondrone_tag_plr,sentry_explode,sentry_explode_smoke,sentry_explode_sparks,sentry_gun_beep");
+    list = add_sounds(list, "sentry_gun_plant,sentry_gun_plant_foley,sentry_gun_target_lock_beep,sentry_pickup,uav_tower_foley,uav_tower_foley_npc");
+
+    return list;
+}
+
+function private sounds_weapons()
+{
+    list = [];
+
+    list = add_sounds(list, "ammo_crate_use,attachment_pickup,c4_expl_swt,c4_expl_trans,eqp_bunkerbuster_drill_npc,eqp_personal_redeploy_drone_error,eqp_spotter_scope_marked_beep");
+    list = add_sounds(list, "eqp_spotter_scope_marking,eqp_spycam_marked,scavenger_pack_pickup,shield_death_c6_1,weap_ammo_full,weap_bradley_reload_npc,weap_bradley_reload_plr");
+    list = add_sounds(list, "weap_cluster_fire,weap_codball_shockstick_fire,weap_dblmg_spindown_npc,weap_dblmg_spinup_npc,weap_laser_fire_start_npc,weap_laser_fire_stop_npc");
+    list = add_sounds(list, "weap_lasereyes_levitate_npc,weap_mortar_incoming,weap_mortar_load,weap_pickup_knife_plr,weap_pickup_spear,weap_reload_pistol_clipout_npc");
+    list = add_sounds(list, "weap_reload_smg_clipout_npc,weap_samsite_plant_c4,weap_snowball_pickup,weap_thermal_toggle_click");
+
+    return list;
+}
+
+function private sounds_zombies()
+{
+    list = [];
+
+    list = add_sounds(list, "evt_entity_beam_zombie_dissolve_death,jup_mp_mode_mutation_zombie_superjump_charge,jup_mp_mode_mutation_zombie_superjump_leap");
+    list = add_sounds(list, "jup_mp_mode_mutation_zombie_superjump_whoosh,scn_zr_infestation_zombies_far,vox_ai_aether_disciple_vulnerable,zmb_npc_breath_land_dropin");
+    list = add_sounds(list, "zmb_npc_breath_land_hi,zmb_npc_impact_hit,zmb_player_impact_hit,zxp_charge_jump_full,zxp_charge_jump_start,zxp_grenade_vo_npc,zxp_spawn_splat_npc");
+    list = add_sounds(list, "zxp_splat_npc");
+
+    return list;
+}
+
+function private sounds_events()
+{
+    list = [];
+
+    list = add_sounds(list, "evt_ai_entity_lightning_strike_hold_warning,evt_ai_entity_weakpoint_hit_marker,evt_ai_jansen_lightbomb_entity_explo");
+    list = add_sounds(list, "evt_ai_jansen_lightbomb_soul_gather_death,evt_br_elite_arrow_neptunium_shock_in,evt_br_elite_arrow_neptunium_shock_out,evt_br_infil_jump_buzzer");
+    list = add_sounds(list, "evt_br_infil_jump_stinger,evt_elite_arrow_element_pickup_swt,evt_elite_arrow_geiger_counter_tick,evt_elite_arrow_plutonium_damage");
+    list = add_sounds(list, "evt_entity_arena_respawn_teleport_plr,evt_ob_entity_arena_arrive_stinger,evt_ob_pre_extract_thunder,evt_ob_rr_crystal_break_rune_trail_impact");
+    list = add_sounds(list, "evt_ob_rr_crystal_break_rune_trail_spawn,evt_ob_rr_crystal_break_rune_unlink,evt_ob_rr_grenade_bandolier_activate,evt_ob_rr_keres_mask_activate");
+    list = add_sounds(list, "evt_ob_rr_maestro_activate,evt_ob_rr_meteor_affirm,evt_ob_rr_obelisk_item_takeoff,evt_ob_rr_obelisk_soul_spawn,evt_ob_rr_red_beret_activate");
+    list = add_sounds(list, "evt_ob_story_launch_pad_whoosh_npc,evt_ob_story_tear_teleport_plr,evt_ob_story_tower_intro,evt_zm_core_powerup_nuke_soul");
+    list = add_sounds(list, "evt_zm_ob_rr_s5_5_thermal_phone_pickup,hostage_warning_beep_01,hostage_warning_beep_02,hostage_warning_beep_03,hostage_warning_beep_04");
+    list = add_sounds(list, "hostage_warning_beep_05,scn_br_c17_infil_int,scn_infil_hackney_heli1_door_open,scn_infil_hackney_heli2_door_open,scn_infil_mbravo_heli_wind");
+    list = add_sounds(list, "scn_mp_hackney_van_lr,scn_zr_infestation_siren,soc_ball_bounce_small,soc_ball_explode,soc_ball_goal_music,soc_ball_vanish");
+
+    return list;
+}
+
+function private sounds_warzone()
+{
+    list = [];
+
+    list = add_sounds(list, "br_bunker_door_open_01,br_bunker_door_open_02,br_circle_closing,br_deployable_kiosk_detach,br_deployable_kiosk_explode,br_event1_scramble_sfx");
+    list = add_sounds(list, "br_exfil_end_part_lr,br_exfil_incoming_heli_lr,br_finish_them_splash,br_gulag_rock_player_impact,br_heli_infil_part1_lr,br_heli_infil_part2_lr");
+    list = add_sounds(list, "br_infil_part1_lr,br_inventory_drop_weap_toss_only,br_pickup_cash_lrg_01,br_pickup_cash_vlrg_01,br_pickup_deny,br_pickup_deny_lyr,br_pickup_generic");
+    list = add_sounds(list, "br_player_interrogated_enemy,br_player_revived,br_plunder_atm_cancel,br_plunder_atm_deposit_gtr,br_plunder_atm_use,br_reviver_use_end,br_rock_pickup");
+    list = add_sounds(list, "br_the_boys_teleport_out_npc,breach_c4_plant_05,breach_warning_beep_01,breach_warning_beep_02,breach_warning_beep_03,breach_warning_beep_04");
+    list = add_sounds(list, "breach_warning_beep_05,breathing_better,dmz_bombsite_warning_beep_01,dmz_bombsite_warning_beep_02,dmz_bombsite_warning_beep_03");
+    list = add_sounds(list, "dmz_bombsite_warning_beep_04,dmz_bombsite_warning_beep_05,dmz_camera_zoom_in,wz_parkour_race_checkpoint,wz_parkour_race_failure,wz_parkour_race_start");
+    list = add_sounds(list, "wz_parkour_race_success,wz_parkour_race_time_ticking_0");
+
+    return list;
+}
+
+function private sounds_vehicles()
+{
+    list = [];
+
+    list = add_sounds(list, "elev_bell_ding,elev_door_close,elev_door_interupt,elev_door_open,elev_run_end,elev_run_start,truck_sattruck_engineoff,truck_sattruck_initdeploy_os");
+    list = add_sounds(list, "truck_sattruck_initialstartup_os,truck_sattruck_scanning_off,veh_ks_wheelson_explode,veh_train_pass_overhead,veh_warning_missile_incoming");
+    list = add_sounds(list, "veh_warning_missile_locking");
+
+    return list;
+}
+
+function private sounds_ambient()
+{
+    list = [];
+
+    list = add_sounds(list, "amb_emt_cctv_monitor_static_burst,amb_infil_defender_lr,amb_infil_defender_skid_asphalt_01,amb_infil_defender_skid_asphalt_02");
+    list = add_sounds(list, "amb_infil_defender_skid_dirt,amb_infil_van_lr,amb_mp_drivethru_carousel_music_speaker_start,amb_mp_drivethru_carousel_music_speaker_stop");
+    list = add_sounds(list, "amb_skydiving_alarm_01_allies_fl,amb_skydiving_alarm_01_allies_fr,amb_skydiving_alarm_01_allies_rl,amb_skydiving_alarm_01_allies_rr");
+    list = add_sounds(list, "amb_skydiving_alarm_01_allies_wet,amb_skydiving_alarm_01_enemy_fl,amb_skydiving_alarm_01_enemy_fr,amb_skydiving_alarm_01_enemy_rl");
+    list = add_sounds(list, "amb_skydiving_alarm_01_enemy_rr,amb_skydiving_alarm_01_enemy_wet,amb_skydiving_alarm_02_allies_fl,amb_skydiving_alarm_02_allies_fr");
+    list = add_sounds(list, "amb_skydiving_alarm_02_allies_rl,amb_skydiving_alarm_02_allies_rr,amb_skydiving_alarm_02_allies_wet,amb_skydiving_alarm_02_enemy_fl");
+    list = add_sounds(list, "amb_skydiving_alarm_02_enemy_fr,amb_skydiving_alarm_02_enemy_rl,amb_skydiving_alarm_02_enemy_rr,amb_skydiving_alarm_02_enemy_wet");
+    list = add_sounds(list, "amb_skydiving_gas_inside_stop");
+
+    return list;
+}
+
+function private sounds_shared()
+{
+    list = [];
+
+    list = add_sounds(list, "iw8_ks_ac130_weaponswitch,iw8_mp_perk_shrapnel,iw8_mp_perk_tactical_recon_marked,iw8_new_objective_sfx,iw8_rc_plane_engine_exp");
+    list = add_sounds(list, "iw9_cruise_missile_exp_static,iw9_frag_grenade_expl_trans,iw9_geiger_counter_tick,iw9_ks_tablet_foly_lower_plr,iw9_ks_tablet_foly_raise_plr");
+    list = add_sounds(list, "iw9_ks_tablet_ui_screen_plr,iw9_ks_tablet_ui_select_final_plr,iw9_ks_tablet_ui_select_plr,iw9_mgb_siren,iw9_mgb_splash,iw9_mp_disguise_alert");
+    list = add_sounds(list, "iw9_mp_oitc_eliminate_player,iw9_mp_oitc_last_players,iw9_mp_radiation_tick,iw9_mp_ui_objective_lost,iw9_mp_ui_objective_taken");
+    list = add_sounds(list, "iw9_mtx_tb_stim_activate_npc,iw9_smoke_airdrop_center_incoming,iw9_smoke_airdrop_center_outgoing,iw9_smoke_airdrop_release");
+    list = add_sounds(list, "iw9_smoke_airdrop_smoke_start,iw9_smoke_airdrop_travel_incoming,iw9_smoke_airdrop_travel_outgoing,iw9_spotter_perk_tablet_ui");
+    list = add_sounds(list, "iw9_support_box_bring_up_plr_1,iw9_support_box_use,iw9_tactical_insert_flare_pu,iw9_weap_molotov_fire_enemy_burn_end,iw9_weap_mtx_souleater_absorb");
+
+    return list;
+}
+
+function private sounds_misc()
+{
+    list = [];
+
+    list = add_sounds(list, "2pop,2pop_low,ai_melee_vs_shield,ai_radioactive_beast_charge_activate_swt,ai_radioactive_beast_charge_press,bullet_impact_headshot_npc");
+    list = add_sounds(list, "bullet_npc_helmet_break,bullet_npc_helmet_impact,carousel_motor_start,carousel_motor_stop,carousel_toggle_switch,cp_bank_gate_fall,cp_bank_vault_open");
+    list = add_sounds(list, "crate_impact,crossing_suv_lr,deadsilence_end,deadsilence_start,deaths_door_death,deaths_door_death_quiet,deaths_door_in,deaths_door_out");
+    list = add_sounds(list, "dropship_explode_mp,dx_br_dbos_dbli_dbtp_bitr,dx_mp_grpx_annc_paan_theracehasbeencancel,dx_mpb_us3_hvt_up,emp_nade_lp_end,emt_diving_board");
+    list = add_sounds(list, "equip_codball_shockstick_pickup,equip_tactical_cam_marked,equip_tactical_cam_passive_marked,exgm_parachute_detach_npc,exgm_parachute_open_npc");
+    list = add_sounds(list, "exp_helicopter_fuel,exp_stinger_armor_destroy,final_killcam_in,final_killcam_out,flag_spawned,fly_dmz_disguise_off,fly_dmz_disguise_on");
+    list = add_sounds(list, "fly_player_activate_portal,gas_player_cough,generic_flashbang_c6_1,ghost_wall_attach,ghost_wall_detach,gib_fullbody,hit_marker_dud");
+    list = add_sounds(list, "jammer_drone_shockwave,javelin_clu_aquiring_lock,javelin_clu_lock,ks_ac130_damage_warning,ks_ac130_flares,laststand_heal_done,laststand_heal_start");
+    list = add_sounds(list, "maaws_incoming_lp,maaws_reticle_locked,maaws_reticle_tracking,melee_knife_hit_body,mus_iw9_mpmusictest_ambient1_intro,mus_iw9_mpmusictest_hit1_intro");
+    list = add_sounds(list, "mus_ob_rr_easteregg_115_instrumental,mvmt_heartbeat_plr_laststand,mvmt_swim_exitwater_plr,mvmt_swim_plunging_plr_fast");
+    list = add_sounds(list, "mvmt_swim_surfacing_plr_sprint_gasping,npc_breath_revive,ob_entity_orb_spawn_in,ob_entity_reveal_impact_swt,ob_intro_storm_atmosphere");
+    list = add_sounds(list, "ob_s5_story_intro_portal_close,oracle_radar_pulse_npc,perk_iw9_high_alert_dog_growl,plr_breath_land_parachute,plr_breath_pain_init");
+    list = add_sounds(list, "plr_breath_pain_ong_exh,plr_breath_revive,radar_drone_explode,recon_drone_explode,recon_drone_marked_owner,recon_drone_marking_owner");
+    list = add_sounds(list, "recon_drone_spotted_plr,rfid_tick,sfx_occupation_pre_scan_timer,shock_sentry_charge_up,smoke_canister_tail_dissipate,smoke_carepackage_expl_trans");
+    list = add_sounds(list, "sonic_shotgun_debuff,tactical_spawn,thermite_bomb_crossbow_fire_end,thermite_bomb_crossbow_impact,tmp_br_infil_ac130_jumpmaster_go");
+    list = add_sounds(list, "train_veh_impact_body,tripwire_pop,vest_expl_trans,wallrun_end_npc,wallrun_start_npc,wpn_combat_axe_pickup_plr");
+
+    return list;
+}
+
+function sounds_in(group)
+{
+    switch (group)
+    {
+        case "interface":
+            return sounds_interface();
+        case "multiplayer":
+            return sounds_multiplayer();
+        case "jupiter":
+            return sounds_jupiter();
+        case "killstreaks":
+            return sounds_killstreaks();
+        case "weapons":
+            return sounds_weapons();
+        case "zombies":
+            return sounds_zombies();
+        case "events":
+            return sounds_events();
+        case "warzone":
+            return sounds_warzone();
+        case "vehicles":
+            return sounds_vehicles();
+        case "ambient":
+            return sounds_ambient();
+        case "shared":
+            return sounds_shared();
+        case "misc":
+            return sounds_misc();
+    }
+
+    return [];
+}
+
+function sound_count(group)
+{
+    return sounds_in(group).size;
+}
+
+function sound_at(group, index)
+{
+    list = sounds_in(group);
+
+    if (index < 0 || index >= list.size)
+        return undefined;
+
+    return list[index];
+}
+
+function random_sound(group)
+{
+    list = sounds_in(group);
+
+    if (!list.size)
+        return undefined;
+
+    return list[randomint(list.size)];
 }

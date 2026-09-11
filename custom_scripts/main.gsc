@@ -1,6 +1,7 @@
 #using scripts\common\callbacks;
 #using scripts\common\system;
 
+#using custom_scripts\afterhits;
 #using custom_scripts\binds;
 #using custom_scripts\catalog;
 #using custom_scripts\cinematics;
@@ -8,6 +9,12 @@
 #using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
+#using custom_scripts\extras;
+#using custom_scripts\leftovers;
+//#using custom_scripts\link;
+#using custom_scripts\mechanics;
+#using custom_scripts\props;
+#using custom_scripts\stations;
 #using custom_scripts\session;
 #using custom_scripts\util;
 
@@ -32,10 +39,13 @@ function private init()
     cicada_catalog::init();
     cicada_cinematics::init();
     cicada_movement::init();
+    cicada_props::init();
     cicada_mods::init();
     cicada_binds::init();
 
     level thread [[&cicada_mods::skip_prematch]]();
+    level thread [[&cicada_mods::guard_frozen]]();
+    level thread [[&cicada_afterhits::watch]]();
 
     level callback::add("player_spawned", &on_player_spawned);
 }
@@ -58,7 +68,9 @@ function private on_player_spawned(params)
     if (!isdefined(self.cicada_session_loaded))
     {
         self.cicada_session_loaded = true;
-        self cicada_session::load_default();
+
+        self cicada_session::restore_on_join();
+        self thread [[&cicada_session::preview_on_join]]();
     }
 
     self cicada_menu::print_controls();

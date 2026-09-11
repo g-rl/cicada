@@ -5,7 +5,6 @@
 
 function max_nodes()
 {
-    // bezier weights lose precision past roughly a dozen control points so the node list is capped
     return 12;
 }
 
@@ -393,7 +392,6 @@ function clone_self()
     self cloneplayer(1);
 }
 
-// preview -------------------------------------------------------------------
 function rebuild_preview()
 {
     self clear_preview();
@@ -447,7 +445,6 @@ function set_visible(visible)
         self hide();
 }
 
-// bezier --------------------------------------------------------------------
 function bezier(points, t)
 {
     x = 0;

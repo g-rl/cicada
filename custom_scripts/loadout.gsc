@@ -4,8 +4,10 @@
 #using scripts\mp\utility\game;
 #using scripts\mp\killstreaks\killstreaks;
 #using scripts\mp\perks\perkpackage;
+#using scripts\mp\supers;
 #using scripts\mp\utility\perk;
 
+#using custom_scripts\menu;
 #using custom_scripts\catalog;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
@@ -64,11 +66,33 @@ function give_equipment(id)
     self cicada_weapon::nacto(weapon, true);
 }
 
-// scripts\mp\dev::devgivefieldupgradethink
 function give_field_upgrade(ref)
 {
     self scripts\mp\perks\perkpackage::perkpackage_givedebug(ref, 0);
     self cicada_util::sound("ui_killstreak_select");
+}
+
+function use_field_upgrade(ref)
+{
+    self give_field_upgrade(ref);
+
+    wait 0.25;
+
+    super = supers::getcurrentsuper();
+    if (!isdefined(super) || !isdefined(super.weaponobj))
+        return;
+
+    self supers::givesuperweapon(super);
+    self supers::givesuperpoints(supers::getsuperpointsneeded());
+
+    wait 0.05;
+
+    self notify("special_weapon_fired", super.weaponobj);
+
+    wait 0.1;
+
+    if (!self supers::issuperinuse())
+        self supers::beginsuperuse();
 }
 
 function set_equipment(ref, slot)
@@ -106,6 +130,13 @@ function randomize_camo(player_)
 
     player_ cicada_util::setpers("camo", cicada_catalog::random_camo());
     player_ apply_camo();
+}
+
+function set_camo(id)
+{
+    self cicada_util::setpers("camo", id);
+    self apply_camo();
+    self cicada_util::message("camo set to ^:" + cicada_catalog::pretty(id, "camo"));
 }
 
 function clear_camo()
@@ -184,6 +215,60 @@ function random_entry(options)
     return options[randomint(options.size)];
 }
 
+function pick_id(option)
+{
+    if (isstruct(option) && isdefined(option.id))
+        return option.id;
+
+    return option;
+}
+
+function last_pick(key)
+{
+    if (!isdefined(self.cicada_last_random))
+        return undefined;
+
+    return self.cicada_last_random[key];
+}
+
+function store_pick(key, option)
+{
+    if (!isdefined(self.cicada_last_random))
+        self.cicada_last_random = [];
+
+    self.cicada_last_random[key] = pick_id(option);
+}
+
+function fresh_entry(key, options)
+{
+    if (!isdefined(options) || !options.size)
+        return undefined;
+
+    last = self last_pick(key);
+    picks = [];
+
+    if (isdefined(last) && istrue(self cicada_util::getpers("random_class_unique")))
+        foreach (option in options)
+            if (pick_id(option) != last)
+                picks[picks.size] = option;
+
+    picked = picks.size ? random_entry(picks) : random_entry(options);
+
+    self store_pick(key, picked);
+
+    return picked;
+}
+
+function fresh_choice(key, options)
+{
+    stored = self cicada_util::getpers(key);
+
+    if (isdefined(stored) && stored != "random")
+        return stored;
+
+    return self fresh_entry(key, options);
+}
+
 function random_choice(key, options)
 {
     stored = self cicada_util::getpers(key);
@@ -192,7 +277,7 @@ function random_choice(key, options)
     return random_entry(options);
 }
 
-// level.weaponlootmapdata is keyed "<root>|<variantid>" by scripts\cp_mp\weapon
+// keyed: "<root>|<variantid>" - scripts\cp_mp\weapon
 function blueprint_id(id)
 {
     if (!istrue(self cicada_util::getpers("random_class_blueprints")))
@@ -220,6 +305,287 @@ function blueprint_id(id)
         return -1;
 
     return variants[randomint(variants.size)];
+}
+
+function weapon_root(weapon)
+{
+    if (!isdefined(weapon) || !isdefined(weapon.basename))
+        return undefined;
+
+    return scripts\cp_mp\weapon::getweaponrootname(weapon);
+}
+
+function held_weapons()
+{
+    list = [];
+
+    foreach (weapon in self getweaponslistprimaries())
+    {
+        if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
+            continue;
+
+        list[list.size] = weapon;
+    }
+
+    return list;
+}
+
+function held_at(index)
+{
+    list = self held_weapons();
+
+    if (index < 0 || index >= list.size)
+        return undefined;
+
+    return weapon_root(list[index]);
+}
+
+function weapon_by_root(root)
+{
+    if (!isdefined(root))
+        return undefined;
+
+    foreach (weapon in self getweaponslistall())
+    {
+        if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
+            continue;
+
+        if (weapon_root(weapon) == root)
+            return weapon;
+    }
+
+    return undefined;
+}
+
+function weapon_label(weapon)
+{
+    if (!isdefined(weapon) || !isdefined(weapon.basename))
+        return "none";
+
+    return cicada_util::shorten(cicada_catalog::pretty(weapon_root(weapon), "weapon"), 22);
+}
+
+function attachment_label(root, name)
+{
+    if (!isdefined(name))
+        return "none";
+
+    text = name;
+
+    if (isdefined(root) && isstartstr(text, root + "_"))
+        text = cicada_util::trim_start(text, root + "_");
+
+    return cicada_util::shorten(text, 24);
+}
+
+function fitted_attachments(weapon)
+{
+    if (!isdefined(weapon) || !isdefined(weapon.attachments))
+        return [];
+
+    return weapon.attachments;
+}
+
+function fitted_count(root)
+{
+    return fitted_attachments(self weapon_by_root(root)).size;
+}
+
+function slot_current(weapon, slot)
+{
+    foreach (name in fitted_attachments(weapon))
+        if (cicada_catalog::slot_of(name) == slot)
+            return name;
+
+    return undefined;
+}
+
+function slot_summary(root, slot)
+{
+    weapon = self weapon_by_root(root);
+    name = slot_current(weapon, slot);
+
+    if (!isdefined(name))
+        return "^1empty";
+
+    return "^:" + attachment_label(root, name);
+}
+
+function weapon_slots(weapon)
+{
+    ordered = [];
+
+    if (!isdefined(weapon) || !isdefined(level.weaponattachments))
+        return ordered;
+
+    found = [];
+
+    foreach (name, lootid in level.weaponattachments)
+    {
+        if (!weapon canuseattachment(name))
+            continue;
+
+        found[cicada_catalog::slot_of(name)] = true;
+    }
+
+    foreach (slot in cicada_catalog::slot_names())
+        if (isdefined(found[slot]))
+            ordered[ordered.size] = slot;
+
+    return ordered;
+}
+
+function slot_at(root, index)
+{
+    slots = weapon_slots(self weapon_by_root(root));
+
+    if (index < 0 || index >= slots.size)
+        return undefined;
+
+    return slots[index];
+}
+
+function slot_count(root)
+{
+    return weapon_slots(self weapon_by_root(root)).size;
+}
+
+function attachments_in_slot(weapon, slot)
+{
+    names = [];
+
+    if (!isdefined(weapon) || !isdefined(level.weaponattachments))
+        return names;
+
+    foreach (name, lootid in level.weaponattachments)
+    {
+        if (cicada_catalog::slot_of(name) != slot)
+            continue;
+
+        if (!weapon canuseattachment(name))
+            continue;
+
+        names[names.size] = name;
+    }
+
+    return names;
+}
+
+function slot_options(root, slot)
+{
+    return attachments_in_slot(self weapon_by_root(root), slot);
+}
+
+function rebuild_with(weapon, attachments)
+{
+    root = weapon_root(weapon);
+    variant = isdefined(weapon.variantid) ? weapon.variantid : -1;
+    holding = self getcurrentweapon() == weapon;
+
+    rebuilt = scripts\cp_mp\weapon::buildweapon(root, attachments, self camo(), "none", variant, undefined, undefined, undefined, game_utility::isnightmap());
+
+    if (!isdefined(rebuilt) || isnullweapon(rebuilt))
+    {
+        self cicada_util::message(cicada_util::warn("that mix is not valid"));
+        return false;
+    }
+
+    self takeweapon(weapon);
+    self giveweapon(rebuilt);
+
+    if (holding)
+        self inventory_utility::_switchtoweaponimmediate(rebuilt);
+
+    return true;
+}
+
+function private without_slot(weapon, slot)
+{
+    list = [];
+
+    foreach (name in fitted_attachments(weapon))
+        if (cicada_catalog::slot_of(name) != slot)
+            list[list.size] = name;
+
+    return list;
+}
+
+function set_attachment(name, root, slot)
+{
+    weapon = self weapon_by_root(root);
+
+    if (!isdefined(weapon))
+    {
+        self cicada_util::message(cicada_util::warn("that weapon is gone"));
+        return;
+    }
+
+    list = without_slot(weapon, slot);
+
+    if (isdefined(name))
+    {
+        if (list.size >= 5)
+        {
+            self cicada_util::message(cicada_util::warn("five attachments is the limit"));
+            return;
+        }
+
+        list[list.size] = name;
+    }
+
+    if (self rebuild_with(weapon, list))
+        self cicada_util::message(isdefined(name) ? ("^:" + attachment_label(root, name) + " ^7fitted") : ("^:" + slot + " ^7cleared"));
+
+    self cicada_menu::update_menu();
+}
+
+function clear_slot(root, slot)
+{
+    self set_attachment(undefined, root, slot);
+}
+
+function clear_attachments(root)
+{
+    weapon = self weapon_by_root(root);
+
+    if (!isdefined(weapon))
+        return;
+
+    if (self rebuild_with(weapon, []))
+        self cicada_util::message("attachments ^1cleared");
+
+    self cicada_menu::update_menu();
+}
+
+function randomize_weapon_attachments(root)
+{
+    weapon = self weapon_by_root(root);
+
+    if (!isdefined(weapon))
+        return;
+
+    picked = [];
+
+    foreach (slot in weapon_slots(weapon))
+    {
+        if (picked.size >= 5)
+            break;
+
+        if (randomint(100) >= 50)
+            continue;
+
+        names = attachments_in_slot(weapon, slot);
+
+        if (!names.size)
+            continue;
+
+        picked[picked.size] = names[randomint(names.size)];
+    }
+
+    if (self rebuild_with(weapon, picked))
+        self cicada_util::message("^:" + picked.size + " ^7attachments rolled");
+
+    self cicada_menu::update_menu();
 }
 
 function attachment_names(weapon, slot)
@@ -291,7 +657,7 @@ function give_class_weapon(id, category)
 function random_class_weapon(group, key)
 {
     category = self random_choice(key, level.cicada_groups[group]);
-    entry = random_entry(cicada_catalog::get(category));
+    entry = self fresh_entry(key + "_weapon", cicada_catalog::get(category));
 
     if (!isdefined(entry))
         return undefined;
@@ -338,7 +704,7 @@ function give_class_perks()
 function random_class()
 {
     if (istrue(self cicada_util::getpers("random_class_camo")))
-        self cicada_util::setpers("camo", cicada_catalog::random_camo());
+        self cicada_util::setpers("camo", self fresh_entry("random_camo", level.cicada_camos));
 
     self takeallweapons();
 
@@ -352,17 +718,17 @@ function random_class()
     if (isdefined(secondary))
         weapons[weapons.size] = secondary;
 
-    lethal = self random_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
+    lethal = self fresh_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
     if (isdefined(lethal))
         self scripts\mp\equipment::giveequipment(lethal, "primary");
 
-    tactical = self random_choice("random_tactical", cicada_catalog::equipment_refs("secondary"));
+    tactical = self fresh_choice("random_tactical", cicada_catalog::equipment_refs("secondary"));
     if (isdefined(tactical))
         self scripts\mp\equipment::giveequipment(tactical, "secondary");
 
     if (istrue(self cicada_util::getpers("random_class_super")))
     {
-        super = random_entry(cicada_catalog::super_refs());
+        super = self fresh_entry("random_super", cicada_catalog::super_refs());
         if (isdefined(super))
             self scripts\mp\perks\perkpackage::perkpackage_givedebug(super, 0);
     }

@@ -180,7 +180,7 @@ function monitor_buttons()
     self endon("disconnect");
     level endon("game_ended");
 
-    self.button_actions = list("frag,smoke,special,melee,melee_zoom,melee_breath,stance,gostand,weapnext,actionslot 1,actionslot 2,actionslot 3,actionslot 4,actionslot 5,actionslot 6,actionslot 7,forward,back,moveleft,moveright");
+    self.button_actions = list("frag,smoke,special,melee,melee_zoom,melee_breath,stance,gostand,weapnext,usereload,actionslot 1,actionslot 2,actionslot 3,actionslot 4,actionslot 5,actionslot 6,actionslot 7,forward,back,moveleft,moveright");
     self.button_pressed = [];
 
     for (i = 0; i < self.button_actions.size; i++)
@@ -196,4 +196,74 @@ function isbuttonpressed(button)
         return false;
 
     return self.button_pressed[button];
+}
+
+function trim_start(text, prefix)
+{
+    if (!isstartstr(text, prefix))
+        return text;
+
+    return getsubstr(text, prefix.size, text.size);
+}
+
+function trim_end(text, tail)
+{
+    if (!isendstr(text, tail))
+        return text;
+
+    return getsubstr(text, 0, text.size - tail.size);
+}
+
+function before_mark(text, mark)
+{
+    if (!isdefined(text))
+        return text;
+
+    for (i = 0; i < text.size; i++)
+        if (text[i] == mark)
+            return getsubstr(text, 0, i);
+
+    return text;
+}
+
+function after_mark(text, mark)
+{
+    if (!isdefined(text))
+        return text;
+
+    found = -1;
+
+    for (i = 0; i < text.size; i++)
+        if (text[i] == mark)
+            found = i;
+
+    if (found < 0 || found >= text.size - 1)
+        return text;
+
+    return getsubstr(text, found + 1, text.size);
+}
+
+function shorten(text, limit)
+{
+    if (!isdefined(limit))
+        limit = 20;
+
+    if (text.size <= limit)
+        return text;
+
+    return getsubstr(text, 0, limit);
+}
+
+function unique_in(taken, label)
+{
+    count = 0;
+
+    foreach (used in taken)
+        if (used == label)
+            count++;
+
+    if (!count)
+        return label;
+
+    return label + count;
 }
