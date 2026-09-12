@@ -201,10 +201,10 @@ function structure()
             self add_option("class", credits, &new_menu, "class manager");
             self add_option("game", credits, &new_menu, "game manager");
             self add_option("session", credits, &new_menu, "session manager");
-            self add_option("bots", "^:" + self cicada_util::getpers("bot_difficulty") + " ^7bots on ^:" + self cicada_util::getpers("bot_team"), &new_menu, "bot manager");
+            self add_option("bots", credits, &new_menu, "bot manager");
             self add_option("killcam", undefined, &new_menu, "killcam manager");
-            self add_option("zombies & actors", "^:" + cicada_pve::count() + " ^7alive", &new_menu, "zombies manager");
-            self add_option("models", "^:" + cicada_props::count() + " ^7spawned", &new_menu, "model manager");
+            self add_option("zombies & actors", credits, &new_menu, "zombies manager");
+            self add_option("models", credits, &new_menu, "model manager");
             self add_option("effects", credits, &new_menu, "effect manager");
             self add_option("customization", credits, &new_menu, "menu manager");
             self add_option("clients", credits, &new_menu, "manage clients");
