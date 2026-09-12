@@ -237,22 +237,51 @@ function hint_text(station)
     switch (station.kind)
     {
         case "magic box":
-            text = "^2take a weapon";
-            break;
+            return "SHARED_HINTSTRINGS/MAGICBOX_GRAB_WEAPON";
 
         case "wall buy":
-            text = (station.mode == "ammo refill") ? "^2refill your ammo" : "^2take the weapon";
-            break;
+            if (station.mode == "ammo refill")
+                return "EQUIPMENT_HINTS/AMMO_BOX_USE";
 
-        default:
-            text = "^2ride up";
-            break;
+            return "SHARED_HINTSTRINGS/MAGICBOX_GRAB_WEAPON";
     }
 
-    if (station.uses > 0 && isdefined(station.left))
-        text = text + " ^7(^:" + station.left + "^7)";
+    return "ELEVATOR_USE_HINT";
+}
 
-    return text;
+function hint_name(station)
+{
+    if (!isdefined(station) || station.kind == "ascender")
+        return undefined;
+
+    if (station.kind == "wall buy")
+    {
+        if (station.mode == "ammo refill")
+            return undefined;
+
+        if (isdefined(station.weapon) && station.weapon != "none")
+        {
+            weapon = makeweapon(station.weapon);
+
+            if (isdefined(weapon) && !isnullweapon(weapon))
+                return weapon.displayname;
+        }
+    }
+
+    if (station.kind == "magic box" || station.kind == "wall buy")
+        return "SHARED_HINTSTRINGS/DEFAULT_WEAPON_WALLBUY_NAME";
+
+    return undefined;
+}
+
+function apply_hint(hint, station)
+{
+    hint sethintstring(hint_text(station));
+
+    name = hint_name(station);
+
+    if (isdefined(name))
+        hint sethintstringparams(name);
 }
 
 function make_hint(station)
@@ -266,7 +295,7 @@ function make_hint(station)
     hint setmodel("tag_origin");
     hint makeusable();
     hint setcursorhint("HINT_BUTTON");
-    hint sethintstring(hint_text(station));
+    apply_hint(hint, station);
     hint setusepriority(0);
     hint setuseholdduration("duration_none");
     hint sethintonobstruction("show");
@@ -301,7 +330,7 @@ function refresh_hint(station)
         return;
     }
 
-    station.hint sethintstring(hint_text(station));
+    apply_hint(station.hint, station);
 }
 
 function place_station(kind)
