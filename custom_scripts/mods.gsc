@@ -506,7 +506,7 @@ function clear_bounces()
         self cicada_util::setmappers("bounce_" + i, undefined);
 
     self cicada_util::setmappers("bounce_count", 0);
-    self cicada_util::message("bounce pads ^1cleared");
+    self cicada_util::message("bounces ^1cleared");
 }
 
 function manage_bounce(action)
@@ -2494,7 +2494,7 @@ function apply_round_scores()
 
     gamestaterestore::function_cc67f138614157c4(state);
 
-    self cicada_util::message("round scores ^:" + state.team1score + " ^7- ^:" + state.team2score + " ^7for the next round");
+    // self cicada_util::message("round scores ^:" + state.team1score + " ^7- ^:" + state.team2score + " ^7for the next round");
 }
 
 function round_reset(key)
