@@ -5,6 +5,7 @@
 #using scripts\mp\class;
 #using scripts\mp\flags;
 #using scripts\mp\gamelogic;
+#using scripts\mp\gamescore;
 #using scripts\mp\gamestaterestore;
 #using scripts\mp\gametypes\obj_bombzone;
 #using scripts\mp\menus;
@@ -2678,7 +2679,7 @@ function end_round()
     thread [[&gamelogic::endgame]](game["attackers"], game["end_reason"][tolower(game[game["defenders"]]) + "_eliminated"]);
 }
 
-function fast_last()
+function may_manage_score()
 {
     limit = (level.roundscorelimit - 1);
     self.score = limit;
@@ -4050,6 +4051,7 @@ function apply_defaults()
     self cicada_util::initpers("pick_bounce", "save");
     self cicada_util::initpers("pick_bots", "crosshair");
     self cicada_util::initpers("pick_stack", "add current");
+    self cicada_util::initpers("pick_score", "fast last");
     self cicada_util::initpers("pick_session", "save new");
     self cicada_util::initpers("last_sound", "ui_mp_suitcase_pickup");
     self cicada_util::initpers("teleport_mode", "enemy");

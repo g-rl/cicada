@@ -219,8 +219,8 @@ function structure()
             self add_option("movement rules", self cicada_mechanics::move_summary(), &new_menu, "movement rules");
             self add_option("leftovers", "warzone and zombies bits", &new_menu, "leftovers");
             self add_option("visions", undefined, &new_menu, "visions");
-            if (gametype == "dm")
-                self add_option("fast last", undefined, &cicada_mods::fast_last);
+            if (cicada_mods::may_manage_score())
+                self add_array_pers("score manager", cicada_mods::score_limit() ? ("^:" + self cicada_mods::score_now() + " ^7of ^:" + cicada_mods::score_limit()) : "^1no score limit", &cicada_mods::manage_score, cicada_util::list("fast last,two piece,reset scores"), "pick_score");
             self add_feature("invincibility", undefined, "invincible");
             self add_feature("unlimited lives", undefined, "unlimited_lives");
             self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
