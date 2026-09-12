@@ -2681,11 +2681,108 @@ function end_round()
 
 function may_manage_score()
 {
-    limit = (level.roundscorelimit - 1);
-    self.score = limit;
-    self.pers["score"] = limit;
-    self.kills = limit;
-    self.pers["kills"] = limit;
+    kind = scripts\mp\utility\game::getbasegametype();
+
+    return kind == "dm" || kind == "war";
+}
+
+function score_limit()
+{
+    if (isdefined(level.scorelimit) && level.scorelimit > 0)
+        return int(level.scorelimit);
+
+    if (isdefined(level.roundscorelimit) && level.roundscorelimit > 0)
+        return int(level.roundscorelimit);
+
+    return 0;
+}
+
+function score_now()
+{
+    if (istrue(level.teambased))
+    {
+        if (isdefined(self.team) && isdefined(game["teamScores"]) && isdefined(game["teamScores"][self.team]))
+            return int(game["teamScores"][self.team]);
+
+        return 0;
+    }
+
+    return isdefined(self.score) ? int(self.score) : 0;
+}
+
+function private give_score(player_, points)
+{
+    if (!isdefined(player_) || !isplayer(player_))
+        return;
+
+    gamescore::_setplayerscore(player_, points);
+
+    player_.score = points;
+    player_.pers["score"] = points;
+    player_.kills = points;
+    player_.pers["kills"] = points;
+}
+
+function private give_team_score(team, points)
+{
+    if (!isdefined(team) || !istrue(level.teambased))
+        return;
+
+    gamescore::_setteamscore(team, points, 0);
+}
+
+function private score_below(back)
+{
+    limit = score_limit();
+
+    if (limit < 1)
+    {
+        self cicada_util::message(cicada_util::warn("no score limit on this mode"));
+        return;
+    }
+
+    points = limit - back;
+
+    if (points < 0)
+        points = 0;
+
+    if (istrue(level.teambased))
+        give_team_score(self.team, points);
+
+    give_score(self, points);
+    self cicada_util::message("^:" + points + " ^7of ^:" + limit);
+}
+
+function reset_scores()
+{
+    foreach (player_ in level.players)
+        give_score(player_, 0);
+
+    if (istrue(level.teambased) && isdefined(game["teamScores"]))
+        foreach (team, value in game["teamScores"])
+            give_team_score(team, 0);
+
+    self cicada_util::message("scores ^1reset");
+}
+
+function manage_score(action)
+{
+    switch (action)
+    {
+        case "fast last":
+            self score_below(1);
+            break;
+
+        case "two piece":
+            self score_below(2);
+            break;
+
+        case "reset scores":
+            self reset_scores();
+            break;
+    }
+
+    self cicada_menu::update_menu();
 }
 
 function drop_weapon(which)
