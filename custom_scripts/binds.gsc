@@ -48,6 +48,7 @@ function init()
     register("bot bolt movement", &cicada_movement::play_bot_bolt);
     register("agent bolt movement", &cicada_movement::play_agent_bolt);
     register("zombie bolt movement", &cicada_movement::play_zombie_bolt);
+    register("mimic grab", &cicada_pve::grab_me);
     register("record movement", &cicada_movement::play_record);
     register("bot movement", &cicada_movement::start_bot_path);
     register("zombie movement", &cicada_pve::start_zombie_path);

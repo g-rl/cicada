@@ -270,6 +270,16 @@ function structure()
             self add_array("pain vision", sliders, &cicada_mods::set_vision_effect, cicada_util::list("off,on"), self cicada_util::getpers("vision_pain"), "pain");
             self add_array("night vision", sliders, &cicada_mods::set_vision_effect, cicada_util::list("off,on"), self cicada_util::getpers("vision_night"), "night");
             self add_increment("vision fade time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("vision_time"), 0, 5, 0.05, "vision_time");
+            self add_option("color screen", undefined, &new_menu, "color screen");
+            break;
+
+        case "color screen":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_feature("color screen", "fills the world, keeps your gun", "color_screen");
+            self add_array("screen color", sliders, &cicada_mods::set_screen, cicada_mods::screen_colors(), self cicada_mods::screen_color(), "screen_color");
+            self add_increment("screen distance", increments, &cicada_mods::set_screen, self cicada_util::getpersfloat("screen_distance"), 20, 200, 5, "screen_distance");
+            self add_increment("screen spread", increments, &cicada_mods::set_screen, self cicada_util::getpersfloat("screen_spread"), 10, 200, 5, "screen_spread");
             break;
 
         case "killstreak hud":
@@ -746,6 +756,7 @@ function structure()
             self add_option("delete last point", self cicada_movement::summary("path"), &cicada_movement::delete_point, "path");
             self add_option("reset points", self cicada_movement::summary("path"), &cicada_movement::clear_points, "path");
             self add_toggle("show waypoints", "marks every saved point", cicada_movement::markers_on("path"), &cicada_movement::toggle_markers, "path");
+            self add_increment("stop time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("path_pause"), 0, 10, 0.5, "path_pause");
             self add_state("reset to start point", "starts it at point one", "path_reset");
             self add_state("path messages", "prints each leg and time", "path_debug");
             break;
@@ -758,6 +769,7 @@ function structure()
             self add_option("delete last point", self cicada_movement::summary("zombie_path"), &cicada_movement::delete_point, "zombie_path");
             self add_option("reset points", self cicada_movement::summary("zombie_path"), &cicada_movement::clear_points, "zombie_path");
             self add_toggle("show waypoints", undefined, cicada_movement::markers_on("zombie_path"), &cicada_movement::toggle_markers, "zombie_path");
+            self add_increment("stop time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("zombie_path_pause"), 0, 10, 0.5, "zombie_path_pause");
             self add_state("reset to start point", undefined, "zombie_path_reset");
             self add_state("path messages", undefined, "path_debug");
             break;
@@ -1054,6 +1066,32 @@ function structure()
             self add_option("save bolt", self cicada_movement::summary("bolt"), &cicada_movement::save_point, "bolt");
             self add_option("delete last bolt", self cicada_movement::summary("bolt"), &cicada_movement::delete_point, "bolt");
             self add_option("play bolt", self cicada_movement::summary("bolt"), &cicada_movement::play_bolt);
+            self add_option("point speeds", undefined, &new_menu, "bolt point speeds");
+            self add_toggle("show waypoints", undefined, cicada_movement::markers_on("bolt"), &cicada_movement::toggle_markers, "bolt");
+            break;
+
+        case "bolt point speeds":
+            self.bind_index = false;
+            self add_menu(menu);
+            self bolt_speed_options("bolt", increments);
+            break;
+
+        case "bot bolt point speeds":
+            self.bind_index = false;
+            self add_menu(menu);
+            self bolt_speed_options("bot_bolt", increments);
+            break;
+
+        case "agent bolt point speeds":
+            self.bind_index = false;
+            self add_menu(menu);
+            self bolt_speed_options("agent_bolt", increments);
+            break;
+
+        case "zombie bolt point speeds":
+            self.bind_index = false;
+            self add_menu(menu);
+            self bolt_speed_options("zombie_bolt", increments);
             break;
 
         case "bot bolt movement settings":
@@ -1268,7 +1306,7 @@ function structure()
                     self add_increment("plant no sooner than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_early"), 1, 60, 1, "plant_early");
                     self add_increment("plant no later than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_late"), 1, 60, 1, "plant_late");
                 }
-                self add_option("take the bomb", self cicada_mods::carrying_bomb() ? "^2you have it" : (self cicada_mods::may_take_bomb() ? "^:available^7 to pickup" : "^1not^7 on the planting team"), &cicada_mods::grab_bomb);
+                self add_option("take the bomb", self cicada_mods::carrying_bomb() ? "^2already holding" : (self cicada_mods::may_take_bomb() ? "^:available^7 to pickup" : "^1not^7 planting"), &cicada_mods::grab_bomb);
                 self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
             }
             break;
@@ -1891,7 +1929,25 @@ function ai_bolt_options(kind, increments)
     self add_option("delete last point", self cicada_movement::summary(key), &cicada_movement::delete_point, key);
     self add_option(cicada_util::warn("clear points"), self cicada_movement::summary(key), &cicada_movement::clear_points, key);
     self add_option("play now", self cicada_movement::summary(key), &cicada_movement::play_ai_bolt, kind);
+    self add_option("point speeds", undefined, &new_menu, kind + " bolt point speeds");
+    self add_toggle("show waypoints", undefined, cicada_movement::markers_on(key), &cicada_movement::toggle_markers, key);
     self ai_bind_options(kind);
+}
+
+function bolt_speed_options(key, increments)
+{
+    total = self cicada_movement::count(key);
+
+    if (!total)
+    {
+        self add_option("^1no points saved");
+        return;
+    }
+
+    fallback = self cicada_util::getpersfloat(key + "_speed");
+
+    for (i = 0; i < total; i++)
+        self add_increment("point " + (i + 1), increments, &cicada_movement::set_point_speed, self cicada_movement::leg_time(key, i, fallback), 0.1, 10, 0.1, key, i);
 }
 
 function ai_target_menu(kind)
@@ -2057,6 +2113,8 @@ function zombie_options(zombie, increments, sliders)
     self add_menu(cicada_pve::zombie_name(zombie));
     self add_option("kill", "^:" + zombie.health + " ^7hp", &cicada_pve::kill_zombie, zombie);
     self add_option("send at me", "paths it straight to you", &cicada_pve::send_at_me, zombie);
+    if (cicada_pve::is_mimic(zombie))
+        self add_option("grab me", "pulls you in and throws you", &cicada_pve::grab_me, zombie);
     self add_option("look at me", undefined, &cicada_pve::look_at_me, zombie);
     self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
     self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);

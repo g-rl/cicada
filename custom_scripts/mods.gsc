@@ -67,6 +67,7 @@ function init()
     register("auto_pause", &auto_pause, &unpause_timer);
     register("auto_plant", &auto_plant);
     register("kill_target", &kill_target_mode, &kill_target_off);
+    register("color_screen", &color_screen, &color_screen_off);
     register("equipment_aimbot", &cicada_mechanics::equipment_aimbot);
     register("auto_chute", &cicada_mechanics::auto_chute);
     register("redeploy", &cicada_mechanics::redeploy, &cicada_mechanics::redeploy_off);
@@ -3973,6 +3974,104 @@ function toggle_vision()
     self apply_visions();
 }
 
+function screen_model()
+{
+    return "p7_box_cardboard_d_closed";
+}
+
+function screen_colors()
+{
+    return cicada_util::list("green,cyan,orange,red,yellow");
+}
+
+function screen_color()
+{
+    color = self cicada_util::getpers("screen_color");
+
+    return isdefined(color) ? color : "green";
+}
+
+function private drop_screen()
+{
+    if (isdefined(self.cicada_screen_panels))
+    {
+        foreach (panel in self.cicada_screen_panels)
+            if (isdefined(panel))
+                panel delete();
+
+        self.cicada_screen_panels = undefined;
+    }
+
+    if (isdefined(self.cicada_screen_rig))
+    {
+        self.cicada_screen_rig delete();
+        self.cicada_screen_rig = undefined;
+    }
+}
+
+function private build_screen()
+{
+    ahead = self cicada_util::getpersfloat("screen_distance");
+    spread = self cicada_util::getpersfloat("screen_spread");
+    fill = "outlinefill_nodepth_" + self screen_color();
+    panels = [];
+
+    for (side = -2; side <= 2; side++)
+        for (lift = -2; lift <= 2; lift++)
+        {
+            panel = spawn("script_model", self.cicada_screen_rig.origin);
+            panel setmodel(screen_model());
+            panel linkto(self.cicada_screen_rig, "", (ahead, side * spread, lift * spread), (0, 0, 0));
+            panel hudoutlineenable(fill);
+            panels[panels.size] = panel;
+        }
+
+    self.cicada_screen_panels = panels;
+}
+
+function color_screen(key)
+{
+    self endon("disconnect");
+    self endon(cicada_util::stop_event(key));
+    level endon("game_ended");
+
+    for (;;)
+    {
+        if (!isalive(self))
+        {
+            self drop_screen();
+            waitframe();
+            continue;
+        }
+
+        if (!isdefined(self.cicada_screen_rig))
+        {
+            rig = spawn("script_model", self geteye());
+            rig setmodel("tag_origin");
+            rig.angles = self getplayerangles();
+
+            self.cicada_screen_rig = rig;
+            self build_screen();
+        }
+
+        self.cicada_screen_rig.origin = self geteye();
+        self.cicada_screen_rig.angles = self getplayerangles();
+
+        waitframe();
+    }
+}
+
+function color_screen_off(key)
+{
+    self drop_screen();
+}
+
+function set_screen(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self drop_screen();
+}
+
 function set_vision_effect(value, kind)
 {
     on = (value == "on");
@@ -4304,6 +4403,11 @@ function apply_defaults()
     self cicada_util::initpers("vision_hud_damage", false);
     self cicada_util::initpers("vision_hud_damage_state", 0);
     self cicada_util::initpers("vision_time", 0);
+    self cicada_util::initpers("screen_color", "green");
+    self cicada_util::initpers("screen_distance", 60);
+    self cicada_util::initpers("path_pause", 0.5);
+    self cicada_util::initpers("zombie_path_pause", 0.5);
+    self cicada_util::initpers("screen_spread", 30);
     self cicada_util::initpers("vision_thermal", "off");
     self cicada_util::initpers("vision_pain", "off");
     self cicada_util::initpers("vision_night", "off");

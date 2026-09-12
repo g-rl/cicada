@@ -1082,6 +1082,27 @@ function start_zombie_path()
             self cicada_movement::path_note("point ^:" + (i + 1) + " ^7timed out after ^:15 ^7seconds");
         else
             self cicada_movement::path_note("point ^:" + (i + 1) + " ^7reached in ^:" + cicada_movement::path_seconds(leg) + "s");
+
+        pause = self cicada_util::getpersfloat("zombie_path_pause");
+
+        if (pause > 0)
+        {
+            foreach (zombie in zombies())
+            {
+                if (!isalive(zombie))
+                    continue;
+
+                hold_at(zombie, zombie.origin);
+                zombie aisetdesiredspeed(0);
+                zombie aisettargetspeed(0);
+            }
+
+            wait pause;
+
+            foreach (zombie in zombies())
+                if (isalive(zombie))
+                    apply_speed(zombie, zombie_speed(zombie));
+        }
     }
 
     foreach (zombie in zombies())
@@ -1457,6 +1478,130 @@ function toggle_freeze(zombie)
         freeze_zombie(zombie);
 
     self cicada_menu::update_menu();
+}
+
+function is_mimic(zombie)
+{
+    return isdefined(zombie) && isdefined(zombie.cicada_pve_aitype) && issubstr(zombie.cicada_pve_aitype, "mimic");
+}
+
+function mimics()
+{
+    live = [];
+
+    foreach (zombie in zombies())
+        if (is_mimic(zombie) && isalive(zombie))
+            live[live.size] = zombie;
+
+    return live;
+}
+
+function closest_mimic()
+{
+    pick = undefined;
+    best = 0;
+
+    foreach (mimic in mimics())
+    {
+        range = distancesquared(self.origin, mimic.origin);
+
+        if (!isdefined(pick) || range < best)
+        {
+            pick = mimic;
+            best = range;
+        }
+    }
+
+    return pick;
+}
+
+function grab_me(mimic)
+{
+    if (!isdefined(mimic))
+        mimic = self closest_mimic();
+
+    if (!isdefined(mimic) || !isalive(mimic))
+    {
+        self cicada_util::message_bold("^5spawn a mimic first");
+        return;
+    }
+
+    self thread [[&mimic_grab]](mimic);
+}
+
+function private grab_timeout()
+{
+    self endon("death");
+    self endon("emerge_attack_hit");
+
+    wait 6;
+    self notify("cicada_grab_done");
+}
+
+function private mimic_grab(mimic)
+{
+    self endon("disconnect");
+    self endon("death");
+    level endon("game_ended");
+
+    if (istrue(mimic.cicada_pve_grabbing))
+        return;
+
+    mimic.cicada_pve_grabbing = true;
+    frozen = is_frozen(mimic);
+
+    if (frozen)
+        unfreeze_zombie(mimic);
+
+    mimic.ignoreall = 1;
+    mimic.dontmelee = 1;
+
+    angles = vectortoangles(self.origin - mimic.origin);
+    angles = (0, angles[1], 0);
+
+    mimic forceteleport(mimic.origin, angles);
+
+    play = level.sharedfuncs["ai"]["Animscripted_SharedFunc"];
+
+    if (isdefined(play))
+        mimic thread [[play]]("emerge_attack_hit", "emerge_attack_hit", mimic.origin, angles, "grab_end");
+
+    rig = spawn("script_model", mimic gettagorigin("tag_player"));
+    rig setmodel("tag_origin");
+    rig.angles = mimic gettagangles("tag_player");
+    rig linkto(mimic, "tag_player", (0, 0, -40), (0, 0, 0));
+
+    self setstance("stand", 1, 1);
+    self playerlinktoblend(rig, "tag_origin", 0.3, 0.1, 0.05);
+
+    mimic thread [[&grab_timeout]]();
+    mimic utility::waittill_any_in_array_return(cicada_util::list("emerge_attack_hit,cicada_grab_done"));
+
+    if (self islinked())
+        self unlink();
+
+    rig delete();
+
+    away = self.origin - mimic.origin;
+    away = (away[0], away[1], 0);
+
+    if (length(away) < 1)
+        away = anglestoforward(angles);
+
+    away = vectornormalize(away);
+
+    self setorigin(self.origin + (0, 0, 5));
+    self setvelocity(away * 700 + (0, 0, 300));
+    self earthquakeforplayer(0.5, 0.8, self.origin, 500);
+
+    mimic.cicada_pve_grabbing = undefined;
+    mimic.ignoreall = 0;
+    mimic.dontmelee = 0;
+
+    if (frozen)
+        freeze_zombie(mimic);
+    else
+        release_goal(mimic);
 }
 
 function send_at_me(zombie)

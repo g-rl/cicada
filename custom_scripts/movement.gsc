@@ -119,6 +119,26 @@ function summary(key)
     return "^:" + self count(key) + " ^7points";
 }
 
+function speed_key(key, index)
+{
+    return key + "_speed_" + index;
+}
+
+function leg_time(key, index, fallback)
+{
+    speed = self cicada_util::getmappers(speed_key(key, index));
+
+    if (isdefined(speed) && speed > 0)
+        return float(speed);
+
+    return fallback;
+}
+
+function set_point_speed(value, key, index)
+{
+    self cicada_util::setmappers(speed_key(key, index), value);
+}
+
 function save_point(key)
 {
     if (self count(key) >= limit(key))
@@ -151,6 +171,7 @@ function delete_point(key)
     }
 
     self cicada_util::setmappers(key + "_point_" + (total - 1), undefined);
+    self cicada_util::setmappers(speed_key(key, total - 1), undefined);
     self cicada_util::setmappers(key + "_count", total - 1);
     self refresh_markers(key);
     self cicada_util::message("point ^:#" + total + " ^7deleted");
@@ -159,7 +180,10 @@ function delete_point(key)
 function clear_points(key)
 {
     for (i = 0; i < self count(key); i++)
+    {
         self cicada_util::setmappers(key + "_point_" + i, undefined);
+        self cicada_util::setmappers(speed_key(key, i), undefined);
+    }
 
     self cicada_util::setmappers(key + "_count", 0);
     clear_markers(key);
@@ -260,8 +284,10 @@ function ride_points(key, rider, leg)
         if (!isdefined(rider.cicada_rig))
             return;
 
-        rig moveto(self point(key, i), leg, 0, 0);
-        wait (leg);
+        step = self leg_time(key, i, leg);
+
+        rig moveto(self point(key, i), step, 0, 0);
+        wait (step);
     }
 
     rider stop_ride();
@@ -373,7 +399,17 @@ function start_bot_path()
 
         self path_note("point ^:" + (i + 1) + " ^7" + reason + " in ^:" + path_seconds(leg) + "s");
 
-        wait 0.5;
+        pause = self cicada_util::getpersfloat("path_pause");
+
+        if (pause > 0)
+        {
+            bot botclearscriptgoal();
+            bot botsetscriptgoal(bot.origin, 16, "critical");
+
+            wait pause;
+        }
+        else
+            waitframe();
     }
 
     bot notify("cicada_path_done");
