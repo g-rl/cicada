@@ -330,6 +330,61 @@ function held_weapons()
     return list;
 }
 
+function carried_weapons()
+{
+    list = [];
+
+    foreach (weapon in self getweaponslistall())
+    {
+        if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
+            continue;
+
+        list[list.size] = weapon;
+    }
+
+    return list;
+}
+
+function private was_carried(before, weapon)
+{
+    foreach (held in before)
+        if (held == weapon)
+            return true;
+
+    return false;
+}
+
+function take_new_weapons(before, keep)
+{
+    foreach (weapon in self carried_weapons())
+        if (!was_carried(before, weapon))
+            self inventory_utility::_takeweapon(weapon);
+
+    if (isdefined(keep) && !isnullweapon(keep) && self hasweapon(keep))
+        self inventory_utility::_switchtoweaponimmediate(keep);
+}
+
+function editable_weapons()
+{
+    list = [];
+
+    foreach (weapon in self held_weapons())
+        if (weapon_slots(weapon).size)
+            list[list.size] = weapon;
+
+    return list;
+}
+
+function editable_at(index)
+{
+    list = self editable_weapons();
+
+    if (index < 0 || index >= list.size)
+        return undefined;
+
+    return weapon_root(list[index]);
+}
+
 function held_at(index)
 {
     list = self held_weapons();
@@ -490,8 +545,8 @@ function rebuild_with(weapon, attachments)
         return false;
     }
 
-    self takeweapon(weapon);
-    self giveweapon(rebuilt);
+    self inventory_utility::_takeweapon(weapon);
+    self inventory_utility::_giveweapon(rebuilt);
 
     if (holding)
         self inventory_utility::_switchtoweaponimmediate(rebuilt);
@@ -523,15 +578,7 @@ function set_attachment(name, root, slot)
     list = without_slot(weapon, slot);
 
     if (isdefined(name))
-    {
-        if (list.size >= 5)
-        {
-            self cicada_util::message(cicada_util::warn("five attachments is the limit"));
-            return;
-        }
-
         list[list.size] = name;
-    }
 
     if (self rebuild_with(weapon, list))
         self cicada_util::message(isdefined(name) ? ("^:" + attachment_label(root, name) + " ^7fitted") : ("^:" + slot + " ^7cleared"));

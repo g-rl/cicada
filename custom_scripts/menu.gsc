@@ -971,11 +971,11 @@ function structure()
         case "attachment manager":
             self.bind_index = false;
             self add_menu(menu);
-            weapons = self cicada_loadout::held_weapons();
+            weapons = self cicada_loadout::editable_weapons();
             if (!weapons.size)
                 self add_option("^1nothing to work on");
             for (i = 0; i < weapons.size; i++)
-                self add_option(self cicada_loadout::weapon_label(weapons[i]), "^:" + cicada_loadout::fitted_attachments(weapons[i]).size + " ^7of ^:5 ^7fitted", &new_menu, "weapon attachments");
+                self add_option(self cicada_loadout::weapon_label(weapons[i]), "^:" + cicada_loadout::fitted_attachments(weapons[i]).size + " ^7fitted", &new_menu, "weapon attachments");
             break;
 
         case "weapon attachments":
@@ -1171,7 +1171,7 @@ function structure()
 
             self add_option("^:random ^7class^7", undefined, &new_menu, "random class");
             self add_option("builds " + self accent() + "manager", undefined, &new_menu, "builds manager");
-            self add_option("attachment " + self accent() + "manager", "^:" + self cicada_loadout::held_weapons().size + " ^7weapons held", &new_menu, "attachment manager");
+            self add_option("attachment " + self accent() + "manager", "^:" + self cicada_loadout::editable_weapons().size + " ^7weapons held", &new_menu, "attachment manager");
 
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
@@ -2779,7 +2779,7 @@ function new_menu(menu)
         self.select_zombie = cicada_pve::actor_at(self get_cursor());
 
     if (self get_menu() == "attachment manager")
-        self.select_weapon = self cicada_loadout::held_at(self get_cursor());
+        self.select_weapon = self cicada_loadout::editable_at(self get_cursor());
 
     if (self get_menu() == "weapon attachments")
         self.select_slot = self cicada_loadout::slot_at(self.select_weapon, self get_cursor());

@@ -532,9 +532,39 @@ function run(force)
     self give_parts();
 }
 
+function private preview_length()
+{
+    longest = 0;
+
+    foreach (name in part_names())
+        if (self part_on(name + "_on") && self part_delay(name) > longest)
+            longest = self part_delay(name);
+
+    foreach (name in extra_names())
+        if (self extra_on(name) && self extra_delay(name) > longest)
+            longest = self extra_delay(name);
+
+    return longest + 3;
+}
+
+function private preview_run()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    before = self cicada_loadout::carried_weapons();
+    holding = self getcurrentweapon();
+
+    self run(true);
+
+    wait self preview_length();
+
+    self cicada_loadout::take_new_weapons(before, holding);
+}
+
 function preview()
 {
-    self thread [[&run]](true);
+    self thread [[&preview_run]]();
 }
 
 function watch()
