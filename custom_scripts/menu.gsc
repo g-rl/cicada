@@ -1268,6 +1268,7 @@ function structure()
                     self add_increment("plant no sooner than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_early"), 1, 60, 1, "plant_early");
                     self add_increment("plant no later than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_late"), 1, 60, 1, "plant_late");
                 }
+                self add_option("take the bomb", self cicada_mods::carrying_bomb() ? "^2you have it" : (self cicada_mods::may_take_bomb() ? "^:available^7 to pickup" : "^1not^7 on the planting team"), &cicada_mods::grab_bomb);
                 self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
             }
             break;

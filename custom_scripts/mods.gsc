@@ -5,6 +5,7 @@
 #using scripts\mp\class;
 #using scripts\mp\flags;
 #using scripts\mp\gamelogic;
+#using scripts\mp\gameobjects;
 #using scripts\mp\gamescore;
 #using scripts\mp\gamestaterestore;
 #using scripts\mp\gametypes\obj_bombzone;
@@ -2550,6 +2551,58 @@ function unpause_timer(key)
     gamelogic::resumetimer();
 }
 
+function carrying_bomb()
+{
+    return isdefined(level.sdbomb) && isdefined(level.sdbomb.carrier) && level.sdbomb.carrier == self;
+}
+
+function may_take_bomb()
+{
+    if (!isdefined(level.sdbomb) || istrue(level.multibomb) || istrue(level.bombplanted))
+        return false;
+
+    if (!isdefined(self.team) || !isdefined(game["attackers"]) || self.team != game["attackers"])
+        return false;
+
+    return true;
+}
+
+function take_bomb()
+{
+    if (!isalive(self))
+        return false;
+
+    if (self carrying_bomb())
+        return true;
+
+    if (!self may_take_bomb() || isdefined(level.sdbomb.carrier))
+        return false;
+
+    level.sdbomb gameobjects::setpickedup(self);
+
+    return self carrying_bomb();
+}
+
+function grab_bomb()
+{
+    if (self take_bomb())
+    {
+        self cicada_util::message("bomb ^2taken");
+        return;
+    }
+
+    if (self carrying_bomb())
+        return;
+
+    if (isdefined(level.sdbomb) && isdefined(level.sdbomb.carrier))
+    {
+        self cicada_util::message(cicada_util::warn("someone else has it"));
+        return;
+    }
+
+    self cicada_util::message(cicada_util::warn("your team does not plant"));
+}
+
 function plant_zone()
 {
     if (!isdefined(level.bombzones))
@@ -2610,6 +2663,14 @@ function auto_plant(key)
     if (!isdefined(zone))
     {
         self cicada_util::message(cicada_util::warn("no bomb site to plant on"));
+        return;
+    }
+
+    self take_bomb();
+
+    if (!self carrying_bomb())
+    {
+        self cicada_util::message(cicada_util::warn("could not take the bomb"));
         return;
     }
 
@@ -4254,12 +4315,12 @@ function apply_defaults()
     self cicada_util::initpers("camera_rotation", 0);
     self cicada_util::initpers("camera_fov", 0);
 
-    self cicada_util::initpers("freeze_timer", true);
+    self cicada_util::initpers("freeze_timer", false);
     self cicada_util::initpers("round_reset", true);
     self cicada_util::initpers("round_random", true);
     self cicada_util::initpers("round_cap", 4);
-    self cicada_util::initpers("auto_pause", false);
-    self cicada_util::initpers("pause_after", 30);
+    self cicada_util::initpers("auto_pause", true);
+    self cicada_util::initpers("pause_after", 80);
     self cicada_util::initpers("pause_random", false);
     self cicada_util::initpers("auto_plant", false);
     self cicada_util::initpers("plant_early", 5);
