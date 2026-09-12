@@ -15,11 +15,6 @@ function zone_count()
     return self.cicada_zones.size;
 }
 
-function zone_summary()
-{
-    return "^:" + self zone_count() + " ^7zones";
-}
-
 function private zone_hurts(zone, player_)
 {
     if (player_ == zone.owner && !istrue(zone.hurt_owner))
@@ -313,11 +308,6 @@ function manage_wires(action)
             self clear_wires();
             break;
     }
-}
-
-function explosive_summary()
-{
-    return istrue(self.cicada_xrounds) ? "^2on" : "^1off";
 }
 
 function private explosive_loop()

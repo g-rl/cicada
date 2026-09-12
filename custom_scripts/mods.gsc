@@ -756,11 +756,6 @@ function crouch_bind(command)
     }
 }
 
-function position_bind_summary()
-{
-    return "crouch ^5+ ^7" + self cicada_binds::slot_label(self cicada_util::getpers("save_slot")) + " ^5/ ^7" + self cicada_binds::slot_label(self cicada_util::getpers("load_slot"));
-}
-
 function has_position()
 {
     return isdefined(self cicada_util::getmappers("position"));
@@ -2286,7 +2281,7 @@ function set_timescale(value)
 {
     scale = float(value);
     self cicada_util::setpers("timescale", scale);
-    
+
     // park timescale in menu to be safe..
     if (self cicada_util::in_menu())
         return;
@@ -3608,14 +3603,6 @@ function play_class_anim_once(id)
         id = self cicada_util::getpersint("class_anim_id");
 
     self play_anim_once(id, self cicada_util::getpers("class_anim_hands") == "both");
-}
-
-function class_anim_summary()
-{
-    if (!istrue(self cicada_util::getpers("class_anim")))
-        return "^1off";
-
-    return "^:anim " + self cicada_util::getpersint("class_anim_id") + " ^7on ^:" + self cicada_util::getpers("class_anim_hands") + " ^7hands";
 }
 
 function set_anim_hands(mode)

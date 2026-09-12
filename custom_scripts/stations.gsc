@@ -122,11 +122,6 @@ function sound_key(event)
     return "station_" + event + "_sound";
 }
 
-function fx_summary(event)
-{
-    return self cicada_mods::stack_summary(fx_key(event)) + " ^7| " + self cicada_mods::sound_stack_summary(sound_key(event));
-}
-
 function events_summary(kind)
 {
     total = 0;

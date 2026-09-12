@@ -258,11 +258,6 @@ function extra_count()
     return total;
 }
 
-function extra_summary()
-{
-    return "^:" + self extra_count() + " ^7of ^:" + extra_names().size;
-}
-
 function clear_extras()
 {
     foreach (name in extra_names())
@@ -439,16 +434,6 @@ function part_delay_key(name)
 function part_delay(name)
 {
     return self cicada_util::getpersfloat(part_delay_key(name));
-}
-
-function delay_summary(name)
-{
-    wait_for = self part_delay(name);
-
-    if (wait_for <= 0)
-        return "^7fires right away";
-
-    return "^:" + wait_for + "s ^7after the end";
 }
 
 function private do_part(name)

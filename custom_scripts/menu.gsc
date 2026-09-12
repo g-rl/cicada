@@ -203,7 +203,7 @@ function structure()
             self add_option("session", credits, &new_menu, "session manager");
             self add_option("bots", credits, &new_menu, "bot manager");
             self add_option("killcam", undefined, &new_menu, "killcam manager");
-            self add_option("zombies & actors", credits, &new_menu, "zombies manager");
+            self add_option("zombies & actors", credits, &new_menu, "zombies & actors");
             self add_option("models", credits, &new_menu, "model manager");
             self add_option("effects", credits, &new_menu, "effect manager");
             self add_option("customization", credits, &new_menu, "menu manager");
@@ -311,13 +311,13 @@ function structure()
             self afterhits_part("sound", self cicada_mods::sound_stack_summary("after_sound"), "afterhits sound stack", increments);
             self afterhits_part("anim", self cicada_afterhits::anim_summary(), "afterhits anim", increments);
             self afterhits_part("spot", self cicada_afterhits::spot_summary(), "afterhits position", increments);
-            self add_option("extra " + self accent() + "actions", self cicada_afterhits::extra_summary(), &new_menu, "afterhits extras");
+            self add_option("extra " + self accent() + "actions", ("^:" + self cicada_afterhits::extra_count() + " ^7of ^:" + cicada_afterhits::extra_names().size), &new_menu, "afterhits extras");
             break;
 
         case "afterhits extras":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option(cicada_util::warn("clear extras"), self cicada_afterhits::extra_summary(), &cicada_afterhits::clear_extras);
+            self add_option(cicada_util::warn("clear extras"), ("^:" + self cicada_afterhits::extra_count() + " ^7of ^:" + cicada_afterhits::extra_names().size), &cicada_afterhits::clear_extras);
             foreach (name in cicada_afterhits::extra_names())
             {
                 self add_toggle(name, self cicada_afterhits::extra_on(name) ? self cicada_afterhits::extra_delay_summary(name) : undefined, self cicada_afterhits::extra_on(name), &cicada_afterhits::flip_extra, name);
@@ -462,7 +462,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("unstuck", undefined, &cicada_mods::unstuck);
-            self add_feature("save and load binds", self cicada_mods::position_bind_summary(), "save_load_binds");
+            self add_feature("save and load binds", ("crouch ^5+ ^7" + self cicada_binds::slot_label(self cicada_util::getpers("save_slot")) + " ^5/ ^7" + self cicada_binds::slot_label(self cicada_util::getpers("load_slot"))), "save_load_binds");
             self add_array_live("save position button", live_sliders, &cicada_binds::set_slot_key, self cicada_binds::slot_labels(), self cicada_binds::slot_label(self cicada_util::getpers("save_slot")), "save_slot");
             self add_array_live("load position button", live_sliders, &cicada_binds::set_slot_key, self cicada_binds::slot_labels(), self cicada_binds::slot_label(self cicada_util::getpers("load_slot")), "load_slot");
             self add_array_pers("manage position", sliders, &cicada_mods::manage_position, cicada_util::list("save,load,reset"), "pick_position");
@@ -549,9 +549,9 @@ function structure()
         case "leftovers":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("radiation " + self accent() + "zones", self cicada_leftovers::zone_summary(), &new_menu, "radiation zones");
+            self add_option("radiation " + self accent() + "zones", ("^:" + self cicada_leftovers::zone_count() + " ^7zones"), &new_menu, "radiation zones");
             self add_option("tripwires", self cicada_leftovers::wire_summary(), &new_menu, "tripwires");
-            self add_option("explosive " + self accent() + "rounds", self cicada_leftovers::explosive_summary(), &new_menu, "explosive rounds");
+            self add_option("explosive " + self accent() + "rounds", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &new_menu, "explosive rounds");
             self add_option("station " + self accent() + "manager", self cicada_stations::summary(), &new_menu, "station manager");
             self add_option("what is loaded", "prints it for you", &cicada_stations::probe_report);
             break;
@@ -599,13 +599,13 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             foreach (event in cicada_stations::kind_events(self cicada_util::getpers("station_kind")))
-                self add_option(cicada_stations::fx_label(event), self cicada_stations::fx_summary(event), &new_menu, "station event");
+                self add_option(cicada_stations::fx_label(event), (self cicada_mods::stack_summary(cicada_stations::fx_key(event)) + " ^7| " + self cicada_mods::sound_stack_summary(cicada_stations::sound_key(event))), &new_menu, "station event");
             break;
 
         case "station event":
             self.bind_index = false;
             self add_menu(cicada_stations::fx_label(self.select_event));
-            self add_option("preview", self cicada_stations::fx_summary(self.select_event), &cicada_stations::preview_event, self.select_event);
+            self add_option("preview", (self cicada_mods::stack_summary(cicada_stations::fx_key(self.select_event)) + " ^7| " + self cicada_mods::sound_stack_summary(cicada_stations::sound_key(self.select_event))), &cicada_stations::preview_event, self.select_event);
             self add_option("effects", self cicada_mods::stack_summary(cicada_stations::fx_key(self.select_event)), &new_menu, "station effect stack");
             self add_option("sounds", self cicada_mods::sound_stack_summary(cicada_stations::sound_key(self.select_event)), &new_menu, "station sound stack");
             break;
@@ -699,7 +699,7 @@ function structure()
         case "explosive rounds":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("turn on or off", self cicada_leftovers::explosive_summary(), &cicada_leftovers::explosive_rounds);
+            self add_option("turn on or off", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &cicada_leftovers::explosive_rounds);
             self add_increment("blast damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_damage"), 10, 1000, 10, "xrounds_damage");
             self add_increment("blast width", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_blast"), 32, 1000, 16, "xrounds_blast");
             self add_increment("wait between", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("xrounds_rate"), 0, 2, 0.05, "xrounds_rate");
@@ -730,7 +730,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("bot paths", self cicada_movement::summary("path"), &new_menu, "bot paths");
-            self add_array("spawn bot", "^5[{+gostand}] ^7spawns a bot on that team", &cicada_mods::spawn_bot_of, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
+            self add_array("spawn bot", "^5[{+gostand}] ^7to spawn", &cicada_mods::spawn_bot_of, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
             self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
             self add_array_pers("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "pick_bots");
             self add_feature("freeze bots", undefined, "frozen_bots");
@@ -750,16 +750,16 @@ function structure()
             self add_state("path messages", "prints each leg and time", "path_debug");
             break;
 
-        case "zombie paths":
+        case "zombie & actor paths":
             self.bind_index = false;
             self add_menu(menu);
             self add_option("start path movement", self cicada_movement::summary("zombie_path"), &cicada_pve::start_zombie_path);
             self add_option("save point", self cicada_movement::summary("zombie_path"), &cicada_movement::save_point, "zombie_path");
             self add_option("delete last point", self cicada_movement::summary("zombie_path"), &cicada_movement::delete_point, "zombie_path");
             self add_option("reset points", self cicada_movement::summary("zombie_path"), &cicada_movement::clear_points, "zombie_path");
-            self add_toggle("show waypoints", "marks every saved point", cicada_movement::markers_on("zombie_path"), &cicada_movement::toggle_markers, "zombie_path");
-            self add_state("reset to start point", "starts them at point one", "zombie_path_reset");
-            self add_state("path messages", "prints each leg and time", "path_debug");
+            self add_toggle("show waypoints", undefined, cicada_movement::markers_on("zombie_path"), &cicada_movement::toggle_markers, "zombie_path");
+            self add_state("reset to start point", undefined, "zombie_path_reset");
+            self add_state("path messages", undefined, "path_debug");
             break;
 
         case "aimbot settings":
@@ -1091,7 +1091,7 @@ function structure()
             self add_state("empty clip", undefined, "class_empty_clip");
             self add_state("illusion", undefined, "class_illusion");
             self add_state("canswap", undefined, "class_canswap");
-            self add_option("set anim", self cicada_mods::class_anim_summary(), &new_menu, "class change anim");
+            self add_option("set anim", (istrue(self cicada_util::getpers("class_anim")) ? ("^:anim " + self cicada_util::getpersint("class_anim_id") + " ^7on ^:" + self cicada_util::getpers("class_anim_hands") + " ^7hands") : "^1off"), &new_menu, "class change anim");
             break;
 
         case "class change anim":
@@ -1278,7 +1278,7 @@ function structure()
             self add_option("layout", "position, spacing and scale", &new_menu, "menu layout");
             // self add_array("font", sliders, &set_layout, cicada_util::list("default,objective,big,small,bold"), self cicada_util::getpers("menu_font"), "menu_font");
             self add_option("menu " + self accent() + "colors", "accent ^:" + self cicada_util::getpers("menu_accent") + " ^7- text ^:" + self cicada_util::getpers("menu_text"), &new_menu, "menu colors");
-            self add_option("menu " + self accent() + "controls", self control_summary(), &new_menu, "menu controls");
+            self add_option("menu " + self accent() + "controls", ("open " + self control_token("control_hold", "ads") + " " + self control_token("control_open", "actionslot 1")), &new_menu, "menu controls");
             self add_toggle("summaries", "the info line under the menu", self cicada_util::getpers("menu_summary"), &flip_layout, "menu_summary");
             self add_toggle("version text", "build name in the title", self cicada_util::getpers("menu_version"), &flip_layout, "menu_version");
             self add_option(cicada_util::warn("reset menu settings"), undefined, &reset_layout);
@@ -1338,7 +1338,7 @@ function structure()
         case "model manager":
             self.bind_index = false;
             self add_menu(menu);
-            self add_array("spawn model", "^5[{+gostand}] ^7spawns it here", &cicada_props::spawn_of_model, cicada_props::model_labels(), cicada_props::model_label(self cicada_util::getpers("prop_model")), "prop_model");
+            self add_array("spawn model", "^5[{+gostand}] ^7to spawn", &cicada_props::spawn_of_model, cicada_props::model_labels(), cicada_props::model_label(self cicada_util::getpers("prop_model")), "prop_model");
             self add_option("spawn random model", "picks any model in the list", &cicada_props::spawn_random);
             self add_option("manage models", "^:" + cicada_props::count() + " ^7spawned", &new_menu, "manage models");
             self add_option("randomize every model", "^:" + cicada_props::count() + " ^7spawned", &cicada_props::randomize_all);
@@ -1346,7 +1346,7 @@ function structure()
             self add_increment("spawn height", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("prop_height"), -100, 300, 5, "prop_height");
             self add_increment("path speed", increments, &cicada_mods::set_value, self cicada_util::getpersint("prop_speed"), 25, 1000, 25, "prop_speed");
             self add_state("solid on spawn", "model blocks bullets", "prop_solid");
-            self add_state("collision on spawn", "clip on every new model", "prop_collision");
+            self add_state("collision on spawn", "clips on new models", "prop_collision");
             self add_option(cicada_util::warn("clear models"), "^:" + cicada_props::count() + " ^7spawned", &cicada_props::clear_props);
             break;
 
@@ -1391,22 +1391,22 @@ function structure()
             self add_option("save point", self cicada_movement::summary("prop_path"), &cicada_movement::save_point, "prop_path");
             self add_option("delete last point", self cicada_movement::summary("prop_path"), &cicada_movement::delete_point, "prop_path");
             self add_option("reset points", self cicada_movement::summary("prop_path"), &cicada_movement::clear_points, "prop_path");
-            self add_toggle("show waypoints", "marks every saved point", cicada_movement::markers_on("prop_path"), &cicada_movement::toggle_markers, "prop_path");
-            self add_state("loop the path", "restarts at point one", "prop_path_loop");
-            self add_state("face the next point", "turns the model as it travels", "prop_path_face");
-            self add_state("path messages", "prints each leg and time", "path_debug");
+            self add_toggle("show waypoints", undefined, cicada_movement::markers_on("prop_path"), &cicada_movement::toggle_markers, "prop_path");
+            self add_state("loop paths", undefined, "prop_path_loop");
+            self add_state("face next point", undefined, "prop_path_face");
+            self add_state("path messages", undefined, "path_debug");
             break;
 
-        case "zombies manager":
+        case "zombies & actors":
             self.bind_index = false;
             self add_menu(menu);
             self add_option("manage zombies", "^:" + cicada_pve::horde_count() + " ^7alive", &new_menu, "manage zombies");
             self add_option("actor " + self accent() + "manager", "^:" + cicada_pve::actor_count() + " ^7types loaded", &new_menu, "actor manager");
-            self add_option("zombie paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie paths");
+            self add_option("zombie paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
             self add_feature("zombie horde", "keeps zombies spawning", "pve");
             self add_toggle("zombie killcams", undefined, self cicada_util::getpers("pve_killcam"), &cicada_pve::flip_value, "pve_killcam");
-            self add_array("spawn type", "^5[{+gostand}] ^7spawns it here", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
-            self add_array("actor type", "^5[{+gostand}] ^7spawns it here", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
+            self add_array("spawn type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
+            self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_toggle("kill score", "points on a zombie kill", self cicada_util::getpers("pve_score"), &cicada_pve::flip_value, "pve_score");
             self add_toggle("save zombies", "keeps them for next round", self cicada_util::getpers("pve_save_state"), &cicada_pve::flip_value, "pve_save_state");
             self add_toggle("autosave zombies", "saves every edit as you go", self cicada_util::getpers("pve_autosave"), &cicada_pve::flip_value, "pve_autosave");
@@ -1433,12 +1433,12 @@ function structure()
         case "actor manager":
             self.bind_index = false;
             self add_menu(menu);
-            self add_array("actor type", "^5[{+gostand}] ^7spawns it here", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
+            self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("spawn this actor", "^:" + cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), &cicada_pve::spawn_chosen_actor);
             self add_option("spawn random actor", "^:" + cicada_pve::actor_count() + " ^7types loaded", &cicada_pve::random_actor);
             self add_option("kill agents", "^:" + self cicada_util::getpers("kill_agent_mode"), &cicada_binds::kill_agents);
             self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
-            self add_option("actor paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie paths");
+            self add_option("actor paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
             self add_array_pers("actor state", sliders, &cicada_pve::manage_state, cicada_util::list("save,load,clear"), "pick_state");
             self add_toggle("auto respawn", "respawns it with its settings", self cicada_util::getpers("pve_respawn"), &cicada_pve::flip_value, "pve_respawn");
             self add_increment("respawn delay", increments, &cicada_pve::set_value, self cicada_util::getpersfloat("pve_respawn_delay"), 0.5, 30, 0.5, "pve_respawn_delay");
@@ -1485,7 +1485,7 @@ function structure()
             for (i = 0; i < cicada_catalog::sound_count(self.select_sound_group); i++)
             {
                 name = cicada_catalog::sound_at(self.select_sound_group, i);
-                self add_option(self cicada_mods::sound_label(name), "plays for you only", &cicada_mods::preview_sound, name);
+                self add_option(self cicada_mods::sound_label(name), undefined, &cicada_mods::preview_sound, name);
             }
             break;
 
@@ -1493,7 +1493,7 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 10, 1);
-            self add_feature("target selecting", "only the target ends the game", "kill_target");
+            self add_feature("target selecting", "only calls on selected", "kill_target");
             self add_state("hide weapon & items", undefined, "hide_weapon");
             self add_state("hide victim", undefined, "hide_victim");
             self add_state("hide perks", undefined, "hide_perks");
@@ -1522,7 +1522,7 @@ function structure()
                 self add_option(cicada_util::warn("autosave is on"), "autosave blocks edits");
             self add_option("load session", "^1overwrites ^7your settings", &cicada_session::load_selected);
             self add_option("save over session", undefined, &cicada_session::save_selected);
-            self add_option("preview session", "prints what it holds", &cicada_session::preview_selected);
+            self add_option("preview session", undefined, &cicada_session::preview_selected);
             if (cicada_session::map_count(self.select_session))
                 self add_option("map settings", "^:" + cicada_session::map_count(self.select_session) + " ^7maps stored", &new_menu, "session maps");
             if (self.select_session != cicada_session::autosave_name())
@@ -1545,7 +1545,7 @@ function structure()
             self add_menu(cicada_session::map_label(self.select_map));
             self add_option("print settings", cicada_session::map_summary(self.select_session, self.select_map), &cicada_session::preview_selected_map);
             if (!cicada_session::is_current_map(self.select_map))
-                self add_option("copy onto this map", "keeps the originals as well", &cicada_session::copy_selected_map);
+                self add_option("copy onto this map", undefined, &cicada_session::copy_selected_map);
             self add_option(cicada_util::warn("delete map settings"), cicada_session::map_summary(self.select_session, self.select_map), &cicada_session::delete_selected_map);
             break;
 
@@ -2390,11 +2390,6 @@ function open_pressed()
         return false;
 
     return self cicada_util::isbuttonpressed("-" + self control_button("control_open", "actionslot 1"));
-}
-
-function control_summary()
-{
-    return "open " + self control_token("control_hold", "ads") + " " + self control_token("control_open", "actionslot 1");
 }
 
 function print_controls()
