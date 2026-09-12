@@ -578,7 +578,13 @@ function structure()
         case "station settings":
             self.bind_index = false;
             self add_menu(self cicada_util::getpers("station_kind"));
-            self add_array("model", sliders, &cicada_mods::set_value, cicada_props::model_labels(), self cicada_util::getpers(cicada_stations::kind_key(self cicada_util::getpers("station_kind"), "model")), cicada_stations::kind_key(self cicada_util::getpers("station_kind"), "model"));
+            self add_array("base", sliders, &cicada_stations::set_base, cicada_stations::base_kinds(), self cicada_stations::station_base(), "station_base");
+            if (self cicada_stations::station_base() == "agent")
+                self add_array("actor", sliders, &cicada_stations::set_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("station_actor")), "station_actor");
+            else
+                self add_array("model", sliders, &cicada_mods::set_value, cicada_props::model_labels(), self cicada_util::getpers(cicada_stations::kind_key(self cicada_util::getpers("station_kind"), "model")), cicada_stations::kind_key(self cicada_util::getpers("station_kind"), "model"));
+            self add_toggle("preview in front", undefined, self cicada_stations::previewing(), &cicada_stations::toggle_preview);
+            self add_increment("preview range", increments, &cicada_stations::set_preview_range, self cicada_util::getpersint("station_preview_range"), 40, 400, 10, "station_preview_range");
             self add_increment("use range", increments, &cicada_mods::set_value, self cicada_util::getpersint("station_radius"), 30, 500, 10, "station_radius");
             self add_increment("cooldown", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("station_cooldown"), 0.5, 30, 0.5, "station_cooldown");
             self add_increment("uses allowed", "^:0 ^7never runs out", &cicada_mods::set_value, self cicada_util::getpersint("station_uses"), 0, 50, 1, "station_uses");

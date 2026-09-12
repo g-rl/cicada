@@ -7,6 +7,7 @@
 #using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\props;
+#using custom_scripts\pve;
 #using custom_scripts\util;
 
 #namespace cicada_stations;
@@ -63,6 +64,138 @@ function station_model(kind)
         return cicada_props::model_for_label(wanted);
 
     return cicada_props::model_for_label(cicada_props::model_labels()[0]);
+}
+
+function base_kinds()
+{
+    return cicada_util::list("model,agent");
+}
+
+function station_base()
+{
+    base = self cicada_util::getpers("station_base");
+
+    return isdefined(base) ? base : "model";
+}
+
+function station_actor_type()
+{
+    return self cicada_util::getpers("station_actor");
+}
+
+function previewing()
+{
+    return isdefined(self.cicada_station_preview);
+}
+
+function preview_spot()
+{
+    range = self cicada_util::getpersint("station_preview_range");
+
+    if (range < 40)
+        range = 120;
+
+    return self.origin + anglestoforward((0, self getplayerangles()[1], 0)) * range;
+}
+
+function drop_preview()
+{
+    if (!self previewing())
+        return;
+
+    if (isdefined(self.cicada_station_preview_actor))
+    {
+        cicada_pve::drop_station_actor(self.cicada_station_preview_actor);
+        self.cicada_station_preview_actor = undefined;
+    }
+
+    self.cicada_station_preview delete();
+    self.cicada_station_preview = undefined;
+}
+
+function private build_preview()
+{
+    spot = self preview_spot();
+    angles = (0, self getplayerangles()[1] + 180, 0);
+
+    holder = spawn("script_model", spot);
+    holder.angles = angles;
+
+    if (self station_base() == "agent")
+    {
+        holder setmodel("tag_origin");
+
+        actor = self cicada_pve::spawn_station_actor(self station_actor_type(), spot, angles);
+
+        if (!isdefined(actor))
+        {
+            holder delete();
+            self cicada_util::message(cicada_util::warn("that actor is not loaded on this map"));
+            return;
+        }
+
+        self.cicada_station_preview_actor = actor;
+    }
+    else
+        holder setmodel(self station_model(self cicada_util::getpers("station_kind")));
+
+    self.cicada_station_preview = holder;
+    self cicada_util::message("preview ^2on");
+}
+
+function toggle_preview()
+{
+    if (self previewing())
+    {
+        self drop_preview();
+        self cicada_util::message("preview ^1off");
+        self cicada_menu::update_menu();
+        return;
+    }
+
+    self build_preview();
+    self cicada_menu::update_menu();
+}
+
+function set_base(value, key)
+{
+    self cicada_util::setpers(key, value);
+
+    if (self previewing())
+    {
+        self drop_preview();
+        self build_preview();
+    }
+
+    self cicada_menu::update_menu();
+}
+
+function set_actor(value, key)
+{
+    self cicada_util::setpers(key, cicada_pve::actor_for_label(value));
+
+    if (self previewing())
+    {
+        self drop_preview();
+        self build_preview();
+    }
+
+    self cicada_menu::update_menu();
+}
+
+function set_preview_range(value, key)
+{
+    self cicada_util::setpers(key, value);
+
+    if (!self previewing())
+        return;
+
+    spot = self preview_spot();
+
+    self.cicada_station_preview.origin = spot;
+
+    if (isdefined(self.cicada_station_preview_actor))
+        cicada_pve::move_station_actor(self.cicada_station_preview_actor, spot, self.cicada_station_preview.angles);
 }
 
 function kind_key(kind, part)
@@ -366,12 +499,32 @@ function place_station(kind)
     if (station.uses > 0)
         station.left = station.uses;
 
+    station.base = self station_base();
     station.model = spawn("script_model", spot);
-    station.model setmodel(model);
     station.model.angles = (0, self getplayerangles()[1] + 180, 0);
 
+    if (station.base == "agent")
+    {
+        station.model setmodel("tag_origin");
+        station.actor = self cicada_pve::spawn_station_actor(self station_actor_type(), spot, station.model.angles);
+
+        if (!isdefined(station.actor))
+        {
+            station.base = "model";
+            station.model setmodel(model);
+            self cicada_util::message(cicada_util::warn("that actor is not loaded - model used"));
+        }
+    }
+    else
+        station.model setmodel(model);
+
     if (istrue(self cicada_util::getpers("station_outline")))
-        station.model hudoutlineenable("outlinefill_nodepth_green");
+    {
+        if (isdefined(station.actor))
+            station.actor hudoutlineenable("outlinefill_nodepth_green");
+        else
+            station.model hudoutlineenable("outlinefill_nodepth_green");
+    }
 
     if (!isdefined(level.cicada_stations))
         level.cicada_stations = [];
@@ -394,6 +547,7 @@ function move_station(station)
     drop_hint(station);
     station.model.origin = self spot_in_front();
     station.model.angles = (0, self getplayerangles()[1] + 180, 0);
+    cicada_pve::move_station_actor(station.actor, station.model.origin, station.model.angles);
     make_hint(station);
     self cicada_util::message(station.kind + " ^2moved");
     self cicada_menu::update_menu();
@@ -406,6 +560,7 @@ function raise_station(value, station)
 
     spot = station.model.origin;
     station.model.origin = (spot[0], spot[1], value);
+    cicada_pve::move_station_actor(station.actor, station.model.origin, station.model.angles);
     make_hint(station);
 }
 
@@ -415,6 +570,8 @@ function remove_station(station)
         return;
 
     drop_hint(station);
+    cicada_pve::drop_station_actor(station.actor);
+    station.actor = undefined;
 
     if (isdefined(station.model))
         station.model delete();
@@ -431,6 +588,8 @@ function clear_stations()
     foreach (station in stations())
     {
         drop_hint(station);
+        cicada_pve::drop_station_actor(station.actor);
+        station.actor = undefined;
 
         if (isdefined(station.model))
             station.model delete();

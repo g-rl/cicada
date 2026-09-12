@@ -4172,6 +4172,8 @@ function apply_defaults()
     self cicada_util::initpers("station_roll_time", 0.9);
     self cicada_util::initpers("station_ride_rate", 0.25);
     self cicada_util::initpers("station_idle_rate", 1);
+    self cicada_util::initpers("station_base", "model");
+    self cicada_util::initpers("station_preview_range", 120);
     self cicada_util::initpers("buy_weapon", "none");
     self cicada_util::initpers("lift_height", 400);
     self cicada_util::initpers("lift_speed", 1.5);

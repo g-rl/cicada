@@ -12,6 +12,10 @@ function init()
 
     foreach (name in model_list())
         precachemodel(name);
+
+    foreach (group in head_groups())
+        foreach (head in heads_in(group))
+            precachemodel(head);
 }
 
 function model_list()
@@ -788,6 +792,7 @@ function private attach_head(prop, name)
 
     prop attach(name, "", 1);
     prop.cicada_prop_head = name;
+    prop.headmodel = name;
 }
 
 function refresh_head(prop)

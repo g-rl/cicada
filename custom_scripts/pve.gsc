@@ -1,3 +1,4 @@
+#using scripts\common\values;
 #using scripts\engine\utility;
 #using scripts\mp\agents\agent_common;
 #using scripts\mp\agents\agents;
@@ -1342,6 +1343,117 @@ function spawn_actor(aitype)
 
     self cicada_util::message("^1actor ^7spawned - ^:" + live_actor_count() + " ^7alive");
     self cicada_menu::update_menu();
+}
+
+function march_actor(actor, spot, angles)
+{
+    if (!isdefined(actor) || !isalive(actor))
+        return;
+
+    actor clearpath();
+    actor clearbtgoal(3);
+    actor setbtgoalpos(3, spot + anglestoforward(angles) * 1024);
+    actor setbtgoalradius(3, 8);
+    actor forceupdategoalpos();
+
+    apply_speed(actor, "walk");
+}
+
+function private hold_station_actor(spot, angles)
+{
+    self endon("death");
+    level endon("game_ended");
+
+    rig = spawn("script_model", spot);
+    rig setmodel("tag_origin");
+    rig.angles = angles;
+
+    self.cicada_station_rig = rig;
+
+    march_actor(self, spot, angles);
+    self linkto(rig);
+
+    self waittill("death");
+
+    if (isdefined(rig))
+        rig delete();
+}
+
+function spawn_station_actor(aitype, origin, angles)
+{
+    self apply_settings();
+    self ensure_ready();
+
+    if (!isdefined(aitype) || aitype == "none" || !ai_loaded(aitype))
+        return undefined;
+
+    spot = getclosestpointonnavmesh(origin);
+
+    if (!isdefined(spot))
+        spot = origin;
+
+    actor = mp_agent::spawnnewagentaitype(aitype, spot, angles, "team_two_hundred");
+
+    if (!isdefined(actor))
+        return undefined;
+
+    actor.cicada_pve_aitype = aitype;
+    actor.cicada_pve_actor = 1;
+    actor.cicada_station_actor = 1;
+    actor.ignoreall = 1;
+    actor.dontmelee = 1;
+    actor.dontsyncmelee = 1;
+    actor.takedamage = 0;
+    actor.maxhealth = 100000;
+    actor.health = actor.maxhealth;
+
+    actor val::set("cicada_station", "damage", 0);
+    actor setthreatbiasgroup("pve_zombie");
+
+    actor thread [[&hold_station_actor]](spot, angles);
+
+    return actor;
+}
+
+function move_station_actor(actor, spot, angles)
+{
+    if (!isdefined(actor) || !isalive(actor))
+        return;
+
+    ground = getclosestpointonnavmesh(spot);
+
+    if (!isdefined(ground))
+        ground = spot;
+
+    actor unlink();
+    actor forceteleport(ground, angles);
+
+    if (isdefined(actor.cicada_station_rig))
+    {
+        actor.cicada_station_rig.origin = ground;
+        actor.cicada_station_rig.angles = angles;
+    }
+
+    march_actor(actor, ground, angles);
+
+    if (isdefined(actor.cicada_station_rig))
+        actor linkto(actor.cicada_station_rig);
+}
+
+function drop_station_actor(actor)
+{
+    if (!isdefined(actor))
+        return;
+
+    if (isdefined(actor.cicada_station_rig))
+    {
+        actor unlink();
+        actor.cicada_station_rig delete();
+        actor.cicada_station_rig = undefined;
+    }
+
+    if (isalive(actor))
+        actor suicide();
 }
 
 function spawn_of_actor(value, key)
