@@ -212,6 +212,18 @@ function structure()
             self add_option("clients", credits, &new_menu, "manage clients");
             break;
 
+        case "weapon anims":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_increment("anim to ^1replace", "which anim changes (^5[{+gostand}] ^7preview)", &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_dst"), 0, 127, 1, "anim_remap_dst", undefined, &cicada_mods::preview_remap_anim);
+            self add_increment("^2play anim ^7as", "which anim plays instead (^5[{+gostand}] ^7preview)", &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_src"), 0, 127, 1, "anim_remap_src", undefined, &cicada_mods::preview_remap_anim);
+            self add_option("apply anim swaps", "plays ^2new ^7anim on ^1replaced ^7anim", &cicada_mods::remap_weapon_anim);
+            self add_option("steal ^:random ^7smg anim", undefined, &cicada_mods::steal_weapon_anim, "sub machine guns");
+            self add_option("steal ^:random ^7gun anim", undefined, &cicada_mods::steal_weapon_anim, cicada_catalog::weapon_categories()[randomint(6)]);
+            //self add_option("anim info", "print xanim hash from ^2play anim ^7as", &cicada_mods::print_anim_slot);
+            self add_option("^1reset anims", undefined, &cicada_mods::reset_weapon_anims);
+            break;
+
         case "mods & toggles":
             self.bind_index = false;
             self add_menu(menu);
@@ -234,6 +246,7 @@ function structure()
             self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
             self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
             self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
+            self add_option("weapon ^1xanims", "swap xanims on the held weapon", &new_menu, "weapon anims");
 
             self add_feature("always nac", "[{+weapnext}] to easily swap", "always_nac");
             self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");

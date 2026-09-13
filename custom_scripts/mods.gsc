@@ -3941,7 +3941,10 @@ function after_class_change()
     self endon("death");
     level endon("game_ended");
 
-    wait 0.5;
+    if (isdefined(self.spawnweaponobj))
+        self wait_for_weapon(self.spawnweaponobj);
+
+    wait 0.1;
 
     if (istrue(self cicada_util::getpers("class_empty_clip")))
         self cicada_weapon::empty_clip();
@@ -4086,7 +4089,10 @@ function play_anim_slot(index)
 
 function preview_anim_slot(id, index)
 {
-    self play_anim_once(id, self anim_slot_hands(index) == "both");
+    bruh = false;
+    if (isdefined(index))
+        bruh = self anim_slot_hands(index) == "both";
+    self play_anim_once(id, bruh);
 }
 
 function private wipe_anim_slot(index)
@@ -4632,6 +4638,8 @@ function apply_defaults()
     self cicada_util::initpers("auto_prone_mode", "air");
     self cicada_util::initpers("anim_id", 0);
     self cicada_util::initpers("anim_slots", 0);
+    self cicada_util::initpers("anim_remap_dst", 0);
+    self cicada_util::initpers("anim_remap_src", 0);
     self cicada_util::initpers("bot_respawn_delay", 3);
     self cicada_util::initpers("equipment_aimbot", false);
     self cicada_util::initpers("equipment_aim_mode", "both");
@@ -5103,6 +5111,8 @@ function monitor_class()
             self thread [[&supers::givesuperpoints]](supers::getsuperpointsneeded());
         }
 
+        self thread [[&after_class_change]]();
+
         // give fast perks too (i dont think i want this or if i do, i want it as a pers in class options)
         // self thread give_perks();
         wait 0.05;
@@ -5207,4 +5217,209 @@ function play_anim_once(id, both_hands)
     wait 0.05;
 
     self nengine_set_anim(-1);
+}
+
+// TODO: improve with text slider later?
+function anim_name(id)
+{
+    names = [];
+    names[0] = "idle";
+    names[2] = "pre fire";
+    names[3] = "fire";
+    names[4] = "last shot";
+    names[5] = "rechamber";
+    names[6] = "ads fire";
+    names[7] = "ads last shot";
+    names[8] = "grenade prime";
+    names[9] = "grenade ready";
+    names[10] = "melee";
+    names[11] = "melee hit";
+    names[12] = "melee kill";
+    names[13] = "put away";
+    names[14] = "pull out";
+    names[15] = "first pull out";
+    names[16] = "reload";
+    names[17] = "reload empty";
+    names[18] = "reload start";
+    names[20] = "reload end";
+
+    if (isdefined(names[id]))
+        return names[id];
+
+    return "anim " + id;
+}
+
+function anim_label(id)
+{
+    return "^5" + id + " ^7" + anim_name(id);
+}
+
+function preview_remap_anim(id)
+{
+    self cicada_util::message(anim_label(id));
+    self play_anim_once(id, false);
+}
+
+function anim_slot_for(id)
+{
+    slot = nengine_weapon_anim_slot(id);
+    if (slot < 0)
+        self cicada_util::message(cicada_util::warn(anim_name(id) + " not known for this weapon yet, swap weapons once"));
+    return slot;
+}
+
+function refresh_weapon_anims()
+{
+    held = self getcurrentweapon();
+    other = self cicada_weapon::next_weapon();
+    if (!isdefined(other) || other == held)
+        return false;
+
+    self setspawnweapon(other);
+    wait 0.05;
+    self setspawnweapon(held);
+    wait 0.05;
+    return true;
+}
+
+function print_anim_slot()
+{
+    id = self cicada_util::getpersint("anim_remap_src");
+    slot = self anim_slot_for(id);
+    if (slot < 0)
+        return;
+
+    hash = nengine_weapon_anim_hash(slot);
+    if (hash == "")
+    {
+        self cicada_util::message(cicada_util::warn("this weapon has no " + anim_name(id) + " anim"));
+        return;
+    }
+
+    self cicada_util::message(anim_label(id) + " ^7is xanim ^5" + hash);
+}
+
+function remap_weapon_anim()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    dst = self cicada_util::getpersint("anim_remap_dst");
+    src = self cicada_util::getpersint("anim_remap_src");
+
+    if (dst == src)
+    {
+        self cicada_util::message(cicada_util::warn("pick two different anims"));
+        return;
+    }
+
+    dst_slot = self anim_slot_for(dst);
+    src_slot = self anim_slot_for(src);
+
+    if (dst_slot < 0 || src_slot < 0)
+        return;
+
+    if (!nengine_weapon_anim_remap(dst_slot, src_slot))
+    {
+        self cicada_util::message(cicada_util::warn("this weapon has no " + anim_name(src) + " anim"));
+        return;
+    }
+
+    self refresh_weapon_anims();
+    self cicada_util::message(anim_label(dst) + " ^7now plays " + anim_label(src));
+}
+
+function wait_for_weapon(weapon)
+{
+    for (i = 0; i < 40; i++)
+    {
+        if (self getcurrentweapon() == weapon)
+            return true;
+
+        wait 0.05;
+    }
+
+    return false;
+}
+
+function borrow_weapon_anim(donor, slot)
+{
+    held = self getcurrentweapon();
+
+    self giveweapon(donor);
+    self setspawnweapon(donor);
+
+    if (!self wait_for_weapon(donor))
+    {
+        self takeweapon(donor);
+        return false;
+    }
+
+    wait 0.1;
+    self setspawnweapon(held);
+    self wait_for_weapon(held);
+    wait 0.1;
+    self takeweapon(donor);
+
+    return nengine_weapon_anim_copy(slot, slot);
+}
+
+function steal_weapon_anim(category)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_anim_steal_busy))
+        return;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+    slot = self anim_slot_for(id);
+
+    if (slot < 0)
+        return;
+
+    entries = cicada_catalog::get(category);
+
+    if (!entries.size)
+    {
+        self cicada_util::message(cicada_util::warn("nothing in " + category));
+        return;
+    }
+
+    self.cicada_anim_steal_busy = true;
+    held = self getcurrentweapon();
+    tries = min(entries.size, 8);
+    seen = [];
+
+    for (i = 0; i < tries; i++)
+    {
+        pick = randomint(entries.size);
+
+        if (isdefined(seen[pick]))
+            continue;
+
+        seen[pick] = true;
+        entry = entries[pick];
+        donor = makeweapon(entry.id);
+
+        if (!isdefined(donor) || isnullweapon(donor) || donor == held || self hasweapon(donor))
+            continue;
+
+        if (self borrow_weapon_anim(donor, slot))
+        {
+            self refresh_weapon_anims();
+            self cicada_util::message(anim_label(id) + " ^7taken from ^5" + entry.name);
+            self.cicada_anim_steal_busy = false;
+            return;
+        }
+    }
+
+    self cicada_util::message(cicada_util::warn("no " + category + " with a usable " + anim_name(id) + " anim"));
+    self.cicada_anim_steal_busy = false;
+}
+
+function reset_weapon_anims()
+{
+    nengine_weapon_anim_reset();
+    self cicada_util::message("weapon anims restored");
 }
