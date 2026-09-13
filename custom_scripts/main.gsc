@@ -35,6 +35,7 @@ function private init()
     setdvar("r_mbEnable", 0); // remove all motion blur
     setdvar("camera_thirdPerson", 0); // disable third person just in case
     setdvar("jump_slowdownEnable", 0); // jump slowdown
+    setdvar("pan_mixedinput", 0);
 
     // functions
     cicada_catalog::init();

@@ -2968,11 +2968,13 @@ function set_slider(scrolling, index)
         if (self.slider[storage] < self.structure[index]["minimum"])
             self.slider[storage] = self.structure[index]["maximum"];
 
-        position = abs((self.structure[index]["maximum"] - self.structure[index]["minimum"])) / ((50 - 8));
-
         self update_value_text(index);
 
-        self.menu["hud"]["slider"][2][index].x = (self.menu["hud"]["slider"][1][index].x + (abs((self.slider[storage] - self.structure[index]["minimum"])) / position) - 42);
+        range = abs(self.structure[index]["maximum"] - self.structure[index]["minimum"]);
+        fill = range > 0 ? (abs(self.slider[storage] - self.structure[index]["minimum"]) / range) : 1;
+
+        if (isdefined(self.menu["hud"]["slider"][1][index]))
+            self.menu["hud"]["slider"][1][index] set_shader("white", int(8 + (42 * fill)), 8);
     }
 }
 
@@ -3074,7 +3076,7 @@ function update_resize()
         self.menu["hud"]["foreground"][1].x = (self.x_offset + 1);
 
         if (!isdefined(self.menu["hud"]["foreground"][2]))
-            self.menu["hud"]["foreground"][2] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 221), (self.y_offset + 16), 4, 16, self.current_menu_color, 0.6, 4);
+            self.menu["hud"]["foreground"][2] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 221), (self.y_offset + 16), 4, 16, self.current_menu_color, 0.6, 4, true);
 
         if (isdefined(self.menu["hud"]["arrow"][0])) self.menu["hud"]["arrow"][0] destroy_element();
         if (isdefined(self.menu["hud"]["arrow"][1])) self.menu["hud"]["arrow"][1] destroy_element();
@@ -3208,16 +3210,17 @@ function create_hud()
     if (!isdefined(self.slider_kept))
         self.slider_kept = [];
 
-    self.menu["hud"]["title"]        = self create_text("MP/NEURA_TITLE_" + self get_title(), "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 1.75), self.color[4], 1, 10);
-    self.menu["hud"]["index"]        = self create_text("MP/NEURA_INDEX_[]", "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 217), (self.y_offset + 1.75), self.color[4], 1, 10);
+    // playerstate only carries 30 live hudelems per client, chrome + slider knobs sit in the 15 archival slots instead
+    self.menu["hud"]["title"]        = self create_text("MP/NEURA_TITLE_" + self get_title(), "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 1.75), self.color[4], 1, 10, true);
+    self.menu["hud"]["index"]        = self create_text("MP/NEURA_INDEX_[]", "MP_INGAME_ONLY/HP_UNLOCKS_IN", self.font, self.font_scale, "TOP_RIGHT", "TOPCENTER", (self.x_offset + 217), (self.y_offset + 1.75), self.color[4], 1, 10, true);
     // outline
-    self.menu["hud"]["background"][0] = self create_shader("white", "TOP_LEFT", "TOPCENTER", self.x_offset, (self.y_offset - 1), 222, 34, self.current_menu_color, 0.6, 1);
+    self.menu["hud"]["background"][0] = self create_shader("white", "TOP_LEFT", "TOPCENTER", self.x_offset, (self.y_offset - 1), 222, 34, self.current_menu_color, 0.6, 1, true);
     // top bar
-    self.menu["hud"]["background"][1] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), self.y_offset, 220, 32, self.color[1], 0.8, 2);
+    self.menu["hud"]["background"][1] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), self.y_offset, 220, 32, self.color[1], 0.8, 2, true);
     // toggle box
-    self.menu["hud"]["foreground"][0] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), (self.y_offset + 16), 220, 16, self.color[1], 0.05, 3);
+    self.menu["hud"]["foreground"][0] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), (self.y_offset + 16), 220, 16, self.color[1], 0.05, 3, true);
     // cursor - use these for flickershaders?
-    self.menu["hud"]["foreground"][1] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), (self.y_offset + 16), 214, 16, self.current_menu_color, 0.6, 4);
+    self.menu["hud"]["foreground"][1] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 1), (self.y_offset + 16), 214, 16, self.current_menu_color, 0.6, 4, true);
     // scrolling bar on the side
     //self.menu["hud"]["foreground"][2] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 221), (self.y_offset + 16), 4, 16, self.current_menu_color, 0.4, 4);
 }
@@ -3241,7 +3244,7 @@ function set_text(text)
     self settext(text);
 }
 
-function create_text(text, override, font, font_scale, alignment, relative, x_offset, y_offset, color, alpha, sort)
+function create_text(text, override, font, font_scale, alignment, relative, x_offset, y_offset, color, alpha, sort, archived)
 {
     element                = self hud_util::createfontstring(font, font_scale);
     if (isdefined(element))
@@ -3250,7 +3253,7 @@ function create_text(text, override, font, font_scale, alignment, relative, x_of
         element.alpha          = alpha;
         element.sort           = sort;
         element.player         = self;
-        element.archived       = false; // should_archive
+        element.archived       = istrue(archived);
 
         element.foreground     = true;
         element.hidewheninmenu = true;
@@ -3264,7 +3267,7 @@ function create_text(text, override, font, font_scale, alignment, relative, x_of
     return element;
 }
 
-function create_shader(shader, alignment, relative, x_offset, y_offset, width, height, color, alpha, sort)
+function create_shader(shader, alignment, relative, x_offset, y_offset, width, height, color, alpha, sort, archived)
 {
     element                = newclienthudelem(self);
     element.elemtype       = "icon";
@@ -3273,7 +3276,7 @@ function create_shader(shader, alignment, relative, x_offset, y_offset, width, h
     element.alpha          = alpha;
     element.sort           = sort;
     element.player         = self;
-    element.archived       = false; //self should_archive();
+    element.archived       = istrue(archived);
     element.foreground     = true;
     element.hidden         = false;
     element.hidewheninmenu = true;
@@ -3398,6 +3401,10 @@ function override_string_for_index(index)
             return "MP_INGAME_ONLY/OBJ_HVT_CAPS_16";
         case 14:
             return "MP_INGAME_ONLY/OBJ_HVT_CAPS_17";
+        case 15:
+            return "MP_INGAME_ONLY/OBJ_HVT_CAPS_18";
+        case 16:
+            return "MP_INGAME_ONLY/OBJ_HVT_CAPS_19";
         default:
             return undefined;
     }
@@ -3426,7 +3433,7 @@ function create_summary(summary)
         summary_ = tolower(isdefined(summary) ? summary : self.structure[self get_cursor()]["summary"]);
         lol_ = "MP/NEURA_INFO_" + "ߵ " + summary_;
         if (!isdefined(self.menu["hud"]["summary"]))
-            self.menu["hud"]["summary"] = self create_text(lol_, "MP_INGAME_ONLY/HQ_AVAILABLE_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 35), self.color[4], 1, 10);
+            self.menu["hud"]["summary"] = self create_text(lol_, "MP_INGAME_ONLY/HQ_AVAILABLE_IN", self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + 35), self.color[4], 1, 10, true);
         else
             self.menu["hud"]["summary"] set_text(lol_);
     }
@@ -3510,8 +3517,7 @@ function create_option()
                 {
                     self.menu["hud"]["slider"][0][index] = self create_text(value_slot + self slider_text(index), override_string_for_index((i * 2) + 2), self.font, self.font_scale, "CENTER", "TOPCENTER", (self.x_offset + 187), (self.y_offset + ((i * self.option_spacing) + 24)), self.color[4], 1, 10);
 
-                    self.menu["hud"]["slider"][1][index] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 212), (self.y_offset + ((i * self.option_spacing) + 20)), 50, 8, cursor ? self.color[2] : self.color[1], 1, 8);
-                    self.menu["hud"]["slider"][2][index] = self create_shader("white", "TOP_RIGHT", "TOPCENTER", (self.x_offset + 170), (self.y_offset + ((i * self.option_spacing) + 20)), 8, 8, cursor ? self.color[0] : self.color[3], 1, 9);
+                    self.menu["hud"]["slider"][1][index] = self create_shader("white", "TOP_LEFT", "TOPCENTER", (self.x_offset + 162), (self.y_offset + ((i * self.option_spacing) + 20)), 8, 8, cursor ? self.color[0] : self.color[3], 1, 8);
                 }
 
                 if (isdefined(self.menu["hud"]["slider"][0][index]))
