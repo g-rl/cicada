@@ -154,6 +154,9 @@ function refresh_on_spawn()
     self thread [[&cicada_props::props_autosave]]();
     self thread [[&cicada_world::spawn_restore]]();
 
+    if (istrue(self cicada_util::getpers("anim_restore")))
+        self thread [[&restore_anims]]();
+
     ensure_kill_hook();
     ensure_damage_hook();
 
@@ -4640,6 +4643,8 @@ function apply_defaults()
     self cicada_util::initpers("anim_slots", 0);
     self cicada_util::initpers("anim_remap_dst", 0);
     self cicada_util::initpers("anim_remap_src", 0);
+    self cicada_util::initpers("anim_swap_count", 0);
+    self cicada_util::initpers("anim_restore", true);
     self cicada_util::initpers("bot_respawn_delay", 3);
     self cicada_util::initpers("equipment_aimbot", false);
     self cicada_util::initpers("equipment_aim_mode", "both");
@@ -5325,6 +5330,7 @@ function remap_weapon_anim()
         return;
     }
 
+    self store_anim_swap(dst, src, undefined);
     self refresh_weapon_anims();
     self cicada_util::message(anim_label(dst) + " ^7now plays " + anim_label(src));
 }
@@ -5407,6 +5413,7 @@ function steal_weapon_anim(category)
 
         if (self borrow_weapon_anim(donor, slot))
         {
+            self store_anim_swap(id, undefined, entry.id);
             self refresh_weapon_anims();
             self cicada_util::message(anim_label(id) + " ^7taken from ^5" + entry.name);
             self.cicada_anim_steal_busy = false;
@@ -5418,8 +5425,404 @@ function steal_weapon_anim(category)
     self.cicada_anim_steal_busy = false;
 }
 
+function anim_ids()
+{
+    ids = [];
+
+    ids[ids.size] = 0;
+    ids[ids.size] = 2;
+    ids[ids.size] = 3;
+    ids[ids.size] = 4;
+    ids[ids.size] = 5;
+    ids[ids.size] = 6;
+    ids[ids.size] = 7;
+    ids[ids.size] = 8;
+    ids[ids.size] = 9;
+    ids[ids.size] = 10;
+    ids[ids.size] = 11;
+    ids[ids.size] = 12;
+    ids[ids.size] = 13;
+    ids[ids.size] = 14;
+    ids[ids.size] = 15;
+    ids[ids.size] = 16;
+    ids[ids.size] = 17;
+    ids[ids.size] = 18;
+    ids[ids.size] = 20;
+
+    return ids;
+}
+
+function anim_labels()
+{
+    list = [];
+
+    foreach (id in anim_ids())
+        list[list.size] = anim_name(id);
+
+    return list;
+}
+
+function anim_id_for(name)
+{
+    foreach (id in anim_ids())
+        if (anim_name(id) == name)
+            return id;
+
+    return 0;
+}
+
+function set_anim_pick(name, key)
+{
+    self cicada_util::setpers(key, anim_id_for(name));
+    self cicada_menu::update_menu();
+}
+
+function anim_pick_label(key)
+{
+    return anim_name(self cicada_util::getpersint(key));
+}
+
+function anim_id_at(index)
+{
+    ids = anim_ids();
+
+    if (index < 0 || index >= ids.size)
+        return 0;
+
+    return ids[index];
+}
+
+function private anim_swap_key(index, field)
+{
+    return "anim_swap_" + index + "_" + field;
+}
+
+function anim_swap_count()
+{
+    total = self cicada_util::getpersint("anim_swap_count");
+
+    if (!isdefined(total) || total < 0)
+        return 0;
+
+    return total;
+}
+
+function anim_swap_summary()
+{
+    total = self anim_swap_count();
+
+    if (!total)
+        return "^1nothing swapped";
+
+    return "^:" + total + " ^7saved";
+}
+
+function anim_swap_dst(index)
+{
+    return self cicada_util::getpersint(anim_swap_key(index, "dst"));
+}
+
+function anim_swap_src(index)
+{
+    return self cicada_util::getpersint(anim_swap_key(index, "src"));
+}
+
+function anim_swap_donor(index)
+{
+    donor = self cicada_util::getpers(anim_swap_key(index, "donor"));
+
+    if (!isdefined(donor))
+        return "";
+
+    return donor;
+}
+
+function anim_swap_label(index)
+{
+    return anim_name(self anim_swap_dst(index));
+}
+
+function anim_swap_source(index)
+{
+    donor = self anim_swap_donor(index);
+
+    if (donor != "")
+        return "from ^5" + cicada_catalog::label(donor);
+
+    return "plays ^5" + anim_name(self anim_swap_src(index));
+}
+
+function private find_anim_swap(dst)
+{
+    for (i = 0; i < self anim_swap_count(); i++)
+        if (self anim_swap_dst(i) == dst)
+            return i;
+
+    return -1;
+}
+
+function private store_anim_swap(dst, src, donor)
+{
+    slot = self find_anim_swap(dst);
+
+    if (slot < 0)
+    {
+        slot = self anim_swap_count();
+        self cicada_util::setpers("anim_swap_count", slot + 1);
+    }
+
+    if (!isdefined(src))
+        src = -1;
+
+    if (!isdefined(donor))
+        donor = "";
+
+    self cicada_util::setpers(anim_swap_key(slot, "dst"), dst);
+    self cicada_util::setpers(anim_swap_key(slot, "src"), src);
+    self cicada_util::setpers(anim_swap_key(slot, "donor"), donor);
+}
+
+function delete_anim_swap(index)
+{
+    total = self anim_swap_count();
+
+    if (index < 0 || index >= total)
+        return;
+
+    for (i = index; i < (total - 1); i++)
+    {
+        self cicada_util::setpers(anim_swap_key(i, "dst"), self anim_swap_dst(i + 1));
+        self cicada_util::setpers(anim_swap_key(i, "src"), self anim_swap_src(i + 1));
+        self cicada_util::setpers(anim_swap_key(i, "donor"), self anim_swap_donor(i + 1));
+    }
+
+    self cicada_util::setpers(anim_swap_key(total - 1, "dst"), undefined);
+    self cicada_util::setpers(anim_swap_key(total - 1, "src"), undefined);
+    self cicada_util::setpers(anim_swap_key(total - 1, "donor"), undefined);
+    self cicada_util::setpers("anim_swap_count", total - 1);
+
+    nengine_weapon_anim_reset();
+    self thread [[&restore_anims]]();
+
+    self cicada_util::message("swap ^1deleted");
+    self cicada_menu::update_menu();
+}
+
+function clear_anim_swaps()
+{
+    total = self anim_swap_count();
+
+    for (i = 0; i < total; i++)
+    {
+        self cicada_util::setpers(anim_swap_key(i, "dst"), undefined);
+        self cicada_util::setpers(anim_swap_key(i, "src"), undefined);
+        self cicada_util::setpers(anim_swap_key(i, "donor"), undefined);
+    }
+
+    self cicada_util::setpers("anim_swap_count", 0);
+
+    nengine_weapon_anim_reset();
+    self cicada_util::message("^:" + total + " ^7swaps cleared");
+    self cicada_menu::update_menu();
+}
+
+function donor_weapon_names(category)
+{
+    names = [];
+
+    foreach (entry in cicada_catalog::get(category))
+        names[names.size] = entry.name;
+
+    return names;
+}
+
+function donor_weapon_at(category, index)
+{
+    entries = cicada_catalog::get(category);
+
+    if (index < 0 || index >= entries.size)
+        return undefined;
+
+    return entries[index];
+}
+
+function private take_anim_from(entry, id, quiet)
+{
+    if (!isdefined(entry))
+        return false;
+
+    slot = self anim_slot_for(id);
+
+    if (slot < 0)
+        return false;
+
+    donor = makeweapon(entry.id);
+
+    if (!isdefined(donor) || isnullweapon(donor))
+        return false;
+
+    if (!self borrow_weapon_anim(donor, slot))
+        return false;
+
+    self store_anim_swap(id, undefined, entry.id);
+    self refresh_weapon_anims();
+
+    if (!istrue(quiet))
+        self cicada_util::message(anim_label(id) + " ^7taken from ^5" + entry.name);
+
+    return true;
+}
+
+function steal_from_weapon(entry)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_anim_steal_busy))
+        return;
+
+    self.cicada_anim_steal_busy = true;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+
+    if (!self take_anim_from(entry, id))
+        self cicada_util::message(cicada_util::warn("that weapon has no " + anim_name(id) + " anim"));
+
+    self.cicada_anim_steal_busy = false;
+    self cicada_menu::update_menu();
+}
+
+function private random_entry()
+{
+    categories = cicada_catalog::weapon_categories();
+
+    for (i = 0; i < 8; i++)
+    {
+        category = categories[randomint(categories.size)];
+        entries = cicada_catalog::get(category);
+
+        if (entries.size)
+            return entries[randomint(entries.size)];
+    }
+
+    return undefined;
+}
+
+function random_anim_here()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_anim_steal_busy))
+        return;
+
+    self.cicada_anim_steal_busy = true;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+    done = false;
+
+    for (i = 0; i < 8 && !done; i++)
+        done = self take_anim_from(random_entry(), id);
+
+    if (!done)
+        self cicada_util::message(cicada_util::warn("no weapon with a usable " + anim_name(id) + " anim"));
+
+    self.cicada_anim_steal_busy = false;
+    self cicada_menu::update_menu();
+}
+
+function randomize_all_anims()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_anim_steal_busy))
+        return;
+
+    self.cicada_anim_steal_busy = true;
+    self cicada_util::message("stealing anims, hold still");
+
+    done = 0;
+
+    foreach (id in anim_ids())
+    {
+        for (i = 0; i < 4; i++)
+        {
+            if (self take_anim_from(random_entry(), id, true))
+            {
+                done++;
+                break;
+            }
+        }
+    }
+
+    self.cicada_anim_steal_busy = false;
+    self cicada_util::message("^:" + done + " ^7anims stolen");
+    self cicada_menu::update_menu();
+}
+
+function restore_anims()
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (istrue(self.cicada_anim_steal_busy) || !self anim_swap_count())
+        return;
+
+    self.cicada_anim_steal_busy = true;
+
+    wait 1;
+
+    back = 0;
+
+    for (i = 0; i < self anim_swap_count(); i++)
+    {
+        dst = self anim_swap_dst(i);
+        donor = self anim_swap_donor(i);
+
+        if (donor == "")
+        {
+            dst_slot = self anim_slot_for(dst);
+            src_slot = self anim_slot_for(self anim_swap_src(i));
+
+            if (dst_slot < 0 || src_slot < 0)
+                continue;
+
+            if (nengine_weapon_anim_remap(dst_slot, src_slot))
+                back++;
+
+            continue;
+        }
+
+        entry = spawnstruct();
+        entry.id = donor;
+        entry.name = cicada_catalog::label(donor);
+
+        if (self take_anim_from(entry, dst, true))
+            back++;
+    }
+
+    self.cicada_anim_steal_busy = false;
+
+    if (back)
+        self cicada_util::message("^:" + back + " ^7anim swaps back");
+}
+
 function reset_weapon_anims()
 {
+    total = self anim_swap_count();
+
+    for (i = 0; i < total; i++)
+    {
+        self cicada_util::setpers(anim_swap_key(i, "dst"), undefined);
+        self cicada_util::setpers(anim_swap_key(i, "src"), undefined);
+        self cicada_util::setpers(anim_swap_key(i, "donor"), undefined);
+    }
+
+    self cicada_util::setpers("anim_swap_count", 0);
+
     nengine_weapon_anim_reset();
+    self refresh_weapon_anims();
     self cicada_util::message("weapon anims restored");
+    self cicada_menu::update_menu();
 }

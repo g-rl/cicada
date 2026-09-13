@@ -215,13 +215,47 @@ function structure()
         case "weapon anims":
             self.bind_index = false;
             self add_menu(menu);
-            self add_increment("anim to ^1replace", "which anim changes (^5[{+gostand}] ^7preview)", &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_dst"), 0, 127, 1, "anim_remap_dst", undefined, &cicada_mods::preview_remap_anim);
-            self add_increment("^2play anim ^7as", "which anim plays instead (^5[{+gostand}] ^7preview)", &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_src"), 0, 127, 1, "anim_remap_src", undefined, &cicada_mods::preview_remap_anim);
-            self add_option("apply anim swaps", "plays ^2new ^7anim on ^1replaced ^7anim", &cicada_mods::remap_weapon_anim);
+            self add_array("anim to ^1replace", "which anim changes", &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_dst"), "anim_remap_dst");
+            self add_array("^2play anim ^7as", "which anim plays instead", &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_src"), "anim_remap_src");
+            self add_option("apply anim swap", undefined, &cicada_mods::remap_weapon_anim);
+            self add_option("steal from weapon", undefined, &new_menu, "anim donor list");
+            self add_option("steal from random weapon", "^:" + self cicada_mods::anim_pick_label("anim_remap_dst"), &cicada_mods::random_anim_here);
             self add_option("steal ^:random ^7smg anim", undefined, &cicada_mods::steal_weapon_anim, "sub machine guns");
-            self add_option("steal ^:random ^7gun anim", undefined, &cicada_mods::steal_weapon_anim, cicada_catalog::weapon_categories()[randomint(6)]);
-            //self add_option("anim info", "print xanim hash from ^2play anim ^7as", &cicada_mods::print_anim_slot);
+            self add_option("randomize every anim", "^1one steal per anim, slow", &cicada_mods::randomize_all_anims);
+            self add_option("saved swaps", self cicada_mods::anim_swap_summary(), &new_menu, "anim swaps");
+            self add_state("restore on spawn", "puts the swaps back each round", "anim_restore");
+            self add_increment("raw anim to ^1replace", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_dst"), 0, 127, 1, "anim_remap_dst", undefined, &cicada_mods::preview_remap_anim);
+            self add_increment("raw anim to ^2play", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_src"), 0, 127, 1, "anim_remap_src", undefined, &cicada_mods::preview_remap_anim);
             self add_option("^1reset anims", undefined, &cicada_mods::reset_weapon_anims);
+            break;
+
+        case "anim donor list":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (category in cicada_catalog::weapon_categories())
+                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons", &new_menu, "anim donor weapons");
+            break;
+
+        case "anim donor weapons":
+            self.bind_index = false;
+            self add_menu(self.select_anim_category);
+            self add_option("random", "^:" + self cicada_mods::anim_pick_label("anim_remap_dst"), &cicada_mods::steal_weapon_anim, self.select_anim_category);
+            foreach (entry in cicada_catalog::get(self.select_anim_category))
+                self add_option(entry.name, "gives its ^5" + self cicada_mods::anim_pick_label("anim_remap_dst"), &cicada_mods::steal_from_weapon, entry);
+            break;
+
+        case "anim swaps":
+            self.bind_index = false;
+            self add_menu(menu);
+            if (!self cicada_mods::anim_swap_count())
+                self add_option("^1nothing swapped");
+            else
+            {
+                for (i = 0; i < self cicada_mods::anim_swap_count(); i++)
+                    self add_option(self cicada_mods::anim_swap_label(i), self cicada_mods::anim_swap_source(i), &cicada_mods::delete_anim_swap, i);
+
+                self add_option(cicada_util::warn("clear every swap"), self cicada_mods::anim_swap_summary(), &cicada_mods::clear_anim_swaps);
+            }
             break;
 
         case "mods & toggles":
@@ -3122,6 +3156,9 @@ function new_menu(menu)
 
     if (self get_menu() == "manage actors")
         self.select_zombie = cicada_pve::actor_at(self get_cursor());
+
+    if (self get_menu() == "anim donor list")
+        self.select_anim_category = cicada_catalog::weapon_categories()[self get_cursor()];
 
     if (self get_menu() == "manage turrets")
         self.select_turret = cicada_world::turret_at(self get_cursor());
