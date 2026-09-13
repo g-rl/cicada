@@ -10,6 +10,7 @@ function init()
 {
     precachemodel("tag_origin");
     precachemodel("axis_guide_createfx");
+    precachemodel(line_model());
 }
 
 function path_note(text)
@@ -53,11 +54,47 @@ function clear_markers(key)
     level.cicada_path_markers[key] = undefined;
 }
 
+function line_model()
+{
+    return "misc_cigarette_01_centered";
+}
+
+function private line_between(markers, from, to)
+{
+    span = distance(from, to);
+
+    if (span < 16)
+        return markers;
+
+    angles = vectortoangles(to - from);
+    forward = anglestoforward(angles);
+    step = 24;
+    total = int(span / step);
+
+    if (total > 20)
+    {
+        total = 20;
+        step = span / total;
+    }
+
+    for (i = 1; i < total; i++)
+    {
+        dot = spawn("script_model", from + forward * (i * step));
+        dot setmodel(line_model());
+        dot.angles = angles;
+        dot hudoutlineenable("outlinefill_nodepth_cyan");
+        markers[markers.size] = dot;
+    }
+
+    return markers;
+}
+
 function build_markers(key)
 {
     markers = [];
+    total = self count(key);
 
-    for (i = 0; i < self count(key); i++)
+    for (i = 0; i < total; i++)
     {
         marker = spawn("script_model", self point(key, i) + (0, 0, 24));
         marker setmodel("axis_guide_createfx");
@@ -65,8 +102,11 @@ function build_markers(key)
         markers[markers.size] = marker;
     }
 
+    for (i = 1; i < total; i++)
+        markers = line_between(markers, self point(key, i - 1) + (0, 0, 24), self point(key, i) + (0, 0, 24));
+
     level.cicada_path_markers[key] = markers;
-    return markers.size;
+    return total;
 }
 
 function refresh_markers(key)

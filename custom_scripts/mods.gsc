@@ -21,6 +21,7 @@
 #using custom_scripts\binds;
 #using custom_scripts\builds;
 #using custom_scripts\catalog;
+#using custom_scripts\cinematics;
 #using custom_scripts\extras;
 #using custom_scripts\leftovers;
 //#using custom_scripts\link;
@@ -144,6 +145,8 @@ function refresh_on_spawn()
     }
 
     self cicada_menu::restore_lock();
+    self cicada_cinematics::recover_scene();
+    self cicada_cinematics::restore_nodes();
 
     if (istrue(self cicada_util::getpers("no_hud")))
         self hide_hud("no_hud");
@@ -4183,6 +4186,11 @@ function apply_defaults()
     self cicada_util::initpers("station_base", "model");
     self cicada_util::initpers("station_save", true);
     self cicada_util::initpers("menu_lock", false);
+    self cicada_util::initpers("scene_length", 5);
+    self cicada_util::initpers("scene_notes", true);
+    self cicada_util::initpers("scene_fit", true);
+    self cicada_util::initpers("scene_overlay", false);
+    self cicada_util::initpers("scene_speed", 1);
     self cicada_util::initpers("station_preview_range", 120);
     self cicada_util::initpers("buy_weapon", "none");
     self cicada_util::initpers("lift_height", 400);

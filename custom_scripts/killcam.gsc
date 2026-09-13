@@ -1,3 +1,4 @@
+#using custom_scripts\cinematics;
 #using custom_scripts\util;
 
 #namespace cicada_killcam;
@@ -8,6 +9,12 @@ function clean()
 
     for (;;)
     {
+        if (self cicada_cinematics::scene_running())
+        {
+            wait 0.05;
+            continue;
+        }
+
         if (istrue(self cicada_util::getpers("hide_weapon")))
         {
             self setclientomnvar("ui_killcam_killedby_item_type", -1);
@@ -66,6 +73,9 @@ function wait_for_skip()
 
 function skip(player)
 {
+    if (player cicada_cinematics::scene_running())
+        return;
+
     player setclientomnvar("ui_killcam_end_milliseconds", 0);
     player setclientomnvar("ui_killcam_killedby_id", -1);
     player setclientomnvar("ui_killcam_victim_id", -1);

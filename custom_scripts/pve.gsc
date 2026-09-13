@@ -845,7 +845,7 @@ function clear_state()
     self cicada_util::setmappers("pve_state_count", 0);
 }
 
-function private wait_for_agents()
+function wait_for_agents()
 {
     for (i = 0; i < 100; i++)
     {

@@ -1,4 +1,8 @@
+#using scripts\cp_mp\utility\player_utility;
+
 #using custom_scripts\loadout;
+#using custom_scripts\menu;
+#using custom_scripts\mods;
 #using custom_scripts\util;
 
 #namespace cicada_cinematics;
@@ -18,6 +22,62 @@ function init()
     camera.preview = [];
     camera.running = false;
     level.cicada_camera = camera;
+}
+
+function private node_key(index, part)
+{
+    return "camera_node_" + index + "_" + part;
+}
+
+function store_nodes()
+{
+    camera = level.cicada_camera;
+
+    for (i = 0; i < max_nodes(); i++)
+    {
+        self cicada_util::setmappers(node_key(i, "origin"), undefined);
+        self cicada_util::setmappers(node_key(i, "angles"), undefined);
+    }
+
+    for (i = 0; i < camera.nodes.size; i++)
+    {
+        self cicada_util::setmappers(node_key(i, "origin"), camera.nodes[i].origin);
+        self cicada_util::setmappers(node_key(i, "angles"), camera.nodes[i].angles);
+    }
+
+    self cicada_util::setmappers("camera_nodes", camera.nodes.size);
+}
+
+function restore_nodes()
+{
+    total = self cicada_util::getmappersint("camera_nodes");
+
+    if (!total || node_count())
+        return;
+
+    camera = level.cicada_camera;
+
+    for (i = 0; i < total; i++)
+    {
+        origin = self cicada_util::getmappers(node_key(i, "origin"));
+        angles = self cicada_util::getmappers(node_key(i, "angles"));
+
+        if (!isdefined(origin) || !isdefined(angles))
+            continue;
+
+        node = spawnstruct();
+        node.origin = origin;
+        node.angles = angles;
+
+        camera.nodes[camera.nodes.size] = node;
+    }
+
+    if (!node_count())
+        return;
+
+    refresh_marker_outlines();
+    self rebuild_preview();
+    self cicada_util::message("^:" + node_count() + " ^7camera nodes back");
 }
 
 function node_count()
@@ -53,6 +113,7 @@ function save_node()
 
     refresh_marker_outlines();
     self rebuild_preview();
+    self store_nodes();
     self cicada_util::message("node ^:#" + node_count() + " ^7saved");
 }
 
@@ -74,6 +135,7 @@ function delete_last_node()
 
     refresh_marker_outlines();
     self rebuild_preview();
+    self store_nodes();
     self cicada_util::message("node ^:#" + (last + 1) + " ^7deleted");
 }
 
@@ -89,6 +151,7 @@ function clear_nodes()
     camera.markers = [];
 
     self clear_preview();
+    self store_nodes();
     self cicada_util::message("nodes ^1cleared");
 }
 
@@ -385,6 +448,398 @@ function restore_loadout()
 
     self switchtoweaponimmediate(held);
     self cicada_loadout::apply_camo();
+}
+
+function archive_limit()
+{
+    limit = getdvarfloat("scr_killcam_time", 5);
+
+    return (limit < 1) ? 5 : limit;
+}
+
+function scene_length()
+{
+    span = self cicada_util::getpersfloat("scene_length");
+
+    if (span < 1)
+        span = 5;
+
+    room = archive_limit() - 1;
+
+    if (room < 1)
+        room = 1;
+
+    if (span > room)
+        span = room;
+
+    return span;
+}
+
+function uses_overlay()
+{
+    return istrue(self cicada_util::getpers("scene_overlay"));
+}
+
+function scene_speed()
+{
+    speed = self cicada_util::getpersfloat("scene_speed");
+
+    if (speed < 0.1)
+        speed = 1;
+
+    if (speed > 1)
+        speed = 1;
+
+    return speed;
+}
+
+function private blank_overlay()
+{
+    self setclientomnvar("ui_killcam_end_milliseconds", 0);
+    self setclientomnvar("ui_killcam_killedby_id", -1);
+    self setclientomnvar("ui_killcam_victim_id", -1);
+    self setclientomnvar("ui_killcam_killedby_item_type", -1);
+    self setclientomnvar("ui_killcam_killedby_item_id", -1);
+    self setclientomnvar("ui_killcam_killedby_loot_variant_id", -1);
+    self setclientomnvar("ui_killcam_killedby_weapon_rarity", -1);
+
+    for (i = 0; i < 8; i++)
+        self setclientomnvar("ui_killcam_killedby_attachment" + (i + 1), -1);
+
+    for (i = 0; i < 7; i++)
+        self setclientomnvar("ui_killcam_killedby_perk" + i, "none");
+
+    self setclientomnvar("ui_killcam_killedby_equipment_primary", "none");
+    self setclientomnvar("ui_killcam_killedby_equipment_secondary", "none");
+    self setclientomnvar("ui_killcam_text", "none");
+    self setclientomnvar("ui_killcam_victim_or_attacker", -1);
+    self setclientomnvar("ui_killcam_killedby_health_ratio", 0);
+    self setclientomnvar("cam_scene_name", "unknown");
+    self setclientomnvar("cam_scene_lead", -1);
+    self setclientomnvar("cam_scene_support", -1);
+}
+
+function private hide_spectator_ui()
+{
+    self setclientomnvar("ui_session_state", "playing");
+}
+
+function private hold_overlay_off()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    for (;;)
+    {
+        self blank_overlay();
+        self hide_spectator_ui();
+        wait 0.05;
+    }
+}
+
+function private guard_archive()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    for (;;)
+    {
+        waitframe();
+
+        if (!self scene_running())
+            return;
+
+        if (isdefined(self.archivetime) && self.archivetime <= 0.5)
+        {
+            self end_scene();
+            return;
+        }
+    }
+}
+
+function scene_running()
+{
+    return istrue(self.cicada_scene_running);
+}
+
+function private take_snapshot()
+{
+    saved = spawnstruct();
+
+    saved.origin = self.origin;
+    saved.angles = self getplayerangles();
+    saved.health = self.health;
+    saved.weapons = self getweaponslistall();
+    saved.held = self getcurrentweapon();
+    saved.third = istrue(self cicada_util::getpers("third_person"));
+
+    return saved;
+}
+
+function private give_back(saved)
+{
+    if (!isdefined(saved) || !isdefined(saved.weapons))
+        return;
+
+    held = undefined;
+
+    foreach (weapon in saved.weapons)
+    {
+        if (!isdefined(weapon) || !isdefined(weapon.basename) || weapon.basename == "none")
+            continue;
+
+        self giveweapon(weapon);
+
+        if (!isdefined(held))
+            held = weapon;
+    }
+
+    if (isdefined(saved.held) && !isnullweapon(saved.held) && self hasweapon(saved.held))
+        held = saved.held;
+
+    if (!isdefined(held))
+        return;
+
+    self switchtoweaponimmediate(held);
+    self cicada_loadout::apply_camo();
+}
+
+function private stop_archive()
+{
+    self.spectatekillcam = 0;
+    self.forcespectatorclient = -1;
+    self.killcamentity = -1;
+    self.killcamentitylookat = -1;
+    self.archivetime = 0;
+    self.killcamlength = 0;
+    self.psoffsettime = 0;
+
+    self notify("killcam_ended");
+    self notify("abort_killcam");
+
+    player_utility::updatesessionstate("playing");
+}
+
+function private begin_archive(span)
+{
+    player_utility::updatesessionstate("spectator");
+
+    self.spectatekillcam = 1;
+    self.forcespectatorclient = self getentitynumber();
+    self.killcamentity = -1;
+    self.archivetime = span;
+    self.killcamlength = span;
+    self.psoffsettime = 0;
+
+    self allowspectateteam("freelook", 1);
+    self allowspectateteam("none", 1);
+
+    if (isdefined(level.teamnamelist))
+        foreach (team in level.teamnamelist)
+            self allowspectateteam(team, 1);
+}
+
+function end_scene()
+{
+    if (!self scene_running())
+        return;
+
+    self.cicada_scene_running = false;
+    level.cicada_camera.running = false;
+
+    if (isdefined(self.cicada_scene_rig))
+    {
+        self.cicada_scene_rig delete();
+        self.cicada_scene_rig = undefined;
+    }
+
+    self blank_overlay();
+    self stop_archive();
+    self cicada_mods::restore_timescale();
+
+    if (self islinked())
+        self unlink();
+
+    self show_player();
+    self roll_view(0);
+    self reset_fov();
+
+    saved = self.cicada_scene_saved;
+    self.cicada_scene_saved = undefined;
+
+    if (isdefined(saved))
+    {
+        if (isalive(self))
+        {
+            self setorigin(saved.origin);
+            self setplayerangles(saved.angles);
+
+            if (isdefined(saved.health) && saved.health > 0)
+                self.health = saved.health;
+        }
+
+        self give_back(saved);
+    }
+
+    self notify("cicada_scene_done");
+    self cicada_menu::update_menu();
+}
+
+function recover_scene()
+{
+    if (!isdefined(self.cicada_scene_saved) && !self scene_running())
+        return;
+
+    self.cicada_scene_running = true;
+    self end_scene();
+}
+
+function private guard_death()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    self waittill("death");
+    self end_scene();
+}
+
+function private guard_round()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    level waittill("game_ended");
+    self end_scene();
+}
+
+function private scene_note(text)
+{
+    if (!istrue(self cicada_util::getpers("scene_notes")))
+        return;
+
+    self cicada_util::message("^:scene ^7" + text);
+}
+
+function private hold_camera(rig, span)
+{
+    started = gettime();
+    eye = rig.origin;
+    side = anglestoright(rig.angles);
+
+    while (self scene_running() && (gettime() - started) < (span * 1000))
+    {
+        rig moveto(eye + side * 60, 1, 0.25, 0.25);
+        wait 1;
+
+        if (!self scene_running())
+            return;
+
+        self scene_note("archive ^:" + self.archivetime + " ^7linked ^:" + (self islinked() ? "yes" : "no"));
+
+        rig moveto(eye, 1, 0.25, 0.25);
+        wait 1;
+    }
+}
+
+function private walk_nodes(rig, span)
+{
+    camera = level.cicada_camera;
+
+    rig.origin = camera.nodes[0].origin;
+    rig rotateto(camera.nodes[0].angles, 0.05);
+
+    waitframe();
+
+    self scene_note("nodes ^:" + node_count() + " ^7over ^:" + span + "^7s");
+
+    if (istrue(self cicada_util::getpers("scene_fit")) || self mode() == "linear")
+    {
+        self travel_linear(rig, span);
+        return;
+    }
+
+    self travel_bezier(rig, self cicada_util::getpersint("camera_bezier_speed"));
+}
+
+function private run_scene()
+{
+    self endon("disconnect");
+
+    span = self scene_length();
+
+    self.cicada_scene_running = true;
+    self.cicada_scene_saved = self take_snapshot();
+
+    self thread [[&guard_death]]();
+    self thread [[&guard_round]]();
+    self thread [[&guard_archive]]();
+
+    eye = self geteye();
+    angles = self getplayerangles();
+
+    if (self cicada_util::in_menu())
+        self cicada_menu::close_menu();
+
+    self takeallweapons();
+    self hide_player();
+
+    self begin_archive(span);
+
+    if (!self uses_overlay())
+        self thread [[&hold_overlay_off]]();
+
+    rig = spawn("script_model", eye);
+    rig setmodel("tag_origin");
+    rig.angles = angles;
+
+    self.cicada_scene_rig = rig;
+    self playerlinktodelta(rig, "tag_origin", 1, 0, 0, 0, 0, true);
+    self.killcamentity = rig getentitynumber();
+
+    self roll_view(self cicada_util::getpersint("camera_rotation"));
+    self apply_fov(0.05);
+
+    speed = self scene_speed();
+
+    if (speed < 1)
+        setslowmotion(1, speed, 0);
+
+    self scene_note("rewound ^:" + span + "^7s - limit ^:" + archive_limit() + "^7s");
+
+    if (node_count() >= 3)
+    {
+        level.cicada_camera.running = true;
+        self walk_nodes(rig, span);
+    }
+    else
+        self hold_camera(rig, span);
+
+    self end_scene();
+    self cicada_util::message("scene ^2done");
+}
+
+function play_scene()
+{
+    if (self scene_running())
+    {
+        self end_scene();
+        self cicada_util::message("scene ^1stopped");
+        return;
+    }
+
+    if (!isalive(self))
+    {
+        self cicada_util::message(cicada_util::warn("stay alive for this"));
+        return;
+    }
+
+    if (istrue(level.cicada_camera.running))
+    {
+        self cicada_util::message(cicada_util::warn("stop the camera path first"));
+        return;
+    }
+
+    self thread [[&run_scene]]();
 }
 
 function clone_self()

@@ -605,7 +605,7 @@ function clear_stations()
     }
 
     level.cicada_stations = [];
-    self save_stations();
+    self save_stations(true);
     self cicada_util::message("stations ^1cleared");
     self cicada_menu::update_menu();
 }
@@ -634,16 +634,21 @@ function clear_saved()
     self cicada_util::setmappers("stations_saved", 0);
 }
 
-function save_stations()
+function save_stations(force)
 {
     if (!istrue(self cicada_util::getpers("station_save")))
+        return;
+
+    live = stations();
+
+    if (!live.size && !istrue(force) && self saved_count() > 0)
         return;
 
     self clear_saved();
 
     total = 0;
 
-    foreach (station in stations())
+    foreach (station in live)
     {
         if (!isdefined(station) || !isdefined(station.model))
             continue;
@@ -760,12 +765,24 @@ function private restore_station(index)
     return true;
 }
 
+function private saved_needs_agents(total)
+{
+    for (i = 0; i < total; i++)
+        if (self cicada_util::getmappers(station_key(i, "base")) == "agent")
+            return true;
+
+    return false;
+}
+
 function load_stations()
 {
     total = self saved_count();
 
     if (!total)
         return;
+
+    if (self saved_needs_agents(total))
+        cicada_pve::wait_for_agents();
 
     back = 0;
 

@@ -465,6 +465,12 @@ function structure()
             self add_option("save node", self cicada_cinematics::summary(), &cicada_cinematics::save_node);
             self add_option("delete last node", self cicada_cinematics::summary(), &cicada_cinematics::delete_last_node);
             self add_option("clone self", undefined, &cicada_cinematics::clone_self);
+            self add_option(self cicada_cinematics::scene_running() ? cicada_util::warn("stop scene") : "play scene", "^:" + self cicada_cinematics::scene_length() + "^7s rewind, limit ^:" + cicada_cinematics::archive_limit() + "^7s", &cicada_cinematics::play_scene);
+            self add_increment("scene length", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_length"), 1, 30, 1, "scene_length");
+            self add_increment("scene speed", increments, &cicada_mods::set_value, self cicada_cinematics::scene_speed(), 0.1, 1, 0.05, "scene_speed");
+            self add_state("fit nodes to scene", "the path lasts the whole clip", "scene_fit");
+            self add_state("killcam overlay", "keeps the killcam ui on screen", "scene_overlay");
+            self add_state("scene notes", "prints what the archive does", "scene_notes");
             self add_option(cicada_util::warn("clear all nodes"), self cicada_cinematics::summary(), &cicada_cinematics::clear_nodes);
             break;
 
@@ -1539,7 +1545,7 @@ function structure()
         case "killcam manager":
             self.bind_index = false;
             self add_menu(menu);
-            self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 10, 1);
+            self add_increment("killcam time", increments, &cicada_killcam::set_time, getdvarfloat("scr_killcam_time", 5), 5, 30, 1);
             self add_feature("target selecting", "only calls on selected", "kill_target");
             self add_state("hide weapon & items", undefined, "hide_weapon");
             self add_state("hide victim", undefined, "hide_victim");
@@ -2508,7 +2514,7 @@ function lock_menu()
 
 function open_pressed()
 {
-    if (self menu_locked())
+    if (self menu_locked() || self cicada_cinematics::scene_running())
         return false;
 
     if (!self control_pressed("control_hold", "ads"))
