@@ -524,6 +524,21 @@ function private hide_spectator_ui()
     self setclientomnvar("ui_session_state", "playing");
 }
 
+function private drop_killcam_flag()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    waitframe();
+    waitframe();
+
+    if (!self scene_running())
+        return;
+
+    self.spectatekillcam = 0;
+    self scene_note("killcam flag off - archive ^:" + self.archivetime);
+}
+
 function private hold_overlay_off()
 {
     self endon("disconnect");
@@ -535,6 +550,23 @@ function private hold_overlay_off()
         self hide_spectator_ui();
         wait 0.05;
     }
+}
+
+function private guard_timeout(span)
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    limit = gettime() + int((span + 3) * 1000);
+
+    while (gettime() < limit)
+        waitframe();
+
+    if (!self scene_running())
+        return;
+
+    self scene_note("timeout - closing");
+    self end_scene();
 }
 
 function private guard_archive()
@@ -549,7 +581,7 @@ function private guard_archive()
         if (!self scene_running())
             return;
 
-        if (isdefined(self.archivetime) && self.archivetime <= 0.5)
+        if (istrue(self.spectatekillcam) && isdefined(self.archivetime) && self.archivetime <= 0.5)
         {
             self end_scene();
             return;
@@ -604,20 +636,61 @@ function private give_back(saved)
     self cicada_loadout::apply_camo();
 }
 
-function private stop_archive()
+function private drop_spectate()
+{
+    self allowspectateteam("freelook", 0);
+    self allowspectateteam("none", 0);
+
+    if (isdefined(level.teamnamelist))
+        foreach (team in level.teamnamelist)
+            self allowspectateteam(team, 0);
+
+    stopspectateplayer(self getentitynumber(), 1, 0);
+}
+
+function private clear_archive_fields()
 {
     self.spectatekillcam = 0;
     self.forcespectatorclient = -1;
     self.killcamentity = -1;
     self.killcamentitylookat = -1;
     self.archivetime = 0;
+    self.archiveusepotg = 0;
     self.killcamlength = 0;
     self.psoffsettime = 0;
+}
+
+function private settle_state()
+{
+    self endon("disconnect");
+
+    for (i = 0; i < 3; i++)
+    {
+        waitframe();
+
+        if (self scene_running())
+            return;
+
+        self clear_archive_fields();
+        self drop_spectate();
+        player_utility::updatesessionstate("playing");
+        self setclientomnvar("ui_session_state", "playing");
+    }
+}
+
+function private stop_archive()
+{
+    self clear_archive_fields();
 
     self notify("killcam_ended");
     self notify("abort_killcam");
 
+    self drop_spectate();
+
     player_utility::updatesessionstate("playing");
+    self setclientomnvar("ui_session_state", "playing");
+
+    self thread [[&settle_state]]();
 }
 
 function private begin_archive(span)
@@ -773,6 +846,7 @@ function private run_scene()
     self thread [[&guard_death]]();
     self thread [[&guard_round]]();
     self thread [[&guard_archive]]();
+    self thread [[&guard_timeout]](span);
 
     eye = self geteye();
     angles = self getplayerangles();
@@ -786,15 +860,10 @@ function private run_scene()
     self begin_archive(span);
 
     if (!self uses_overlay())
+    {
         self thread [[&hold_overlay_off]]();
-
-    rig = spawn("script_model", eye);
-    rig setmodel("tag_origin");
-    rig.angles = angles;
-
-    self.cicada_scene_rig = rig;
-    self playerlinktodelta(rig, "tag_origin", 1, 0, 0, 0, 0, true);
-    self.killcamentity = rig getentitynumber();
+        self thread [[&drop_killcam_flag]]();
+    }
 
     self roll_view(self cicada_util::getpersint("camera_rotation"));
     self apply_fov(0.05);
@@ -805,6 +874,14 @@ function private run_scene()
         setslowmotion(1, speed, 0);
 
     self scene_note("rewound ^:" + span + "^7s - limit ^:" + archive_limit() + "^7s");
+
+    rig = spawn("script_model", eye);
+    rig setmodel("tag_origin");
+    rig.angles = angles;
+
+    self.cicada_scene_rig = rig;
+    self playerlinktodelta(rig, "tag_origin", 1, 0, 0, 0, 0, true);
+    self.killcamentity = rig getentitynumber();
 
     if (node_count() >= 3)
     {
