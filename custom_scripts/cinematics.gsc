@@ -254,6 +254,41 @@ function base_fov()
     return 65;
 }
 
+function bind_fov_summary()
+{
+    value = self cicada_util::getpersint("bind_fov_value");
+    fade = self cicada_util::getpersfloat("bind_fov_fade");
+
+    if (istrue(self.cicada_bind_fov))
+        return "^2on ^7at ^:" + value;
+
+    return "^:" + value + " ^7over ^:" + fade + "^7s";
+}
+
+function bind_fov()
+{
+    if (istrue(level.cicada_camera.running) || self scene_running())
+    {
+        self cicada_util::message(cicada_util::warn("not during a camera move"));
+        return;
+    }
+
+    fade = self cicada_util::getpersfloat("bind_fov_fade");
+
+    if (istrue(self.cicada_bind_fov))
+    {
+        self.cicada_bind_fov = undefined;
+        self lerpfov(base_fov(), fade);
+        self lerpfovbypreset("default_2seconds");
+        self lerpfovscalefactor(1, fade);
+        return;
+    }
+
+    self.cicada_bind_fov = true;
+    self lerpfovscalefactor(0, 0);
+    self lerpfov(self cicada_util::getpersint("bind_fov_value"), fade);
+}
+
 function reset_fov_preview()
 {
     self endon("disconnect");
@@ -722,11 +757,7 @@ function end_scene()
     self.cicada_scene_running = false;
     level.cicada_camera.running = false;
 
-    if (isdefined(self.cicada_scene_rig))
-    {
-        self.cicada_scene_rig delete();
-        self.cicada_scene_rig = undefined;
-    }
+    self notify("cicada_scene_done");
 
     self undress_nodes();
     self drop_scene_vision();
@@ -737,6 +768,12 @@ function end_scene()
 
     if (self islinked())
         self unlink();
+
+    if (isdefined(self.cicada_scene_rig))
+    {
+        self.cicada_scene_rig delete();
+        self.cicada_scene_rig = undefined;
+    }
 
     self show_player();
     self roll_view(0);
@@ -759,7 +796,6 @@ function end_scene()
         self give_back(saved);
     }
 
-    self notify("cicada_scene_done");
     self cicada_menu::update_menu();
 }
 

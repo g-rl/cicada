@@ -468,7 +468,15 @@ function structure()
             self add_option(self cicada_cinematics::scene_running() ? cicada_util::warn("stop scene") : "play scene", "^:" + self cicada_cinematics::scene_length() + "^7s rewind, limit ^:" + cicada_cinematics::archive_limit() + "^7s", &cicada_cinematics::play_scene);
             self add_option("scene settings", "^:" + self cicada_cinematics::scene_length() + "^7s at ^:" + self cicada_cinematics::scene_speed() + "^7x", &new_menu, "scene settings");
             self add_option("scene effects", self cicada_cinematics::scene_effect_summary(), &new_menu, "scene effects");
+            self add_option("fov bind", self cicada_cinematics::bind_fov_summary(), &new_menu, "fov bind");
             self add_option(cicada_util::warn("clear all nodes"), self cicada_cinematics::summary(), &cicada_cinematics::clear_nodes);
+            break;
+
+        case "fov bind":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_increment("bind fov", increments, &cicada_mods::set_value, self cicada_util::getpersint("bind_fov_value"), 1, 120, 1, "bind_fov_value");
+            self add_increment("fade time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bind_fov_fade"), 0, 5, 0.05, "bind_fov_fade");
             break;
 
         case "scene settings":
