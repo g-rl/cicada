@@ -15,6 +15,7 @@
 #using custom_scripts\catalog;
 #using custom_scripts\loadout;
 #using custom_scripts\menu;
+#using custom_scripts\mods;
 #using custom_scripts\movement;
 #using custom_scripts\util;
 
@@ -1885,6 +1886,9 @@ function private zombie_on_damaged(einflictor, eattacker, idamage, idflags, smea
     if (istrue(level.cicada_pve_snipers) && istrue(self.cicada_pve_zombie) && isplayer(eattacker) && isdefined(objweapon) && isdefined(objweapon.basename) && weaponclass(objweapon.basename) == "sniper")
         idamage = self.health + 1;
 
+    if (isplayer(eattacker) && isalive(self))
+        eattacker cicada_mods::play_unit_effect(istrue(self.cicada_pve_zombie) ? "zombie" : "agent", "hit", self.origin);
+
     original = level.cicada_pve_ondamage_orig[self.unittype];
     if (isdefined(original))
         [[original]](einflictor, eattacker, idamage, idflags, smeansofdeath, sweapon, vpoint, vdir, shitloc, timeoffset, modelindex, partname, objweapon);
@@ -1911,6 +1915,9 @@ function private zombie_on_killed(einflictor, eattacker, idamage, smeansofdeath,
 
     if (istrue(self.cicada_pve_boss))
         boss_killed(self, eattacker);
+
+    if (isplayer(eattacker))
+        eattacker cicada_mods::play_unit_effect(istrue(self.cicada_pve_zombie) ? "zombie" : "agent", "kill", self.origin);
 
     original = level.cicada_pve_onkilled_orig[self.unittype];
     if (isdefined(original))

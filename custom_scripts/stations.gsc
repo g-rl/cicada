@@ -517,7 +517,10 @@ function place_station(kind)
         }
     }
     else
+    {
         station.model setmodel(model);
+        cicada_props::dress_model(station.model, model);
+    }
 
     station.outline = istrue(self cicada_util::getpers("station_outline"));
 
@@ -612,7 +615,7 @@ function clear_stations()
 
 function private station_fields()
 {
-    return cicada_util::list("kind,base,actor,model,origin,angles,radius,cooldown,uses,left,pool,mode,weapon,joker,lift,speed,outline");
+    return cicada_util::list("kind,base,actor,model,origin,angles,radius,cooldown,uses,left,pool,mode,weapon,joker,lift,speed,outline,head_mode,head_pick");
 }
 
 function private station_key(index, field)
@@ -670,6 +673,8 @@ function save_stations(force)
         self cicada_util::setmappers(station_key(total, "lift"), station.lift);
         self cicada_util::setmappers(station_key(total, "speed"), station.speed);
         self cicada_util::setmappers(station_key(total, "outline"), istrue(station.outline));
+        self cicada_util::setmappers(station_key(total, "head_mode"), cicada_props::head_mode(station.model));
+        self cicada_util::setmappers(station_key(total, "head_pick"), station.model.cicada_prop_head_pick);
 
         total++;
     }
@@ -744,7 +749,21 @@ function private restore_station(index)
         }
     }
     else
+    {
         station.model setmodel(station.model_name);
+
+        pick = self cicada_util::getmappers(station_key(index, "head_pick"));
+
+        if (isdefined(pick))
+            station.model.cicada_prop_head_pick = pick;
+
+        mode = self cicada_util::getmappers(station_key(index, "head_mode"));
+
+        if (isdefined(mode))
+            station.model.cicada_prop_head_mode = mode;
+
+        cicada_props::dress_model(station.model, station.model_name);
+    }
 
     if (station.outline)
     {
@@ -794,6 +813,32 @@ function load_stations()
         self cicada_util::message("^:" + back + " ^7stations back");
 
     self cicada_menu::update_menu();
+}
+
+function open_head(station)
+{
+    if (!isdefined(station) || !isdefined(station.model))
+        return;
+
+    if (station.base == "agent")
+    {
+        self cicada_util::message(cicada_util::warn("agents keep their own head"));
+        return;
+    }
+
+    self.select_prop = station.model;
+    self cicada_menu::new_menu("model head");
+}
+
+function head_summary(station)
+{
+    if (!isdefined(station) || !isdefined(station.model))
+        return "^1gone";
+
+    if (station.base == "agent")
+        return "^1agent base";
+
+    return cicada_props::head_summary(station.model);
 }
 
 function manage_stations(action)

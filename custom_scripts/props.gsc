@@ -863,17 +863,250 @@ function private prop_model_swap(prop, name)
     refresh_head(prop);
 }
 
+function clip_names()
+{
+    names = cicada_util::list("care_package_col,collision_clip,tactical_cover_col,shield_drone_clip,clip32x32x32,clip32x32x128,clip32x32x256,clip64x64x64,clip64x64x128,clip64x64x256");
+
+    foreach (name in cicada_util::list("clip128x128x128,clip128x128x256,player32x32x32,player32x32x128,player64x64x64,player64x64x128,player64x64x256,player128x128x128"))
+        names[names.size] = name;
+
+    return names;
+}
+
+function private scan_brushmodels()
+{
+    best = undefined;
+    best_size = 0;
+
+    foreach (ent in getentarray("script_brushmodel", "classname"))
+    {
+        if (!isdefined(ent))
+            continue;
+
+        half = ent getboundshalfsize();
+
+        if (!isdefined(half))
+            continue;
+
+        if (half[0] < 4 || half[1] < 4 || half[2] < 4)
+            continue;
+
+        if (half[0] > 160 || half[1] > 160 || half[2] > 160)
+            continue;
+
+        size = half[0] + half[1] + half[2];
+
+        if (!isdefined(best) || size < best_size)
+        {
+            best = ent;
+            best_size = size;
+        }
+    }
+
+    return best;
+}
+
 function collision_source()
 {
+    if (isdefined(level.cicada_clip_source))
+        return level.cicada_clip_source;
+
+    if (istrue(level.cicada_clip_scanned))
+        return undefined;
+
+    level.cicada_clip_scanned = true;
+
     if (isdefined(level.cratedata) && isdefined(level.cratedata.mountmantlemodel))
-        return level.cratedata.mountmantlemodel;
+        level.cicada_clip_source = level.cratedata.mountmantlemodel;
 
-    clip = getent("care_package_col", "targetname");
+    if (!isdefined(level.cicada_clip_source))
+    {
+        foreach (name in clip_names())
+        {
+            found = getent(name, "targetname");
 
-    if (isdefined(clip))
-        return clip;
+            if (isdefined(found))
+            {
+                level.cicada_clip_source = found;
+                break;
+            }
+        }
+    }
 
-    return getent("collision_clip", "targetname");
+    if (!isdefined(level.cicada_clip_source))
+        level.cicada_clip_source = scan_brushmodels();
+
+    return level.cicada_clip_source;
+}
+
+function dress_model(ent, name)
+{
+    if (!isdefined(ent))
+        return;
+
+    ent.cicada_prop_model = name;
+    refresh_head(ent);
+}
+
+function private prop_fields()
+{
+    return cicada_util::list("model,origin,angles,solid,clips,auto,width,layers,space,offset,head_mode,head_pick,spin");
+}
+
+function private prop_key(index, field)
+{
+    return "prop_saved_" + index + "_" + field;
+}
+
+function saved_props()
+{
+    return self cicada_util::getmappersint("props_saved");
+}
+
+function clear_saved_props()
+{
+    for (i = 0; i < self saved_props(); i++)
+        foreach (field in prop_fields())
+            self cicada_util::setmappers(prop_key(i, field), undefined);
+
+    self cicada_util::setmappers("props_saved", 0);
+}
+
+function save_props(force)
+{
+    if (!istrue(self cicada_util::getpers("prop_save")))
+        return;
+
+    live = props();
+
+    if (!live.size && !istrue(force) && self saved_props() > 0)
+        return;
+
+    self clear_saved_props();
+
+    total = 0;
+
+    foreach (prop in live)
+    {
+        if (!isdefined(prop) || !isdefined(prop.cicada_prop_model))
+            continue;
+
+        self cicada_util::setmappers(prop_key(total, "model"), prop.cicada_prop_model);
+        self cicada_util::setmappers(prop_key(total, "origin"), prop.origin);
+        self cicada_util::setmappers(prop_key(total, "angles"), prop.angles);
+        self cicada_util::setmappers(prop_key(total, "solid"), istrue(prop.cicada_prop_solid));
+        self cicada_util::setmappers(prop_key(total, "clips"), has_collision(prop));
+        self cicada_util::setmappers(prop_key(total, "auto"), istrue(prop.cicada_prop_clip_auto));
+        self cicada_util::setmappers(prop_key(total, "width"), clip_width(prop));
+        self cicada_util::setmappers(prop_key(total, "layers"), clip_layers(prop));
+        self cicada_util::setmappers(prop_key(total, "space"), clip_spacing(prop));
+        self cicada_util::setmappers(prop_key(total, "offset"), prop_clip_offset(prop));
+        self cicada_util::setmappers(prop_key(total, "head_mode"), head_mode(prop));
+        self cicada_util::setmappers(prop_key(total, "head_pick"), prop.cicada_prop_head_pick);
+        self cicada_util::setmappers(prop_key(total, "spin"), istrue(prop.cicada_prop_spin));
+
+        total++;
+    }
+
+    self cicada_util::setmappers("props_saved", total);
+}
+
+function private restore_prop(index)
+{
+    name = self cicada_util::getmappers(prop_key(index, "model"));
+    origin = self cicada_util::getmappers(prop_key(index, "origin"));
+
+    if (!isdefined(name) || !isdefined(origin))
+        return false;
+
+    angles = self cicada_util::getmappers(prop_key(index, "angles"));
+
+    if (!isdefined(angles))
+        angles = (0, 0, 0);
+
+    prop = spawn("script_model", origin);
+    prop.angles = angles;
+    prop_model_swap(prop, name);
+
+    pick = self cicada_util::getmappers(prop_key(index, "head_pick"));
+
+    if (isdefined(pick))
+        prop.cicada_prop_head_pick = pick;
+
+    mode = self cicada_util::getmappers(prop_key(index, "head_mode"));
+
+    if (isdefined(mode))
+        prop.cicada_prop_head_mode = mode;
+
+    refresh_head(prop);
+
+    width = self cicada_util::getmappersint(prop_key(index, "width"));
+    layers = self cicada_util::getmappersint(prop_key(index, "layers"));
+    space = self cicada_util::getmappersint(prop_key(index, "space"));
+
+    prop.cicada_prop_clip_width = (width > 0) ? width : 1;
+    prop.cicada_prop_clip_layers = (layers > 0) ? layers : 1;
+    prop.cicada_prop_clip_space = (space > 0) ? space : 56;
+
+    track(prop);
+
+    if (istrue(self cicada_util::getmappers(prop_key(index, "solid"))))
+    {
+        prop.cicada_prop_solid = true;
+        prop solid();
+    }
+
+    if (istrue(self cicada_util::getmappers(prop_key(index, "clips"))))
+    {
+        prop.cicada_prop_clip_auto = istrue(self cicada_util::getmappers(prop_key(index, "auto")));
+        build_collision(prop, self cicada_util::getmappers(prop_key(index, "offset")));
+    }
+
+    if (istrue(self cicada_util::getmappers(prop_key(index, "spin"))))
+    {
+        prop.cicada_prop_spin = true;
+        level thread [[&spin_prop]](prop);
+    }
+
+    return true;
+}
+
+function load_props()
+{
+    total = self saved_props();
+
+    if (!total || count())
+        return;
+
+    back = 0;
+
+    for (i = 0; i < total; i++)
+        if (self restore_prop(i))
+            back++;
+
+    if (back)
+        self cicada_util::message("^:" + back + " ^7models back from the last round");
+
+    self cicada_menu::update_menu();
+}
+
+function props_autosave()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    self notify("cicada_prop_autosave");
+    self endon("cicada_prop_autosave");
+
+    for (;;)
+    {
+        wait 2;
+
+        if (!istrue(self cicada_util::getpers("prop_save")) || !count())
+            continue;
+
+        self save_props();
+    }
 }
 
 function has_collision(prop)
@@ -1111,8 +1344,13 @@ function private make_prop(name, origin, angles)
 
     track(prop);
 
-    if (istrue(self cicada_util::getpers("prop_collision")))
+    if (istrue(self cicada_util::getpers("prop_collision")) || istrue(prop.cicada_prop_solid))
+    {
+        prop.cicada_prop_clip_auto = !istrue(self cicada_util::getpers("prop_collision"));
         self add_collision(prop);
+    }
+
+    self save_props();
 
     return prop;
 }
@@ -1199,6 +1437,7 @@ function move_prop(where, prop)
 function private settle_collision(prop)
 {
     rebuild_collision(prop);
+    self save_props();
 }
 
 function face_me(prop)
@@ -1299,13 +1538,26 @@ function toggle_solid(prop)
     {
         prop.cicada_prop_solid = false;
         prop notsolid();
+
+        if (istrue(prop.cicada_prop_clip_auto))
+        {
+            prop.cicada_prop_clip_auto = false;
+            drop_collision(prop);
+        }
     }
     else
     {
         prop.cicada_prop_solid = true;
         prop solid();
+
+        if (!has_collision(prop))
+        {
+            prop.cicada_prop_clip_auto = true;
+            self add_collision(prop);
+        }
     }
 
+    self save_props();
     self cicada_menu::update_menu();
 }
 
@@ -1373,6 +1625,7 @@ function delete_prop(prop)
     prop delete();
 
     rebuild();
+    self save_props(true);
     self cicada_util::message("prop ^1deleted");
     self cicada_menu::update_menu();
 }
@@ -1395,6 +1648,7 @@ function clear_props()
     }
 
     level.cicada_props = [];
+    self save_props(true);
     self cicada_util::message("props ^1cleared");
     self cicada_menu::update_menu();
 }

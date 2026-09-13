@@ -466,12 +466,48 @@ function structure()
             self add_option("delete last node", self cicada_cinematics::summary(), &cicada_cinematics::delete_last_node);
             self add_option("clone self", undefined, &cicada_cinematics::clone_self);
             self add_option(self cicada_cinematics::scene_running() ? cicada_util::warn("stop scene") : "play scene", "^:" + self cicada_cinematics::scene_length() + "^7s rewind, limit ^:" + cicada_cinematics::archive_limit() + "^7s", &cicada_cinematics::play_scene);
+            self add_option("scene settings", "^:" + self cicada_cinematics::scene_length() + "^7s at ^:" + self cicada_cinematics::scene_speed() + "^7x", &new_menu, "scene settings");
+            self add_option("scene effects", self cicada_cinematics::scene_effect_summary(), &new_menu, "scene effects");
+            self add_option(cicada_util::warn("clear all nodes"), self cicada_cinematics::summary(), &cicada_cinematics::clear_nodes);
+            break;
+
+        case "scene settings":
+            self.bind_index = false;
+            self add_menu(menu);
             self add_increment("scene length", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_length"), 1, 30, 1, "scene_length");
             self add_increment("scene speed", increments, &cicada_mods::set_value, self cicada_cinematics::scene_speed(), 0.1, 1, 0.05, "scene_speed");
             self add_state("fit nodes to scene", "the path lasts the whole clip", "scene_fit");
             self add_state("killcam overlay", "keeps the killcam ui on screen", "scene_overlay");
             self add_state("scene notes", "prints what the archive does", "scene_notes");
-            self add_option(cicada_util::warn("clear all nodes"), self cicada_cinematics::summary(), &cicada_cinematics::clear_nodes);
+            self add_state("connect nodes in the replay", "draws a line through the nodes", "scene_link_nodes");
+            self add_state("hide nodes in the replay", "takes the markers off screen", "scene_hide_nodes");
+            self add_array("scene vision", sliders, &cicada_mods::set_value, cicada_cinematics::vision_choices(), self cicada_util::getpers("scene_vision"), "scene_vision");
+            self add_increment("vision fade", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_vision_fade"), 0, 5, 0.05, "scene_vision_fade");
+            break;
+
+        case "scene effects":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_state("scene effects", self cicada_mods::stack_summary("scene_effect"), "scene_fx");
+            self add_array("plays at", sliders, &cicada_mods::set_value, cicada_cinematics::fx_spots(), self cicada_util::getpers("scene_fx_spot"), "scene_fx_spot");
+            self add_increment("start time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_fx_start"), 0, 30, self cicada_cinematics::scene_step(), "scene_fx_start");
+            self add_state("loop the effects", "keeps playing until the end", "scene_fx_loop");
+            self add_increment("loop delay", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_fx_rate"), 0.05, 10, self cicada_cinematics::scene_step(), "scene_fx_rate");
+            self add_increment("effect height", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_fx_height"), 0, 200, 5, "scene_fx_height");
+            self add_increment("time slider step", increments, &cicada_mods::set_value, self cicada_cinematics::scene_step(), 0.05, 1, 0.05, "scene_fx_step");
+            self add_option("scene shake", self cicada_cinematics::quake_summary(), &new_menu, "scene shake");
+            self stack_options("scene_effect", "scene effect list", increments, sliders);
+            break;
+
+        case "scene shake":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_state("shake the screen", "^:earthquake ^7on the camera", "scene_quake");
+            self add_increment("shake strength", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_quake_scale"), 0.05, 2, 0.05, "scene_quake_scale");
+            self add_increment("shake time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_quake_length"), 0.1, 10, self cicada_cinematics::scene_step(), "scene_quake_length");
+            self add_increment("shake radius", increments, &cicada_mods::set_value, self cicada_util::getpersint("scene_quake_radius"), 100, 5000, 100, "scene_quake_radius");
+            self add_increment("start time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("scene_quake_start"), 0, 30, self cicada_cinematics::scene_step(), "scene_quake_start");
+            self add_state("loop the shake", "repeats until the end", "scene_quake_loop");
             break;
 
         case "position":
@@ -678,6 +714,7 @@ function structure()
             self add_option("bring here", self cicada_stations::station_summary(self.select_station), &cicada_stations::move_station, self.select_station);
             if (isdefined(self.select_station) && isdefined(self.select_station.model))
                 self add_increment("height", increments, &cicada_stations::raise_station, self.select_station.model.origin[2], -100000, 100000, 10, self.select_station);
+            self add_option("head", self cicada_stations::head_summary(self.select_station), &cicada_stations::open_head, self.select_station);
             self add_option(cicada_util::warn("remove station"), undefined, &cicada_stations::remove_station, self.select_station);
             break;
 
@@ -829,6 +866,45 @@ function structure()
             self add_option("tracer effects", self cicada_mods::stack_summary("tracer_effect"), &new_menu, "tracer effects");
             self add_option("bot effects", "loops effects on living bots", &new_menu, "bot effects");
             self add_option("zombie effects", "loops effects on the horde", &new_menu, "zombie effects");
+            self add_option("unit effects", "kills and hits on each kind", &new_menu, "unit effects");
+            break;
+
+        case "unit effects":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (kind in cicada_mods::unit_classes())
+                self add_option(kind + "s", self cicada_mods::unit_summary(kind), &new_menu, kind + " hits");
+            break;
+
+        case "zombie hits":
+        case "agent hits":
+        case "bot hits":
+            self.bind_index = false;
+            self add_menu(menu);
+            self unit_effect_options(cicada_mods::unit_key(menu), increments);
+            break;
+
+        case "zombie kill stack":
+        case "agent kill stack":
+        case "bot kill stack":
+        case "zombie hit stack":
+        case "agent hit stack":
+        case "bot hit stack":
+            self.bind_index = false;
+            self add_menu(menu);
+            self stack_options(unit_stack_key(menu), menu + " list", increments, sliders);
+            break;
+
+        case "zombie kill stack list":
+        case "agent kill stack list":
+        case "bot kill stack list":
+        case "zombie hit stack list":
+        case "agent hit stack list":
+        case "bot hit stack list":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (name in cicada_mods::effect_list())
+                self add_option(cicada_mods::effect_label(name), "^:adds to the stack", &cicada_mods::add_stack_effect, name, unit_stack_key(menu));
             break;
 
         case "kill effects":
@@ -927,6 +1003,7 @@ function structure()
         case "enemy effect list":
         case "friendly effect list":
         case "zombie effect list":
+        case "scene effect list":
         case "teleport effect list":
         case "station effect list":
         case "afterhits effect list":
@@ -1400,6 +1477,7 @@ function structure()
             self add_increment("path speed", increments, &cicada_mods::set_value, self cicada_util::getpersint("prop_speed"), 25, 1000, 25, "prop_speed");
             self add_state("solid on spawn", "model blocks bullets", "prop_solid");
             self add_state("collision on spawn", "clips on new models", "prop_collision");
+            self add_state("keep models", "^:" + self cicada_props::saved_props() + " ^7saved", "prop_save");
             self add_option(cicada_util::warn("clear models"), "^:" + cicada_props::count() + " ^7spawned", &cicada_props::clear_props);
             break;
 
@@ -1683,6 +1761,9 @@ function stack_key(menu)
         case "zombie effect list":
             return "zombie_effect";
 
+        case "scene effect list":
+            return "scene_effect";
+
         case "teleport effect list":
             return "teleport_effect";
 
@@ -1703,6 +1784,25 @@ function stack_key(menu)
     }
 
     return undefined;
+}
+
+function unit_stack_key(menu)
+{
+    kind = cicada_mods::unit_key(menu);
+
+    if (issubstr(menu, "kill"))
+        return kind + "_kill_effect";
+
+    return kind + "_hit_effect";
+}
+
+function unit_effect_options(kind, increments)
+{
+    self add_state("kill effects", self cicada_mods::stack_summary(kind + "_kill_effect"), kind + "_kill_fx");
+    self add_option("kill effect stack", self cicada_mods::stack_summary(kind + "_kill_effect"), &new_menu, kind + " kill stack");
+    self add_state("damage effects", self cicada_mods::stack_summary(kind + "_hit_effect"), kind + "_hit_fx");
+    self add_option("damage effect stack", self cicada_mods::stack_summary(kind + "_hit_effect"), &new_menu, kind + " hit stack");
+    self add_increment("effect height", increments, &cicada_mods::set_value, self cicada_util::getpersfloat(kind + "_fx_height"), 0, 200, 5, kind + "_fx_height");
 }
 
 function stack_options(key, list_menu, increments, sliders)

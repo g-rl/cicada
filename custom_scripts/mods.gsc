@@ -144,6 +144,17 @@ function refresh_on_spawn()
         self thread [[&cicada_stations::load_stations]]();
     }
 
+    if (istrue(self cicada_util::getpers("prop_save")) && !istrue(level.cicada_props_restored))
+    {
+        level.cicada_props_restored = true;
+        self thread [[&cicada_props::load_props]]();
+    }
+
+    self thread [[&cicada_props::props_autosave]]();
+
+    ensure_kill_hook();
+    ensure_damage_hook();
+
     self cicada_menu::restore_lock();
     self cicada_cinematics::recover_scene();
     self cicada_cinematics::restore_nodes();
@@ -1109,6 +1120,9 @@ function private revive_after_death()
 
 function player_killed_hook(einflictor, eattacker, idamage, idflags, smeansofdeath, objweapon, vdir, shitloc, timeoffset, deathanimduration)
 {
+    if (isplayer(eattacker) && eattacker != self && cicada_util::is_bot(self))
+        eattacker play_unit_effect("bot", "kill", self.origin);
+
     if (istrue(level.cicada_target_mode) && isplayer(self) && has_kill_target())
     {
         if (istrue(self.cicada_killcam_target))
@@ -1133,6 +1147,65 @@ function may_consider_dead(victim)
         return [[level.cicada_maydead_orig]](victim);
 
     return true;
+}
+
+function unit_classes()
+{
+    return cicada_util::list("zombie,agent,bot");
+}
+
+function unit_key(menu)
+{
+    if (issubstr(menu, "zombie"))
+        return "zombie";
+
+    if (issubstr(menu, "agent"))
+        return "agent";
+
+    return "bot";
+}
+
+function unit_summary(kind)
+{
+    kill = istrue(self cicada_util::getpers(kind + "_kill_fx"));
+    hit = istrue(self cicada_util::getpers(kind + "_hit_fx"));
+
+    if (kill && hit)
+        return "^2kills ^7and ^2hits";
+
+    if (kill)
+        return "^2kills";
+
+    if (hit)
+        return "^2hits";
+
+    return "^1off";
+}
+
+function play_unit_effect(kind, event, origin)
+{
+    if (!istrue(self cicada_util::getpers(kind + "_" + event + "_fx")))
+        return;
+
+    self play_stack(kind + "_" + event + "_effect", origin + (0, 0, self cicada_util::getpersfloat(kind + "_fx_height")));
+}
+
+function private ensure_damage_hook()
+{
+    if (istrue(level.cicada_damage_hook))
+        return;
+
+    level.cicada_damage_hook = true;
+    level.cicada_ondamage_orig = level.callbackplayerdamage;
+    level.callbackplayerdamage = &player_damage_hook;
+}
+
+function player_damage_hook(einflictor, eattacker, idamage, idflags, smeansofdeath, fdistance, objweapon, vpoint, vdir, shitloc, psoffsettime, modelindex, partname, extra_1, extra_2)
+{
+    if (isplayer(eattacker) && eattacker != self && cicada_util::is_bot(self) && isalive(self))
+        eattacker play_unit_effect("bot", "hit", self.origin);
+
+    [[level.cicada_ondamage_orig]](einflictor, eattacker, idamage, idflags, smeansofdeath, fdistance, objweapon, vpoint, vdir, shitloc, psoffsettime, modelindex, partname, extra_1, extra_2);
 }
 
 function private ensure_kill_hook()
@@ -4185,12 +4258,37 @@ function apply_defaults()
     self cicada_util::initpers("station_idle_rate", 1);
     self cicada_util::initpers("station_base", "model");
     self cicada_util::initpers("station_save", true);
+    self cicada_util::initpers("prop_save", true);
+
+    foreach (kind in unit_classes())
+    {
+        self cicada_util::initpers(kind + "_kill_fx", false);
+        self cicada_util::initpers(kind + "_hit_fx", false);
+        self cicada_util::initpers(kind + "_fx_height", 40);
+    }
     self cicada_util::initpers("menu_lock", false);
     self cicada_util::initpers("scene_length", 5);
     self cicada_util::initpers("scene_notes", true);
     self cicada_util::initpers("scene_fit", true);
     self cicada_util::initpers("scene_overlay", false);
     self cicada_util::initpers("scene_speed", 1);
+    self cicada_util::initpers("scene_link_nodes", false);
+    self cicada_util::initpers("scene_hide_nodes", false);
+    self cicada_util::initpers("scene_vision", "none");
+    self cicada_util::initpers("scene_vision_fade", 0.5);
+    self cicada_util::initpers("scene_fx", false);
+    self cicada_util::initpers("scene_fx_spot", "camera");
+    self cicada_util::initpers("scene_fx_start", 0);
+    self cicada_util::initpers("scene_fx_loop", false);
+    self cicada_util::initpers("scene_fx_rate", 0.5);
+    self cicada_util::initpers("scene_fx_height", 40);
+    self cicada_util::initpers("scene_fx_step", 0.25);
+    self cicada_util::initpers("scene_quake", false);
+    self cicada_util::initpers("scene_quake_scale", 0.3);
+    self cicada_util::initpers("scene_quake_length", 1);
+    self cicada_util::initpers("scene_quake_radius", 1200);
+    self cicada_util::initpers("scene_quake_start", 0);
+    self cicada_util::initpers("scene_quake_loop", false);
     self cicada_util::initpers("station_preview_range", 120);
     self cicada_util::initpers("buy_weapon", "none");
     self cicada_util::initpers("lift_height", 400);

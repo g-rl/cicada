@@ -1,5 +1,6 @@
 #using scripts\cp_mp\utility\player_utility;
 
+#using custom_scripts\catalog;
 #using custom_scripts\loadout;
 #using custom_scripts\menu;
 #using custom_scripts\mods;
@@ -20,6 +21,7 @@ function init()
     camera.nodes = [];
     camera.markers = [];
     camera.preview = [];
+    camera.links = [];
     camera.running = false;
     level.cicada_camera = camera;
 }
@@ -726,6 +728,9 @@ function end_scene()
         self.cicada_scene_rig = undefined;
     }
 
+    self undress_nodes();
+    self drop_scene_vision();
+
     self blank_overlay();
     self stop_archive();
     self cicada_mods::restore_timescale();
@@ -834,6 +839,294 @@ function private walk_nodes(rig, span)
     self travel_bezier(rig, self cicada_util::getpersint("camera_bezier_speed"));
 }
 
+function scene_step()
+{
+    step = self cicada_util::getpersfloat("scene_fx_step");
+
+    if (step < 0.05)
+        step = 0.25;
+
+    return step;
+}
+
+function fx_spots()
+{
+    return cicada_util::list("camera,player,first node,each node");
+}
+
+function vision_choices()
+{
+    names = cicada_util::list("none");
+
+    if (!isdefined(level.cicada_visions))
+        return names;
+
+    foreach (name in cicada_catalog::vision_refs())
+        names[names.size] = name;
+
+    return names;
+}
+
+function scene_vision_label()
+{
+    name = self cicada_util::getpers("scene_vision");
+
+    if (!isdefined(name) || name == "" || name == "none")
+        return "^1off";
+
+    return "^:" + cicada_catalog::vision_label(name);
+}
+
+function private apply_scene_vision()
+{
+    name = self cicada_util::getpers("scene_vision");
+
+    if (!isdefined(name) || name == "" || name == "none")
+        return;
+
+    self.cicada_scene_vision = true;
+    self visionsetnakedforplayer(name, self cicada_util::getpersfloat("scene_vision_fade"));
+}
+
+function private drop_scene_vision()
+{
+    if (!istrue(self.cicada_scene_vision))
+        return;
+
+    self.cicada_scene_vision = undefined;
+
+    if (istrue(self.cicada_vision_on))
+    {
+        self cicada_mods::apply_visions();
+        return;
+    }
+
+    self visionsetnakedforplayer("", self cicada_util::getpersfloat("scene_vision_fade"));
+}
+
+function link_model()
+{
+    return "axis_guide_createfx";
+}
+
+function private link_pair(links, from, to)
+{
+    span = distance(from, to);
+
+    if (span < 16)
+        return links;
+
+    angles = vectortoangles(to - from);
+    forward = anglestoforward(angles);
+    step = 24;
+    total = int(span / step);
+
+    if (total > 20)
+    {
+        total = 20;
+        step = span / total;
+    }
+
+    for (i = 1; i < total; i++)
+    {
+        dot = spawn("script_model", from + forward * (i * step));
+        dot setmodel(link_model());
+        dot.angles = angles;
+        dot hudoutlineenable("outlinefill_nodepth_cyan");
+        links[links.size] = dot;
+    }
+
+    return links;
+}
+
+function connect_nodes()
+{
+    camera = level.cicada_camera;
+
+    drop_links();
+
+    if (camera.nodes.size < 2)
+        return;
+
+    links = [];
+
+    for (i = 0; i < camera.nodes.size - 1; i++)
+        links = link_pair(links, camera.nodes[i].origin + (0, 0, 58), camera.nodes[i + 1].origin + (0, 0, 58));
+
+    camera.links = links;
+}
+
+function drop_links()
+{
+    camera = level.cicada_camera;
+
+    if (!isdefined(camera.links))
+    {
+        camera.links = [];
+        return;
+    }
+
+    foreach (dot in camera.links)
+        if (isdefined(dot))
+            dot delete();
+
+    camera.links = [];
+}
+
+function private show_markers(visible)
+{
+    camera = level.cicada_camera;
+
+    foreach (marker in camera.markers)
+        if (isdefined(marker))
+            marker set_visible(visible);
+
+    foreach (dot in camera.preview)
+        if (isdefined(dot))
+            dot set_visible(visible);
+}
+
+function private dress_nodes()
+{
+    if (istrue(self cicada_util::getpers("scene_hide_nodes")))
+        show_markers(false);
+
+    if (istrue(self cicada_util::getpers("scene_link_nodes")))
+        connect_nodes();
+}
+
+function private undress_nodes()
+{
+    drop_links();
+    show_markers(true);
+}
+
+function private fx_origin(rig, spot, height)
+{
+    camera = level.cicada_camera;
+
+    switch (spot)
+    {
+        case "player":
+            return self.origin + (0, 0, height);
+
+        case "first node":
+            if (camera.nodes.size)
+                return camera.nodes[0].origin + (0, 0, height);
+
+            break;
+    }
+
+    if (isdefined(rig))
+        return rig.origin + (0, 0, height);
+
+    return self.origin + (0, 0, height);
+}
+
+function private fire_scene_effects(rig)
+{
+    height = self cicada_util::getpersfloat("scene_fx_height");
+    spot = self cicada_util::getpers("scene_fx_spot");
+
+    if (spot == "each node")
+    {
+        foreach (node in level.cicada_camera.nodes)
+            self cicada_mods::play_stack("scene_effect", node.origin + (0, 0, height));
+
+        return;
+    }
+
+    self cicada_mods::play_stack("scene_effect", self fx_origin(rig, spot, height));
+}
+
+function private play_scene_effects(rig)
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    if (!istrue(self cicada_util::getpers("scene_fx")))
+        return;
+
+    start = self cicada_util::getpersfloat("scene_fx_start");
+
+    if (start > 0)
+        wait start;
+
+    for (;;)
+    {
+        if (!self scene_running())
+            return;
+
+        self fire_scene_effects(rig);
+
+        if (!istrue(self cicada_util::getpers("scene_fx_loop")))
+            return;
+
+        gap = self cicada_util::getpersfloat("scene_fx_rate");
+
+        if (gap < 0.05)
+            gap = 0.5;
+
+        wait gap;
+    }
+}
+
+function private shake_scene()
+{
+    self endon("disconnect");
+    self endon("cicada_scene_done");
+
+    if (!istrue(self cicada_util::getpers("scene_quake")))
+        return;
+
+    start = self cicada_util::getpersfloat("scene_quake_start");
+
+    if (start > 0)
+        wait start;
+
+    for (;;)
+    {
+        if (!self scene_running())
+            return;
+
+        scale = self cicada_util::getpersfloat("scene_quake_scale");
+        length = self cicada_util::getpersfloat("scene_quake_length");
+        radius = self cicada_util::getpersint("scene_quake_radius");
+
+        if (scale <= 0)
+            scale = 0.3;
+
+        if (length < 0.1)
+            length = 1;
+
+        if (radius < 100)
+            radius = 1200;
+
+        self earthquakeforplayer(scale, length, self.origin, radius);
+
+        if (!istrue(self cicada_util::getpers("scene_quake_loop")))
+            return;
+
+        wait length;
+    }
+}
+
+function scene_effect_summary()
+{
+    if (!istrue(self cicada_util::getpers("scene_fx")))
+        return "^1off";
+
+    return self cicada_mods::stack_summary("scene_effect");
+}
+
+function quake_summary()
+{
+    if (!istrue(self cicada_util::getpers("scene_quake")))
+        return "^1off";
+
+    return "^:" + self cicada_util::getpersfloat("scene_quake_scale") + " ^7for ^:" + self cicada_util::getpersfloat("scene_quake_length") + "^7s";
+}
+
 function private run_scene()
 {
     self endon("disconnect");
@@ -882,6 +1175,11 @@ function private run_scene()
     self.cicada_scene_rig = rig;
     self playerlinktodelta(rig, "tag_origin", 1, 0, 0, 0, 0, true);
     self.killcamentity = rig getentitynumber();
+
+    self dress_nodes();
+    self apply_scene_vision();
+    self thread [[&play_scene_effects]](rig);
+    self thread [[&shake_scene]]();
 
     if (node_count() >= 3)
     {
