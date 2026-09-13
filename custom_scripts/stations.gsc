@@ -494,6 +494,7 @@ function place_station(kind)
     station.joker = self cicada_util::getpersint("box_joker");
     station.lift = self cicada_util::getpersint("lift_height");
     station.speed = self cicada_util::getpersfloat("lift_speed");
+    station.model_name = model;
     station.taken = [];
 
     if (station.uses > 0)
@@ -518,7 +519,9 @@ function place_station(kind)
     else
         station.model setmodel(model);
 
-    if (istrue(self cicada_util::getpers("station_outline")))
+    station.outline = istrue(self cicada_util::getpers("station_outline"));
+
+    if (station.outline)
     {
         if (isdefined(station.actor))
             station.actor hudoutlineenable("outlinefill_nodepth_green");
@@ -535,6 +538,7 @@ function place_station(kind)
 
     level thread [[&station_think]](station);
 
+    self save_stations();
     self cicada_util::message("^2" + kind + " ^7placed");
     self cicada_menu::update_menu();
 }
@@ -549,6 +553,7 @@ function move_station(station)
     station.model.angles = (0, self getplayerangles()[1] + 180, 0);
     cicada_pve::move_station_actor(station.actor, station.model.origin, station.model.angles);
     make_hint(station);
+    self save_stations();
     self cicada_util::message(station.kind + " ^2moved");
     self cicada_menu::update_menu();
 }
@@ -562,6 +567,7 @@ function raise_station(value, station)
     station.model.origin = (spot[0], spot[1], value);
     cicada_pve::move_station_actor(station.actor, station.model.origin, station.model.angles);
     make_hint(station);
+    self save_stations();
 }
 
 function remove_station(station)
@@ -579,6 +585,7 @@ function remove_station(station)
     station.model = undefined;
     level.cicada_stations = utility::array_remove(level.cicada_stations, station);
 
+    self save_stations();
     self cicada_util::message(station.kind + " ^1removed");
     self cicada_menu::new_menu();
 }
@@ -598,7 +605,177 @@ function clear_stations()
     }
 
     level.cicada_stations = [];
+    self save_stations();
     self cicada_util::message("stations ^1cleared");
+    self cicada_menu::update_menu();
+}
+
+function private station_fields()
+{
+    return cicada_util::list("kind,base,actor,model,origin,angles,radius,cooldown,uses,left,pool,mode,weapon,joker,lift,speed,outline");
+}
+
+function private station_key(index, field)
+{
+    return "station_saved_" + index + "_" + field;
+}
+
+function saved_count()
+{
+    return self cicada_util::getmappersint("stations_saved");
+}
+
+function clear_saved()
+{
+    for (i = 0; i < self saved_count(); i++)
+        foreach (field in station_fields())
+            self cicada_util::setmappers(station_key(i, field), undefined);
+
+    self cicada_util::setmappers("stations_saved", 0);
+}
+
+function save_stations()
+{
+    if (!istrue(self cicada_util::getpers("station_save")))
+        return;
+
+    self clear_saved();
+
+    total = 0;
+
+    foreach (station in stations())
+    {
+        if (!isdefined(station) || !isdefined(station.model))
+            continue;
+
+        self cicada_util::setmappers(station_key(total, "kind"), station.kind);
+        self cicada_util::setmappers(station_key(total, "base"), isdefined(station.base) ? station.base : "model");
+        self cicada_util::setmappers(station_key(total, "actor"), isdefined(station.actor) ? station.actor.cicada_pve_aitype : undefined);
+        self cicada_util::setmappers(station_key(total, "model"), station.model_name);
+        self cicada_util::setmappers(station_key(total, "origin"), station.model.origin);
+        self cicada_util::setmappers(station_key(total, "angles"), station.model.angles);
+        self cicada_util::setmappers(station_key(total, "radius"), station.radius);
+        self cicada_util::setmappers(station_key(total, "cooldown"), station.cooldown);
+        self cicada_util::setmappers(station_key(total, "uses"), station.uses);
+        self cicada_util::setmappers(station_key(total, "left"), station.left);
+        self cicada_util::setmappers(station_key(total, "pool"), station.pool);
+        self cicada_util::setmappers(station_key(total, "mode"), station.mode);
+        self cicada_util::setmappers(station_key(total, "weapon"), station.weapon);
+        self cicada_util::setmappers(station_key(total, "joker"), station.joker);
+        self cicada_util::setmappers(station_key(total, "lift"), station.lift);
+        self cicada_util::setmappers(station_key(total, "speed"), station.speed);
+        self cicada_util::setmappers(station_key(total, "outline"), istrue(station.outline));
+
+        total++;
+    }
+
+    self cicada_util::setmappers("stations_saved", total);
+}
+
+function private restore_station(index)
+{
+    kind = self cicada_util::getmappers(station_key(index, "kind"));
+    origin = self cicada_util::getmappers(station_key(index, "origin"));
+
+    if (!isdefined(kind) || !isdefined(origin))
+        return false;
+
+    angles = self cicada_util::getmappers(station_key(index, "angles"));
+
+    if (!isdefined(angles))
+        angles = (0, 0, 0);
+
+    station = spawnstruct();
+    station.kind = kind;
+    station.tag = next_tag();
+    station.owner = self;
+    station.base = self cicada_util::getmappers(station_key(index, "base"));
+    station.radius = self cicada_util::getmappersint(station_key(index, "radius"));
+    station.cooldown = self cicada_util::getmappers(station_key(index, "cooldown"));
+    station.uses = self cicada_util::getmappersint(station_key(index, "uses"));
+    station.pool = self cicada_util::getmappers(station_key(index, "pool"));
+    station.mode = self cicada_util::getmappers(station_key(index, "mode"));
+    station.weapon = self cicada_util::getmappers(station_key(index, "weapon"));
+    station.joker = self cicada_util::getmappersint(station_key(index, "joker"));
+    station.lift = self cicada_util::getmappersint(station_key(index, "lift"));
+    station.speed = self cicada_util::getmappers(station_key(index, "speed"));
+    station.model_name = self cicada_util::getmappers(station_key(index, "model"));
+    station.outline = istrue(self cicada_util::getmappers(station_key(index, "outline")));
+    station.taken = [];
+
+    if (!isdefined(station.base))
+        station.base = "model";
+
+    if (!isdefined(station.model_name))
+        station.model_name = self station_model(kind);
+
+    if (!isdefined(station.cooldown))
+        station.cooldown = 1;
+
+    if (!isdefined(station.speed))
+        station.speed = 1;
+
+    if (station.uses > 0)
+    {
+        left = self cicada_util::getmappers(station_key(index, "left"));
+        station.left = isdefined(left) ? int(left) : station.uses;
+
+        if (station.left < 1)
+            return false;
+    }
+
+    station.model = spawn("script_model", origin);
+    station.model.angles = angles;
+
+    if (station.base == "agent")
+    {
+        station.model setmodel("tag_origin");
+        station.actor = self cicada_pve::spawn_station_actor(self cicada_util::getmappers(station_key(index, "actor")), origin, angles);
+
+        if (!isdefined(station.actor))
+        {
+            station.base = "model";
+            station.model setmodel(station.model_name);
+        }
+    }
+    else
+        station.model setmodel(station.model_name);
+
+    if (station.outline)
+    {
+        if (isdefined(station.actor))
+            station.actor hudoutlineenable("outlinefill_nodepth_green");
+        else
+            station.model hudoutlineenable("outlinefill_nodepth_green");
+    }
+
+    if (!isdefined(level.cicada_stations))
+        level.cicada_stations = [];
+
+    level.cicada_stations[level.cicada_stations.size] = station;
+
+    make_hint(station);
+    level thread [[&station_think]](station);
+
+    return true;
+}
+
+function load_stations()
+{
+    total = self saved_count();
+
+    if (!total)
+        return;
+
+    back = 0;
+
+    for (i = 0; i < total; i++)
+        if (self restore_station(i))
+            back++;
+
+    if (back)
+        self cicada_util::message("^:" + back + " ^7stations back");
+
     self cicada_menu::update_menu();
 }
 
@@ -813,6 +990,9 @@ function private use_station(station)
 
         station.left--;
         refresh_hint(station);
+
+        if (isdefined(station.owner))
+            station.owner save_stations();
     }
 
     self fire_event("use", station.model.origin + (0, 0, 30));

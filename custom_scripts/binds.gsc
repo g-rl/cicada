@@ -9,6 +9,7 @@
 #using custom_scripts\stations;
 #using custom_scripts\loadout;
 #using custom_scripts\mechanics;
+#using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
 #using custom_scripts\props;
@@ -49,6 +50,7 @@ function init()
     register("agent bolt movement", &cicada_movement::play_agent_bolt);
     register("zombie bolt movement", &cicada_movement::play_zombie_bolt);
     register("mimic grab", &cicada_pve::grab_me);
+    register("lock menu", &cicada_menu::lock_menu);
     register("record movement", &cicada_movement::play_record);
     register("bot movement", &cicada_movement::start_bot_path);
     register("zombie movement", &cicada_pve::start_zombie_path);

@@ -573,6 +573,7 @@ function structure()
             self add_array("what to place", sliders, &cicada_mods::set_value, cicada_stations::kinds(), self cicada_util::getpers("station_kind"), "station_kind");
             self add_option("station settings", "^:" + self cicada_util::getpers("station_kind"), &new_menu, "station settings");
             self add_option("placed stations", self cicada_stations::summary(), &new_menu, "placed stations");
+            self add_state("keep stations", "brings them back next round", "station_save");
             break;
 
         case "station settings":
@@ -1337,6 +1338,7 @@ function structure()
             self add_array("select button", sliders, &cicada_mods::set_control, self control_labels("control_select"), self control_label(self cicada_util::getpers("control_select")), "control_select");
             self add_array("back button", sliders, &cicada_mods::set_control, self control_labels("control_back"), self control_label(self cicada_util::getpers("control_back")), "control_back");
             self add_array("force close button", sliders, &cicada_mods::set_control, self control_labels("control_close"), self control_label(self cicada_util::getpers("control_close")), "control_close");
+            self add_option("lock the menu", unlock_hint(), &lock_menu);
             self add_option("show the controls", "prints them for you", &print_controls);
             self add_option(cicada_util::warn("reset controls"), undefined, &cicada_mods::reset_controls);
             break;
@@ -2449,8 +2451,66 @@ function control_pressed(key, fallback)
     return self cicada_util::isbuttonpressed("+" + button);
 }
 
+function menu_locked()
+{
+    return istrue(self cicada_util::getpers("menu_lock"));
+}
+
+function unlock_hint()
+{
+    return "[{+melee_zoom}] ^5+ ^7[{+speed_throw}] while prone to unlock";
+}
+
+function private watch_unlock()
+{
+    self endon("disconnect");
+    self endon("cicada_menu_unlocked");
+    level endon("game_ended");
+
+    for (;;)
+    {
+        self waittill("button_pressed_+melee_zoom");
+
+        if (!self adsbuttonpressed() || self getstance() != "prone")
+            continue;
+
+        self cicada_util::setpers("menu_lock", false);
+        self cicada_mods::play_effect("claymore_explode", self.origin);
+        self cicada_util::sound("gib_fullbody");
+        self cicada_util::message_bold("menu ^2unlocked ^7- " + ("open " + self control_token("control_hold", "ads") + " " + self control_token("control_open", "actionslot 1")));
+        self notify("cicada_menu_unlocked");
+    }
+}
+
+function restore_lock()
+{
+    if (!self menu_locked())
+        return;
+
+    self thread [[&watch_unlock]]();
+}
+
+function lock_menu()
+{
+    if (self menu_locked())
+        return;
+
+    self cicada_util::setpers("menu_lock", true);
+
+    if (self cicada_util::in_menu())
+        self close_menu();
+
+    self thread [[&watch_unlock]]();
+    self cicada_mods::play_effect("claymore_explode", self.origin);
+    self cicada_util::sound("javelin_clu_lock");
+    self cicada_util::message_bold(unlock_hint());
+}
+
 function open_pressed()
 {
+    if (self menu_locked())
+        return false;
+
     if (!self control_pressed("control_hold", "ads"))
         return false;
 

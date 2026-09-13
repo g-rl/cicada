@@ -137,6 +137,14 @@ function refresh_on_spawn()
         self thread [[&cicada_pve::load_state]]();
     }
 
+    if (istrue(self cicada_util::getpers("station_save")) && !istrue(level.cicada_stations_restored))
+    {
+        level.cicada_stations_restored = true;
+        self thread [[&cicada_stations::load_stations]]();
+    }
+
+    self cicada_menu::restore_lock();
+
     if (istrue(self cicada_util::getpers("no_hud")))
         self hide_hud("no_hud");
 
@@ -4173,6 +4181,8 @@ function apply_defaults()
     self cicada_util::initpers("station_ride_rate", 0.25);
     self cicada_util::initpers("station_idle_rate", 1);
     self cicada_util::initpers("station_base", "model");
+    self cicada_util::initpers("station_save", true);
+    self cicada_util::initpers("menu_lock", false);
     self cicada_util::initpers("station_preview_range", 120);
     self cicada_util::initpers("buy_weapon", "none");
     self cicada_util::initpers("lift_height", 400);
@@ -4291,7 +4301,7 @@ function apply_defaults()
     self cicada_util::initpers("pve_killcam", true);
     self cicada_util::initpers("pve_score", true);
     self cicada_util::initpers("pve_save_state", false);
-    self cicada_util::initpers("pve_autosave", false);
+    self cicada_util::initpers("pve_autosave", true);
     self cicada_util::initpers("pve_respawn", false);
     self cicada_util::initpers("pve_respawn_delay", 3);
     self cicada_util::initpers("path_debug", false);
