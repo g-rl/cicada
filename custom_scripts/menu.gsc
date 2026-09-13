@@ -1058,6 +1058,16 @@ function structure()
                 self add_option(cicada_mods::effect_label(name), "^:adds to the stack", &cicada_mods::add_stack_effect, name, stack_key(menu));
             break;
 
+        default:
+            self structure_two(menu, increments, sliders, live_sliders, credits, gametype);
+            break;
+    }
+}
+
+function structure_two(menu, increments, sliders, live_sliders, credits, gametype)
+{
+    switch (menu)
+    {
         case "binds":
             self.bind_index = false;
             self add_menu(menu);
@@ -2609,9 +2619,26 @@ function slider_text(index)
     storage = (self get_menu() + "_" + index);
 
     if (isdefined(self.structure[index]["array"]))
-        return slider_fit("" + self.structure[index]["array"][self.slider[storage]]);
+    {
+        value = self.structure[index]["array"][self.slider[storage]];
+
+        if (!isdefined(value))
+            return "";
+
+        return slider_fit("" + value);
+    }
 
     return self value_text(index, self.slider[storage]);
+}
+
+function option_text(index)
+{
+    text = self.structure[index]["text"];
+
+    if (!isdefined(text))
+        return "";
+
+    return tolower(text);
 }
 
 function slider_fit(text)
@@ -3584,7 +3611,7 @@ function create_option()
 
             if (istrue(self.structure[index]["category"]))
             {
-                og_string = "MP/NEURA_STR" + ((i * 2) + 1) + "_" + tolower(self.structure[index]["text"]);
+                og_string = "MP/NEURA_STR" + ((i * 2) + 1) + "_" + self option_text(index);
                 override_string = override_string_for_index((i * 2) + 1);
 
                 self.menu["hud"]["category"][0][index] = self create_text(og_string, override_string, self.font, self.font_scale, "CENTER", "TOPCENTER", (self.x_offset + 102), (self.y_offset + ((i * self.option_spacing) + 24)), self.color[0], 1, 10);
@@ -3605,7 +3632,7 @@ function create_option()
                 }
                 else
                 {
-                    og_string = "MP/NEURA_STR" + ((i * 2) + 1) + "_" + tolower(self.structure[index]["text"]);
+                    og_string = "MP/NEURA_STR" + ((i * 2) + 1) + "_" + self option_text(index);
                     override_string = override_string_for_index((i * 2) + 1);
 
                     self.menu["hud"]["text"][index] = self create_text(og_string, override_string, self.font, self.font_scale, "TOP_LEFT", "TOPCENTER", (self.x_offset + 4), (self.y_offset + ((i * self.option_spacing) + 19)), color[0], 1, 10);
