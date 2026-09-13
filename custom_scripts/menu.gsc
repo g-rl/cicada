@@ -799,6 +799,7 @@ function structure()
             self add_menu(menu);
             self add_option("bot paths", self cicada_movement::summary("path"), &new_menu, "bot paths");
             self add_array("spawn bot", "^5[{+gostand}] ^7to spawn", &cicada_mods::spawn_bot_of, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
+            self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_bot"), &new_menu, "auto bot setup");
             self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
             self add_array_pers("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "pick_bots");
             self add_feature("freeze bots", undefined, "frozen_bots");
@@ -1546,6 +1547,7 @@ function structure()
             self add_toggle("zombie killcams", undefined, self cicada_util::getpers("pve_killcam"), &cicada_pve::flip_value, "pve_killcam");
             self add_array("spawn type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
+            self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
             self add_toggle("kill score", "points on a zombie kill", self cicada_util::getpers("pve_score"), &cicada_pve::flip_value, "pve_score");
             self add_toggle("save zombies", "keeps them for next round", self cicada_util::getpers("pve_save_state"), &cicada_pve::flip_value, "pve_save_state");
             self add_toggle("autosave zombies", "saves every edit as you go", self cicada_util::getpers("pve_autosave"), &cicada_pve::flip_value, "pve_autosave");
@@ -1575,6 +1577,7 @@ function structure()
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("spawn this actor", "^:" + cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), &cicada_pve::spawn_chosen_actor);
             self add_option("spawn random actor", "^:" + cicada_pve::actor_count() + " ^7types loaded", &cicada_pve::random_actor);
+            self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
             self add_option("kill agents", "^:" + self cicada_util::getpers("kill_agent_mode"), &cicada_binds::kill_agents);
             self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
             self add_option("actor paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
@@ -1582,6 +1585,22 @@ function structure()
             self add_toggle("auto respawn", "respawns it with its settings", self cicada_util::getpers("pve_respawn"), &cicada_pve::flip_value, "pve_respawn");
             self add_increment("respawn delay", increments, &cicada_pve::set_value, self cicada_util::getpersfloat("pve_respawn_delay"), 0.5, 30, 0.5, "pve_respawn_delay");
             self add_option(cicada_util::warn("clear actors"), "^:" + cicada_pve::live_actor_count() + " ^7alive", &cicada_pve::clear_actors);
+            break;
+
+        case "auto ai setup":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_state("final killcam target", "its death ends on killcam", "auto_ai_killcam");
+            self add_state("teleport near target", "for the teleport near bind", "auto_ai_teleport");
+            self add_state("bind target", "for the velocity and bolt binds", "auto_ai_bind");
+            break;
+
+        case "auto bot setup":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_state("final killcam target", "others respawn until it dies", "auto_bot_killcam");
+            self add_state("teleport near target", "for the teleport near bind", "auto_bot_teleport");
+            self add_state("bind target", "for the bot velocity and bolt binds", "auto_bot_bind");
             break;
 
         case "manage zombies":

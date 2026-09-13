@@ -1261,7 +1261,9 @@ function spawn_single()
         return;
     }
 
-    spawn_zombie(aitype, origin, isdefined(level.cicada_pve_spawn_type) && level.cicada_pve_spawn_type != "random");
+    zombie = spawn_zombie(aitype, origin, isdefined(level.cicada_pve_spawn_type) && level.cicada_pve_spawn_type != "random");
+
+    self cicada_mods::auto_target_apply(zombie, "auto_ai");
     self cicada_util::message("^1zombie ^7spawned - ^:" + count() + " ^7alive");
     self cicada_menu::update_menu();
 }
@@ -1372,7 +1374,10 @@ function spawn_actor(aitype)
     actor = spawn_zombie(aitype, origin, true);
 
     if (isdefined(actor))
+    {
         actor.cicada_pve_actor = 1;
+        self cicada_mods::auto_target_apply(actor, "auto_ai");
+    }
 
     self cicada_util::message("^1actor ^7spawned - ^:" + live_actor_count() + " ^7alive");
     self cicada_menu::update_menu();

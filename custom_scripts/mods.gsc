@@ -1286,6 +1286,45 @@ function private settle_bot_team(bot, wanted)
     self cicada_util::message("bot moved to ^:" + self team_label(bot));
 }
 
+function private hold_bot_targets()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    known = [];
+
+    foreach (player_ in level.players)
+        known[player_ getentitynumber()] = true;
+
+    limit = gettime() + 15000;
+
+    while (gettime() < limit)
+    {
+        foreach (player_ in level.players)
+        {
+            if (!cicada_util::is_bot(player_) || istrue(known[player_ getentitynumber()]))
+                continue;
+
+            known[player_ getentitynumber()] = true;
+            self thread [[&settle_bot_targets]](player_);
+            return;
+        }
+
+        waitframe();
+    }
+}
+
+function private settle_bot_targets(bot)
+{
+    self endon("disconnect");
+    bot endon("disconnect");
+
+    for (i = 0; i < 60 && bot.sessionstate != "playing"; i++)
+        wait 0.1;
+
+    self auto_target_apply(bot, "auto_bot");
+}
+
 function spawn_bot()
 {
     if (!isdefined(level.bot_funcs) || !isdefined(level.bot_funcs["bots_spawn"]))
@@ -1302,6 +1341,9 @@ function spawn_bot()
 
     if (wanted != "none")
         self thread [[&hold_bot_team]](wanted);
+
+    if (self auto_target_on("auto_bot"))
+        self thread [[&hold_bot_targets]]();
 
     self cicada_util::message("spawning ^:" + difficulty + " ^7bot on ^:" + team);
     self cicada_util::sound("scavenger_pack_pickup");
@@ -1470,6 +1512,94 @@ function toggle_ai_target(ent)
         self cicada_util::message("bind target ^:" + ai_name(ent));
     else
         self cicada_util::message("bind target ^1cleared");
+
+    self cicada_menu::update_menu();
+}
+
+function auto_target_on(prefix)
+{
+    return istrue(self cicada_util::getpers(prefix + "_killcam")) || istrue(self cicada_util::getpers(prefix + "_teleport")) || istrue(self cicada_util::getpers(prefix + "_bind"));
+}
+
+function auto_target_summary(prefix)
+{
+    picked = [];
+
+    if (istrue(self cicada_util::getpers(prefix + "_killcam")))
+        picked[picked.size] = "killcam";
+
+    if (istrue(self cicada_util::getpers(prefix + "_teleport")))
+        picked[picked.size] = "teleport";
+
+    if (istrue(self cicada_util::getpers(prefix + "_bind")))
+        picked[picked.size] = "bind";
+
+    if (!picked.size)
+        return "^1nothing carried over";
+
+    text = "^:" + picked[0];
+
+    for (i = 1; i < picked.size; i++)
+        text += "^7, ^:" + picked[i];
+
+    return text + " ^7on the next one";
+}
+
+function auto_target_apply(ent, prefix)
+{
+    if (!isdefined(ent) || !self auto_target_on(prefix))
+        return;
+
+    self thread [[&auto_target_settle]](ent, prefix);
+}
+
+function private auto_target_settle(ent, prefix)
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    waitframe();
+    waitframe();
+
+    if (!isdefined(ent) || !isalive(ent))
+        return;
+
+    if (istrue(self cicada_util::getpers(prefix + "_teleport")))
+    {
+        foreach (other in self teleport_pool(self teleport_class(ent)))
+            other.cicada_teleport_target = 0;
+
+        ent.cicada_teleport_target = 1;
+    }
+
+    if (istrue(self cicada_util::getpers(prefix + "_bind")))
+    {
+        foreach (other in self ai_pool(ai_class(ent)))
+            other.cicada_bind_target = 0;
+
+        ent.cicada_bind_target = 1;
+    }
+
+    if (istrue(self cicada_util::getpers(prefix + "_killcam")))
+    {
+        if (isplayer(ent))
+        {
+            foreach (other in level.players)
+                other.cicada_killcam_target = false;
+
+            ent.cicada_killcam_target = true;
+        }
+        else
+        {
+            foreach (other in cicada_pve::zombies())
+                other.cicada_pve_killcam_target = 0;
+
+            ent.cicada_pve_killcam_target = 1;
+
+            if (istrue(ent.cicada_pve_zombie) || istrue(ent.cicada_pve_actor))
+                ent setperk("specialty_radarblip", 1);
+        }
+    }
 
     self cicada_menu::update_menu();
 }
@@ -4538,6 +4668,12 @@ function apply_defaults()
     self cicada_util::initpers("camera_fov", 0);
     self cicada_util::initpers("bind_fov_value", 65);
     self cicada_util::initpers("bind_fov_fade", 0.5);
+    self cicada_util::initpers("auto_ai_killcam", false);
+    self cicada_util::initpers("auto_ai_teleport", false);
+    self cicada_util::initpers("auto_ai_bind", false);
+    self cicada_util::initpers("auto_bot_killcam", false);
+    self cicada_util::initpers("auto_bot_teleport", false);
+    self cicada_util::initpers("auto_bot_bind", false);
 
     self cicada_util::initpers("freeze_timer", false);
     self cicada_util::initpers("round_reset", true);
