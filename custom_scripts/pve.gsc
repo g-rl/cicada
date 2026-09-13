@@ -792,9 +792,16 @@ function private state_fields()
 
 function save_state()
 {
+    live = zombies();
+
+    if (!live.size && self state_count() > 0)
+        return self state_count();
+
+    self clear_state();
+
     total = 0;
 
-    foreach (zombie in zombies())
+    foreach (zombie in live)
     {
         if (!isalive(zombie) || !isdefined(zombie.cicada_pve_aitype))
             continue;
@@ -838,6 +845,27 @@ function clear_state()
     self cicada_util::setmappers("pve_state_count", 0);
 }
 
+function private wait_for_agents()
+{
+    for (i = 0; i < 100; i++)
+    {
+        if (isdefined(level.agent_definition))
+            return true;
+
+        waitframe();
+    }
+
+    return isdefined(level.agent_definition);
+}
+
+function restore_state()
+{
+    back = self load_state();
+
+    if (back)
+        self cicada_util::message("^:" + back + " ^7back from the last round");
+}
+
 function load_state()
 {
     total = self state_count();
@@ -847,6 +875,7 @@ function load_state()
 
     self apply_settings();
     self ensure_ready();
+    wait_for_agents();
 
     restored = 0;
 
@@ -861,7 +890,7 @@ function load_state()
         spot = getclosestpointonnavmesh(origin);
 
         if (!isdefined(spot))
-            continue;
+            spot = origin;
 
         zombie = spawn_zombie(aitype, spot, true);
 
@@ -968,6 +997,9 @@ function private autosave_state()
         host = level.cicada_pve_host;
 
         if (!isdefined(host) || !istrue(host cicada_util::getpers("pve_autosave")))
+            continue;
+
+        if (!count())
             continue;
 
         host save_state();

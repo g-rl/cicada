@@ -134,7 +134,7 @@ function refresh_on_spawn()
     if ((istrue(self cicada_util::getpers("pve_save_state")) || istrue(self cicada_util::getpers("pve_autosave"))) && !istrue(level.cicada_pve_restored))
     {
         level.cicada_pve_restored = true;
-        self thread [[&cicada_pve::load_state]]();
+        self thread [[&cicada_pve::restore_state]]();
     }
 
     if (istrue(self cicada_util::getpers("station_save")) && !istrue(level.cicada_stations_restored))
