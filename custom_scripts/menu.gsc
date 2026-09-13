@@ -19,6 +19,7 @@
 #using custom_scripts\pve;
 #using custom_scripts\session;
 #using custom_scripts\util;
+#using custom_scripts\world;
 
 #namespace cicada_menu;
 
@@ -206,6 +207,7 @@ function structure()
             self add_option("zombies & actors", credits, &new_menu, "zombies & actors");
             self add_option("models", credits, &new_menu, "model manager");
             self add_option("effects", credits, &new_menu, "effect manager");
+            self add_option("world", credits, &new_menu, "world");
             self add_option("customization", credits, &new_menu, "menu manager");
             self add_option("clients", credits, &new_menu, "manage clients");
             break;
@@ -610,7 +612,6 @@ function structure()
             self.bind_index = false;
             self add_menu(menu);
             self add_option("radiation " + self accent() + "zones", ("^:" + self cicada_leftovers::zone_count() + " ^7zones"), &new_menu, "radiation zones");
-            self add_option("tripwires", self cicada_leftovers::wire_summary(), &new_menu, "tripwires");
             self add_option("explosive " + self accent() + "rounds", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &new_menu, "explosive rounds");
             self add_option("station " + self accent() + "manager", self cicada_stations::summary(), &new_menu, "station manager");
             self add_option("what is loaded", "prints it for you", &cicada_stations::probe_report);
@@ -734,6 +735,7 @@ function structure()
             self add_increment("zone damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("zone_damage"), 1, 200, 1, "zone_damage");
             self add_increment("damage every", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("zone_rate"), 0.05, 5, 0.05, "zone_rate");
             self add_state("enemies only", undefined, "zone_enemies");
+            self add_state("hurts agents too", "zombies, actors and agents", "zone_hits_ai");
             self add_state("hurts you too", undefined, "zone_hurt_owner");
             self add_option("zone effects", self cicada_mods::stack_summary("zone_effect"), &new_menu, "zone effect stack");
             break;
@@ -744,26 +746,6 @@ function structure()
             self stack_options("zone_effect", "zone effect list", increments, sliders);
             break;
 
-        case "tripwires":
-            self.bind_index = false;
-            self add_menu(menu);
-            self add_array_pers("wire manager", sliders, &cicada_leftovers::manage_wires, cicada_util::list("save point,clear"), "pick_wire");
-            self add_option("save point", self cicada_leftovers::wire_summary(), &cicada_leftovers::save_wire_point);
-            self add_increment("wire thickness", increments, &cicada_mods::set_value, self cicada_util::getpersint("wire_reach"), 4, 200, 4, "wire_reach");
-            self add_increment("wire damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("wire_damage"), 10, 1000, 10, "wire_damage");
-            self add_increment("blast width", increments, &cicada_mods::set_value, self cicada_util::getpersint("wire_blast"), 32, 1000, 16, "wire_blast");
-            self add_state("one use only", undefined, "wire_once");
-            self add_state("enemies only", undefined, "wire_enemies");
-            self add_state("hurts you too", undefined, "wire_hurt_owner");
-            self add_option("wire effects", self cicada_mods::stack_summary("wire_effect"), &new_menu, "wire effect stack");
-            break;
-
-        case "wire effect stack":
-            self.bind_index = false;
-            self add_menu(menu);
-            self stack_options("wire_effect", "wire effect list", increments, sliders);
-            break;
-
         case "explosive rounds":
             self.bind_index = false;
             self add_menu(menu);
@@ -771,6 +753,7 @@ function structure()
             self add_increment("blast damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_damage"), 10, 1000, 10, "xrounds_damage");
             self add_increment("blast width", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_blast"), 32, 1000, 16, "xrounds_blast");
             self add_increment("wait between", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("xrounds_rate"), 0, 2, 0.05, "xrounds_rate");
+            self add_state("hurts agents too", "zombies, actors and agents", "xrounds_hits_ai");
             self add_option("blast effects", self cicada_mods::stack_summary("xrounds_effect"), &new_menu, "xrounds effect stack");
             break;
 
@@ -804,6 +787,7 @@ function structure()
             self add_array_pers("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "pick_bots");
             self add_feature("freeze bots", undefined, "frozen_bots");
             self add_increment("auto respawn delay", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bot_respawn_delay"), 0.5, 30, 0.5, "bot_respawn_delay");
+            self add_increment("look at me hold", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("look_hold"), 0.5, 30, 0.5, "look_hold");
             self add_option("kill bots", "^:" + self cicada_util::getpers("kill_bot_mode"), &cicada_binds::kill_bots);
             break;
 
@@ -866,6 +850,9 @@ function structure()
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("equipment_aim_range"), 100, 5000, 100, "equipment_aim_range");
             self add_increment("homing speed", increments, &cicada_mods::set_value, self cicada_util::getpersint("equipment_aim_speed"), 200, 4000, 100, "equipment_aim_speed");
             self add_increment("aim height", increments, &cicada_mods::set_value, self cicada_util::getpersint("equipment_aim_height"), 0, 80, 5, "equipment_aim_height");
+            self add_state("steer the projectile", "^1off ^7is safer with odd equipment", "equipment_aim_steer");
+            self add_state("top attack rockets", "rockets dive from above", "equipment_aim_top");
+            self add_state("outline rockets", "draws them through walls", "equipment_aim_outline");
             break;
 
         case "effect manager":
@@ -1017,7 +1004,6 @@ function structure()
         case "station effect list":
         case "afterhits effect list":
         case "zone effect list":
-        case "wire effect list":
         case "xrounds effect list":
             self.bind_index = false;
             self add_menu(menu);
@@ -1548,6 +1534,8 @@ function structure()
             self add_array("spawn type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
+            self add_array_pers("teleport zombies", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
+            self add_toggle("freeze zombies", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
             self add_toggle("kill score", "points on a zombie kill", self cicada_util::getpers("pve_score"), &cicada_pve::flip_value, "pve_score");
             self add_toggle("save zombies", "keeps them for next round", self cicada_util::getpers("pve_save_state"), &cicada_pve::flip_value, "pve_save_state");
             self add_toggle("autosave zombies", "saves every edit as you go", self cicada_util::getpers("pve_autosave"), &cicada_pve::flip_value, "pve_autosave");
@@ -1578,7 +1566,15 @@ function structure()
             self add_option("spawn this actor", "^:" + cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), &cicada_pve::spawn_chosen_actor);
             self add_option("spawn random actor", "^:" + cicada_pve::actor_count() + " ^7types loaded", &cicada_pve::random_actor);
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
+            self add_option("possess", self cicada_pve::possess_summary(), &cicada_pve::possess_agent);
+            self add_option("helmet cam", self cicada_mods::helmet_summary(), &cicada_mods::helmet_cam);
+            self add_array("helmet cam tag", sliders, &cicada_mods::set_value, cicada_util::list("tag_eye,tag_player,j_head"), self cicada_util::getpers("helmet_tag"), "helmet_tag");
+            self add_state("freeze while riding", "stops the crash on throwing", "helmet_freeze");
+            self add_array("possess vision", sliders, &cicada_mods::set_value, cicada_pve::possess_visions(), self cicada_util::getpers("possess_vision"), "possess_vision");
+            self add_option("every agent hunts me", "pins you on all of them", &cicada_pve::hunt_every_agent);
             self add_option("kill agents", "^:" + self cicada_util::getpers("kill_agent_mode"), &cicada_binds::kill_agents);
+            self add_array_pers("teleport actors", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
+            self add_toggle("freeze actors", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
             self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
             self add_option("actor paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
             self add_array_pers("actor state", sliders, &cicada_pve::manage_state, cicada_util::list("save,load,clear"), "pick_state");
@@ -1626,6 +1622,127 @@ function structure()
         case "zombie option":
             self.bind_index = false;
             self zombie_options(self.select_zombie, increments, sliders);
+            break;
+
+        case "agent gestures":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_increment("gesture hold", increments, &cicada_mods::set_value, self cicada_util::getpersint("gesture_hold"), 250, 5000, 250, "gesture_hold");
+            self add_option("play on every agent", "^:" + self cicada_pve::gesture_name(), &cicada_pve::gesture_every_agent);
+            foreach (name in cicada_pve::gesture_names())
+                self add_option(name, (name == self cicada_pve::gesture_name()) ? "^2picked" : "^:plays it now", &cicada_pve::set_agent_gesture, name, self.select_zombie);
+            break;
+
+        case "agent behaviour":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (key in cicada_pve::behaviour_keys())
+                self add_toggle(key, undefined, cicada_pve::behaviour_on(self.select_zombie, key), &cicada_pve::toggle_behaviour, key, self.select_zombie);
+            break;
+
+        case "world":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("turrets", cicada_world::turret_summary(), &new_menu, "turret manager");
+            self add_option("vehicles", cicada_world::vehicle_summary(), &new_menu, "vehicle manager");
+            self add_option("physics toys", "shockwaves and ragdolls", &new_menu, "physics toys");
+            self add_option("map control", self cicada_world::door_summary(), &new_menu, "map control");
+            self add_option("what is around me", "prints a count of everything", &cicada_world::radius_report);
+            break;
+
+        case "turret manager":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_array_pers("turret kind", "^5[{+gostand}] ^7to place", &cicada_world::set_turret_kind, cicada_world::turret_kinds(), "turret_kind");
+            self add_option("place a turret", "^:" + self cicada_world::turret_kind(), &cicada_world::place_turret);
+            self add_array_pers("turret mode", sliders, &cicada_world::set_turret_mode, cicada_world::turret_modes(), "turret_mode");
+            self add_array_pers("turret team", sliders, &cicada_world::set_turret_side, cicada_world::turret_sides(), "turret_team");
+            self add_option("all turrets aim at it", "the marked agent or your crosshair", &cicada_world::aim_all_turrets);
+            self add_option("manage turrets", cicada_world::turret_summary(), &new_menu, "manage turrets");
+            self add_state("save turrets", "keeps them for next round", "turret_save");
+            self add_option(cicada_util::warn("clear turrets"), cicada_world::turret_summary(), &cicada_world::clear_turrets);
+            break;
+
+        case "manage turrets":
+            self.bind_index = false;
+            self add_menu(menu);
+            if (!cicada_world::turret_count())
+                self add_option("^1no turrets placed");
+            else
+                foreach (turret in cicada_world::turrets())
+                    self add_option(cicada_world::turret_name(turret), "^:" + cicada_world::turret_mode(turret), &new_menu, "turret option");
+            break;
+
+        case "turret option":
+            self.bind_index = false;
+            self add_menu(cicada_world::turret_name(self.select_turret));
+            self add_option("aim at the marked one", "or whatever you look at", &cicada_world::aim_turret, self.select_turret);
+            self add_option("point at my crosshair", undefined, &cicada_world::point_turret_here, self.select_turret);
+            self add_option("clear its target", undefined, &cicada_world::clear_turret_aim, self.select_turret);
+            self add_toggle("lets it fire", undefined, cicada_world::turret_firing(self.select_turret), &cicada_world::toggle_turret_fire, self.select_turret);
+            self add_array("mode", sliders, &cicada_world::set_turret_mode, cicada_world::turret_modes(), cicada_world::turret_mode(self.select_turret), self.select_turret);
+            self add_array("team", sliders, &cicada_world::set_turret_side, cicada_world::turret_sides(), self cicada_world::turret_side(self.select_turret), self.select_turret);
+            self add_array("teleport it", sliders, &cicada_world::move_turret, cicada_util::list("crosshair,self"), "crosshair", self.select_turret);
+            self add_option(cicada_util::warn("delete turret"), undefined, &cicada_world::delete_turret, self.select_turret);
+            break;
+
+        case "vehicle manager":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_array_pers("vehicle type", cicada_world::type_summary(), &cicada_world::set_vehicle_type, self cicada_world::vehicle_types(), "vehicle_type");
+            self add_option("spawn this vehicle", "^:" + cicada_world::vehicle_label(self cicada_world::vehicle_type()), &cicada_world::spawn_vehicle);
+            self add_state("allow any type", "^1can crash on maps without them", "vehicle_any_type");
+            self add_option("manage vehicles", cicada_world::vehicle_summary(), &new_menu, "manage vehicles");
+            self add_increment("top speed", increments, &cicada_world::set_vehicle_speed, self cicada_util::getpersint("vehicle_speed"), 10, 200, 5, "vehicle_speed");
+            self add_state("save vehicles", "keeps them for next round", "vehicle_save");
+            self add_option(cicada_util::warn("clear vehicles"), cicada_world::vehicle_summary(), &cicada_world::clear_vehicles);
+            break;
+
+        case "manage vehicles":
+            self.bind_index = false;
+            self add_menu(menu);
+            if (!cicada_world::vehicle_count())
+                self add_option("^1no vehicles spawned");
+            else
+                foreach (car in cicada_world::vehicles())
+                    self add_option(cicada_world::vehicle_name(car), self cicada_world::vehicle_side(car), &new_menu, "vehicle option");
+            break;
+
+        case "vehicle option":
+            self.bind_index = false;
+            self add_menu(cicada_world::vehicle_name(self.select_vehicle));
+            self add_option("drive it", "puts you in the driver seat", &cicada_world::drive_vehicle, self.select_vehicle);
+            self add_array("teleport it", sliders, &cicada_world::move_vehicle, cicada_util::list("crosshair,in front of me,me to it"), "crosshair", self.select_vehicle);
+            self add_toggle("engine running", undefined, cicada_world::engine_on(self.select_vehicle), &cicada_world::toggle_engine, self.select_vehicle);
+            self add_toggle("radar blip", undefined, cicada_world::vehicle_blip(self.select_vehicle), &cicada_world::toggle_vehicle_blip, self.select_vehicle);
+            self add_array("team", sliders, &cicada_world::set_vehicle_side, cicada_world::turret_sides(), self cicada_world::vehicle_side(self.select_vehicle), self.select_vehicle);
+            self add_option(cicada_util::warn("delete vehicle"), undefined, &cicada_world::delete_vehicle, self.select_vehicle);
+            break;
+
+        case "physics toys":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("shockwave at crosshair", "throws bodies and props", &cicada_world::shockwave);
+            self add_option("launch models", "every model in the radius", &cicada_world::launch_models);
+            self add_option("launch agents", "zombies, actors and bots near it", &cicada_world::launch_ai);
+            self add_increment("shock radius", increments, &cicada_mods::set_value, self cicada_util::getpersint("shock_radius"), 100, 3000, 50, "shock_radius");
+            self add_increment("shock force", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("shock_force"), 0.5, 20, 0.5, "shock_force");
+            self add_state("throws agents too", "zombies, actors and bots", "shock_hits_ai");
+            self add_state("hurts agents too", "damage on top of the throw", "shock_hurts_ai");
+            self add_increment("shock damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("shock_damage"), 25, 1000, 25, "shock_damage");
+            self add_state("shake the screen", undefined, "shock_quake");
+            self add_increment("ragdoll gravity", increments, &cicada_world::set_ragdoll_gravity, self cicada_util::getpersfloat("ragdoll_gravity"), 0.1, 5, 0.1, "ragdoll_gravity");
+            break;
+
+        case "map control":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_increment("radius", increments, &cicada_mods::set_value, self cicada_util::getpersint("door_radius"), 200, 5000, 100, "door_radius");
+            self add_option("open the doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "open");
+            self add_option("close the doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "close");
+            self add_option("freeze the doors", "nobody can move them", &cicada_world::manage_doors, "freeze");
+            self add_option("unfreeze the doors", undefined, &cicada_world::manage_doors, "unfreeze");
+            self add_option("what is around me", "prints a count of everything", &cicada_world::radius_report);
             break;
 
         case "sound manager":
@@ -1802,9 +1919,6 @@ function stack_key(menu)
 
         case "zone effect list":
             return "zone_effect";
-
-        case "wire effect list":
-            return "wire_effect";
 
         case "xrounds effect list":
             return "xrounds_effect";
@@ -2175,7 +2289,9 @@ function player_options(player, sliders)
     if (!cicada_util::is_bot(player))
         return;
 
-    self add_option("look at me", undefined, &cicada_mods::look_at_me, player);
+    self add_option("look at me", "^:" + self cicada_util::getpersfloat("look_hold") + "s ^7hold", &cicada_mods::look_at_me, player);
+    self add_option("look away", "drops the hold", &cicada_mods::stop_looking_at_me, player);
+    self add_option("helmet cam", self cicada_mods::helmet_summary(), &cicada_mods::helmet_cam, player);
     self add_option("give my weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::give_bot_weapon, player, self getcurrentweapon());
     self add_option("give shield", undefined, &cicada_loadout::give_bot_shield, player);
     self add_option("apply ^:random camo", "currently set: ^:" + player cicada_loadout::camo(), &cicada_loadout::randomize_camo, player);
@@ -2253,10 +2369,23 @@ function zombie_options(zombie, increments, sliders)
 
     self add_menu(cicada_pve::zombie_name(zombie));
     self add_option("kill", "^:" + zombie.health + " ^7hp", &cicada_pve::kill_zombie, zombie);
+    self add_option("possess", self cicada_pve::possess_summary(), &cicada_pve::possess_agent, zombie);
+    self add_option("helmet cam", self cicada_mods::helmet_summary(), &cicada_mods::helmet_cam, zombie);
     self add_option("send at me", "paths it straight to you", &cicada_pve::send_at_me, zombie);
     if (cicada_pve::is_mimic(zombie))
         self add_option("grab me", "pulls you in and throws you", &cicada_pve::grab_me, zombie);
-    self add_option("look at me", undefined, &cicada_pve::look_at_me, zombie);
+    self add_option("watch me", "holds its head on you", &cicada_pve::watch_me, zombie);
+    self add_option("look away", "drops the look at target", &cicada_pve::stop_watching, zombie);
+    self add_option("face me", undefined, &cicada_pve::look_at_me, zombie);
+    self add_array("facing mode", sliders, &cicada_pve::set_orient, cicada_pve::orient_modes(), cicada_pve::orient_mode(zombie), zombie);
+    self add_option("gestures", "^:" + self cicada_pve::gesture_name(), &new_menu, "agent gestures");
+    self add_option("behaviour", "how it acts and what it ignores", &new_menu, "agent behaviour");
+    self add_option("hunt me", "pins you as its favourite enemy", &cicada_pve::hunt_me, zombie);
+    self add_option("hunt the marked one", "needs another one marked", &cicada_pve::hunt_marked, zombie);
+    self add_option("forget target", undefined, &cicada_pve::forget_target, zombie);
+    self add_array("archetype", sliders, &cicada_pve::set_archetype, cicada_pve::archetypes(), cicada_pve::archetype_of(zombie), zombie);
+    self add_option("ragdoll", "drops it into physics", &cicada_pve::drop_ragdoll, zombie);
+    self add_option("clone", "leaves a copy behind", &cicada_pve::clone_agent, zombie);
     self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
     self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);
     self add_array("speed", sliders, &cicada_pve::set_zombie_speed, cicada_util::list("walk,run,sprint"), cicada_pve::zombie_speed(zombie), zombie);
@@ -2266,6 +2395,8 @@ function zombie_options(zombie, increments, sliders)
         self add_option("give my weapon", "^:" + self getcurrentweapon().basename, &cicada_pve::give_my_weapon, zombie);
         self add_option("give random weapon", undefined, &cicada_pve::give_random_weapon, zombie);
         self add_option("give killstreak weapon", "minigun & friends", &cicada_pve::give_streak_weapon, zombie);
+        self add_option("give shield", undefined, &cicada_pve::give_shield, zombie);
+        self add_option("apply ^:random camo", "on the weapon it holds", &cicada_pve::camo_weapon, zombie);
         self add_option("take weapon", undefined, &cicada_pve::take_weapon, zombie);
     }
     self add_toggle("boss", "its death ends the round", cicada_pve::is_boss(zombie), &cicada_pve::toggle_boss, zombie);
@@ -2976,6 +3107,12 @@ function new_menu(menu)
 
     if (self get_menu() == "manage actors")
         self.select_zombie = cicada_pve::actor_at(self get_cursor());
+
+    if (self get_menu() == "manage turrets")
+        self.select_turret = cicada_world::turret_at(self get_cursor());
+
+    if (self get_menu() == "manage vehicles")
+        self.select_vehicle = cicada_world::vehicle_at(self get_cursor());
 
     if (self get_menu() == "attachment manager")
         self.select_weapon = self cicada_loadout::editable_at(self get_cursor());

@@ -123,10 +123,58 @@ function enemy_player()
     return self;
 }
 
+function enemy_ai()
+{
+    closest = undefined;
+    best = 0;
+
+    foreach (ent in getaiarrayinradius(self.origin, 100000))
+    {
+        if (!isalive(ent) || ent == self)
+            continue;
+
+        gap = distance(ent.origin, self.origin);
+
+        if (!isdefined(closest) || gap < best)
+        {
+            closest = ent;
+            best = gap;
+        }
+    }
+
+    return closest;
+}
+
+function enemy_or_ai()
+{
+    enemy = self enemy_player();
+
+    if (enemy != self)
+        return enemy;
+
+    ai = self enemy_ai();
+
+    if (isdefined(ai))
+        return ai;
+
+    return self;
+}
+
 function crosshair()
 {
     eye = self geteye();
     return trace::_bullet_trace(eye, eye + anglestoforward(self getplayerangles()) * 100000, 0, self)["position"];
+}
+
+function crosshair_ent()
+{
+    eye = self geteye();
+    hit = trace::_bullet_trace(eye, eye + anglestoforward(self getplayerangles()) * 100000, 1, self);
+
+    if (!isdefined(hit["entity"]))
+        return undefined;
+
+    return hit["entity"];
 }
 
 function player_name()

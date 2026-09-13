@@ -17,6 +17,7 @@
 #using custom_scripts\stations;
 #using custom_scripts\session;
 #using custom_scripts\util;
+#using custom_scripts\world;
 
 #namespace cicada;
 
@@ -42,6 +43,7 @@ function private init()
     cicada_props::init();
     cicada_mods::init();
     cicada_binds::init();
+    cicada_world::init();
 
     level thread [[&cicada_mods::skip_prematch]]();
     level thread [[&cicada_mods::guard_frozen]]();

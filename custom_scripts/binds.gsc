@@ -16,6 +16,7 @@
 #using custom_scripts\pve;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
+#using custom_scripts\world;
 
 #namespace cicada_binds;
 
@@ -50,6 +51,19 @@ function init()
     register("agent bolt movement", &cicada_movement::play_agent_bolt);
     register("zombie bolt movement", &cicada_movement::play_zombie_bolt);
     register("mimic grab", &cicada_pve::grab_me);
+    register("possess agent", &cicada_pve::possess_agent);
+    register("helmet cam", &cicada_mods::helmet_cam);
+    register("agent gesture", &agent_gesture);
+    register("agent looks at me", &agent_look);
+    register("agent hunts me", &agent_hunt);
+    register("place turret", &cicada_world::place_turret);
+    register("turrets aim at target", &cicada_world::aim_all_turrets);
+    register("spawn vehicle", &cicada_world::spawn_vehicle);
+    register("shockwave", &cicada_world::shockwave);
+    register("launch agents", &cicada_world::launch_ai);
+    register("launch models", &cicada_world::launch_models);
+    register("open doors near me", &open_doors);
+    register("close doors near me", &close_doors);
     register("lock menu", &cicada_menu::lock_menu);
     register("play scene", &cicada_cinematics::play_scene);
     register("record movement", &cicada_movement::play_record);
@@ -84,7 +98,6 @@ function init()
     register("fill the clip", &cicada_extras::fill_clip);
     register("explosive rounds", &cicada_leftovers::explosive_rounds);
     register("radiation zone", &cicada_leftovers::make_zone);
-    register("tripwire point", &cicada_leftovers::save_wire_point);
     register("place station", &cicada_stations::place_station);
     register("anim slot 1", &anim_slot_1);
     register("anim slot 2", &anim_slot_2);
@@ -449,6 +462,31 @@ function freeze_anim()
     cicada_mods::toggle_dvar("pan_freezeanim");
 }
 
+function agent_gesture()
+{
+    self cicada_pve::play_gesture(self cicada_pve::picked_agent());
+}
+
+function agent_look()
+{
+    self cicada_pve::watch_me(self cicada_pve::picked_agent());
+}
+
+function agent_hunt()
+{
+    self cicada_pve::hunt_me(self cicada_pve::picked_agent());
+}
+
+function open_doors()
+{
+    self cicada_world::manage_doors("open");
+}
+
+function close_doors()
+{
+    self cicada_world::manage_doors("close");
+}
+
 function third_person()
 {
     cicada_mods::toggle_dvar("camera_thirdperson");
@@ -586,10 +624,10 @@ function shellshock_self()
 
 function stuck()
 {
-    enemy = self cicada_util::enemy_player();
+    enemy = self cicada_util::enemy_or_ai();
     if (enemy == self)
     {
-        self cicada_util::message_bold("^5spawn an enemy first");
+        self cicada_util::message_bold("^5spawn an enemy, a bot or an agent first");
         return;
     }
 

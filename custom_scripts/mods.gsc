@@ -34,6 +34,7 @@
 #using custom_scripts\pve;
 #using custom_scripts\util;
 #using custom_scripts\weapon;
+#using custom_scripts\world;
 
 #namespace cicada_mods;
 
@@ -151,11 +152,14 @@ function refresh_on_spawn()
     }
 
     self thread [[&cicada_props::props_autosave]]();
+    self thread [[&cicada_world::spawn_restore]]();
 
     ensure_kill_hook();
     ensure_damage_hook();
 
     self cicada_menu::restore_lock();
+    self drop_helmet_cam();
+    self cicada_pve::release_agent();
     self cicada_cinematics::recover_scene();
     self cicada_cinematics::restore_nodes();
 
@@ -876,6 +880,63 @@ function private hold_freeze_spot(player_)
         mark_freeze_spot(player_);
 }
 
+function pin_frozen(player_)
+{
+    if (!isdefined(player_) || istrue(player_.cicada_pinned))
+        return;
+
+    player_.cicada_pinned = true;
+    player_ thread [[&pin_loop]]();
+}
+
+function drop_pin(player_)
+{
+    if (!isdefined(player_))
+        return;
+
+    player_.cicada_pinned = undefined;
+    player_ notify("cicada_unpin");
+}
+
+function private pin_loop()
+{
+    self endon("disconnect");
+    self endon("death");
+    self endon("cicada_unpin");
+    level endon("game_ended");
+
+    for (;;)
+    {
+        if (!frozen_now(self) || istrue(self.cicada_launched))
+        {
+            self.cicada_pinned = undefined;
+            return;
+        }
+
+        if (isdefined(self.cicada_freeze_spot) && isdefined(self.origin))
+        {
+            spot = self.cicada_freeze_spot;
+
+            if (self isonground())
+            {
+                if (distance(self.origin, spot) > 0.05)
+                    self setorigin(spot);
+
+                self setvelocity((0, 0, 0));
+            }
+            else
+            {
+                self.cicada_freeze_spot = (spot[0], spot[1], self.origin[2]);
+
+                drop = self getvelocity();
+                self setvelocity((0, 0, drop[2]));
+            }
+        }
+
+        waitframe();
+    }
+}
+
 function private restore_freeze_spot(player_)
 {
     if (!isdefined(player_.cicada_freeze_spot) || istrue(player_.cicada_launched))
@@ -921,6 +982,7 @@ function guard_frozen()
 
                 player_ freezecontrols(1);
                 restore_freeze_spot(player_);
+                pin_frozen(player_);
             }
 
             waitframe();
@@ -943,6 +1005,7 @@ function freeze_bots(key)
 
             player_ freezecontrols(1);
             hold_freeze_spot(player_);
+            pin_frozen(player_);
         }
 
         wait 0.5;
@@ -953,7 +1016,10 @@ function unfreeze_bots(key)
 {
     foreach (player_ in level.players)
         if (cicada_util::is_bot(player_))
+        {
+            drop_pin(player_);
             player_ freezecontrols(0);
+        }
 }
 
 function is_frozen(player_)
@@ -973,6 +1039,7 @@ function toggle_freeze(player_)
     {
         player_.cicada_frozen = false;
         player_ notify("cicada_unfreeze");
+        drop_pin(player_);
         player_ freezecontrols(0);
         return;
     }
@@ -994,6 +1061,7 @@ function hold_freeze()
         {
             self freezecontrols(1);
             hold_freeze_spot(self);
+            pin_frozen(self);
         }
 
         wait 0.5;
@@ -1403,15 +1471,15 @@ function play_velocity()
 
 function knockback_push()
 {
-    enemy = self cicada_util::enemy_player();
+    enemy = self cicada_util::enemy_or_ai();
 
     if (enemy == self)
     {
-        self cicada_util::message_bold("^5spawn an enemy first");
+        self cicada_util::message_bold("^5spawn an enemy, a bot or an agent first");
         return;
     }
 
-    weapon = enemy getcurrentweapon();
+    weapon = isplayer(enemy) ? enemy getcurrentweapon() : self getcurrentweapon();
 
     if (!isdefined(weapon) || isnullweapon(weapon))
         weapon = self getcurrentweapon();
@@ -1466,6 +1534,225 @@ function ai_name(ent)
         return ent cicada_util::player_name();
 
     return cicada_pve::zombie_name(ent);
+}
+
+function helmet_tag()
+{
+    tag = self cicada_util::getpers("helmet_tag");
+
+    if (!isdefined(tag) || tag == "")
+        return "tag_eye";
+
+    return tag;
+}
+
+function riding_helmet()
+{
+    return isdefined(self.cicada_helmet);
+}
+
+function helmet_summary()
+{
+    if (!self riding_helmet())
+        return "^1off";
+
+    return "^:" + ai_name(self.cicada_helmet);
+}
+
+function drop_helmet_cam()
+{
+    if (!self riding_helmet())
+        return;
+
+    self.cicada_helmet = undefined;
+
+    self notify("cicada_helmet_done");
+    self cameraunlink();
+
+    if (isdefined(self.cicada_helmet_rig))
+    {
+        self.cicada_helmet_rig delete();
+        self.cicada_helmet_rig = undefined;
+    }
+
+    setdvar("cg_drawgun", 1);
+    setdvar("cg_drawcrosshair", 1);
+
+    if (isalive(self) && istrue(self.cicada_helmet_froze))
+        self freezecontrols(0);
+
+    self.cicada_helmet_froze = undefined;
+
+    self cicada_util::message("helmet cam ^1off");
+    self cicada_menu::update_menu();
+}
+
+function helmet_unit()
+{
+    ent = self cicada_util::crosshair_ent();
+
+    if (isdefined(ent) && ent != self && isalive(ent) && (isagent(ent) || isplayer(ent)))
+        return ent;
+
+    ent = self cicada_pve::marked_agent();
+
+    if (isdefined(ent))
+        return ent;
+
+    foreach (player_ in level.players)
+        if (player_ != self && isalive(player_) && is_ai_target(player_))
+            return player_;
+
+    return undefined;
+}
+
+function helmet_cam(unit)
+{
+    if (self riding_helmet())
+    {
+        self drop_helmet_cam();
+        return;
+    }
+
+    if (!isdefined(unit))
+        unit = self helmet_unit();
+
+    if (!isdefined(unit) || !isalive(unit))
+    {
+        self cicada_util::message_bold("^1look at a bot or an agent first");
+        return;
+    }
+
+    spot = unit gettagorigin(self helmet_tag());
+
+    if (!isdefined(spot))
+        spot = unit geteye();
+
+    if (!isdefined(spot))
+        spot = unit.origin + (0, 0, 60);
+
+    rig = spawn("script_model", spot);
+    rig setmodel("tag_origin");
+    rig.angles = unit.angles;
+
+    self.cicada_helmet = unit;
+    self.cicada_helmet_rig = rig;
+
+    self cameralinkto(rig, "tag_origin", 1, 1);
+
+    if (istrue(self cicada_util::getpers("helmet_freeze")))
+    {
+        self.cicada_helmet_froze = true;
+        self freezecontrols(1);
+    }
+
+    self thread [[&ride_helmet]](unit, rig);
+    self thread [[&watch_helmet]](unit);
+    self thread [[&watch_helmet_round]]();
+
+    self cicada_util::message("helmet cam on ^:" + ai_name(unit));
+    self cicada_menu::update_menu();
+}
+
+function private ride_helmet(unit, rig)
+{
+    self endon("disconnect");
+    self endon("cicada_helmet_done");
+
+    tag = self helmet_tag();
+
+    for (;;)
+    {
+        if (!isdefined(unit) || !isdefined(rig))
+            return;
+
+        spot = unit gettagorigin(tag);
+
+        if (!isdefined(spot))
+            spot = unit.origin + (0, 0, 60);
+
+        angles = unit gettagangles(tag);
+
+        if (!isdefined(angles))
+            angles = unit.angles;
+
+        rig.origin = spot;
+        rig.angles = angles;
+
+        waitframe();
+    }
+}
+
+function private watch_helmet(unit)
+{
+    self endon("disconnect");
+    self endon("cicada_helmet_done");
+
+    for (;;)
+    {
+        waitframe();
+
+        if (!isdefined(unit) || !isalive(unit))
+            break;
+
+        if (!isalive(self))
+            break;
+    }
+
+    self drop_helmet_cam();
+}
+
+function private watch_helmet_round()
+{
+    self endon("disconnect");
+    self endon("cicada_helmet_done");
+
+    level waittill("game_ended");
+    self drop_helmet_cam();
+}
+
+function damage_targets(with_ai)
+{
+    pool = [];
+
+    foreach (player_ in level.players)
+        if (isalive(player_))
+            pool[pool.size] = player_;
+
+    if (!istrue(with_ai))
+        return pool;
+
+    foreach (ent in cicada_pve::zombies())
+        pool[pool.size] = ent;
+
+    return pool;
+}
+
+function splash_ai(spot, radius, damage, min_damage, means)
+{
+    if (!isdefined(spot) || !isdefined(radius) || radius <= 0)
+        return;
+
+    if (!isdefined(min_damage))
+        min_damage = int(damage / 4);
+
+    if (!isdefined(means))
+        means = "MOD_EXPLOSIVE";
+
+    foreach (ent in getaiarrayinradius(spot, radius))
+    {
+        if (!isalive(ent))
+            continue;
+
+        away = distance(ent.origin, spot);
+
+        hit = int(damage - ((damage - min_damage) * (away / radius)));
+
+        if (hit < 1)
+            continue;
+
+        ent dodamage(hit, spot, self, self, means);
+    }
 }
 
 function ai_pool(kind)
@@ -3591,7 +3878,23 @@ function manage_teleport(where, player_)
 
 function look_at_me(player_)
 {
-    player_ setplayerangles(vectortoangles(self.origin - player_.origin));
+    if (!isdefined(player_) || !isalive(player_))
+        return;
+
+    hold = self cicada_util::getpersfloat("look_hold");
+
+    if (hold < 0.1)
+        hold = 5;
+
+    player_ botlookatpoint(self geteye(), hold, "script_forced");
+}
+
+function stop_looking_at_me(player_)
+{
+    if (!isdefined(player_) || !isalive(player_))
+        return;
+
+    player_ botlookatpoint(undefined);
 }
 
 function give_bot_weapon(player_, weapon)
@@ -4339,6 +4642,9 @@ function apply_defaults()
     self cicada_util::initpers("equipment_aim_enemies", true);
     self cicada_util::initpers("equipment_aim_rockets", true);
     self cicada_util::initpers("equipment_aim_any", false);
+    self cicada_util::initpers("equipment_aim_steer", true);
+    self cicada_util::initpers("equipment_aim_top", false);
+    self cicada_util::initpers("equipment_aim_outline", false);
     self cicada_util::initpers("auto_chute", false);
     self cicada_util::initpers("chute_fall_time", 3);
     self cicada_util::initpers("chute_freefall", false);
@@ -4362,15 +4668,8 @@ function apply_defaults()
     self cicada_util::initpers("zone_damage", 20);
     self cicada_util::initpers("zone_rate", 1);
     self cicada_util::initpers("pick_zone", "place");
-    self cicada_util::initpers("pick_wire", "save point");
     self cicada_util::initpers("zone_enemies", true);
     self cicada_util::initpers("zone_hurt_owner", false);
-    self cicada_util::initpers("wire_reach", 24);
-    self cicada_util::initpers("wire_damage", 200);
-    self cicada_util::initpers("wire_blast", 160);
-    self cicada_util::initpers("wire_once", true);
-    self cicada_util::initpers("wire_enemies", true);
-    self cicada_util::initpers("wire_hurt_owner", false);
     self cicada_util::initpers("xrounds_damage", 120);
     self cicada_util::initpers("xrounds_blast", 128);
     self cicada_util::initpers("xrounds_rate", 0.1);
@@ -4555,6 +4854,31 @@ function apply_defaults()
     self cicada_util::initpers("pick_crate", "spawn");
     self cicada_util::initpers("pick_bounce", "save");
     self cicada_util::initpers("pick_bots", "crosshair");
+    self cicada_util::initpers("look_hold", 5);
+    self cicada_util::initpers("helmet_tag", "tag_eye");
+    self cicada_util::initpers("helmet_freeze", true);
+    self cicada_util::initpers("zone_hits_ai", true);
+    self cicada_util::initpers("turret_kind", "sentry gun");
+    self cicada_util::initpers("turret_mode", "sentry");
+    self cicada_util::initpers("turret_team", "enemy");
+    self cicada_util::initpers("turret_save", true);
+    self cicada_util::initpers("vehicle_type", "veh9_jltv_physics_mp");
+    self cicada_util::initpers("vehicle_speed", 60);
+    self cicada_util::initpers("vehicle_save", true);
+    self cicada_util::initpers("vehicle_any_type", false);
+    self cicada_util::initpers("shock_radius", 400);
+    self cicada_util::initpers("shock_force", 3);
+    self cicada_util::initpers("shock_damage", 100);
+    self cicada_util::initpers("shock_hits_ai", true);
+    self cicada_util::initpers("shock_hurts_ai", false);
+    self cicada_util::initpers("shock_quake", true);
+    self cicada_util::initpers("ragdoll_gravity", 1);
+    self cicada_util::initpers("door_radius", 1000);
+    self cicada_util::initpers("xrounds_hits_ai", true);
+    self cicada_util::initpers("possess_vision", "none");
+    self cicada_util::initpers("agent_gesture", "talk");
+    self cicada_util::initpers("gesture_hold", 1000);
+    self cicada_util::initpers("pick_ai", "crosshair");
     self cicada_util::initpers("pick_stack", "add current");
     self cicada_util::initpers("pick_score", "fast last");
     self cicada_util::initpers("pick_session", "save new");

@@ -1,5 +1,6 @@
 #using scripts\common\values;
 #using scripts\engine\utility;
+#using scripts\cp_mp\agents\agent_utils;
 #using scripts\mp\agents\agent_common;
 #using scripts\mp\agents\agents;
 #using scripts\mp\ai_mp_controller;
@@ -1824,6 +1825,581 @@ function manage_teleport(where, zombie)
     }
 }
 
+function move_zombies(where)
+{
+    destination = (where == "crosshair") ? self cicada_util::crosshair() : self.origin;
+
+    moved = 0;
+
+    foreach (zombie in zombies())
+    {
+        zombie forceteleport(destination, zombie.angles);
+        settle_after_move(zombie);
+        moved++;
+    }
+
+    self cicada_util::message("^:" + moved + " ^7moved to ^:" + destination);
+    self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function all_frozen()
+{
+    return istrue(level.cicada_pve_frozen_all);
+}
+
+function freeze_all()
+{
+    wanted = !all_frozen();
+    level.cicada_pve_frozen_all = wanted;
+
+    foreach (zombie in zombies())
+    {
+        if (wanted)
+            freeze_zombie(zombie);
+        else
+            unfreeze_zombie(zombie);
+    }
+
+    self cicada_util::message(wanted ? "zombies ^2frozen" : "zombies ^1unfrozen");
+    self cicada_menu::update_menu();
+}
+
+function give_shield(zombie)
+{
+    shield = cicada_loadout::build("iw9_me_riotshield_mp");
+
+    if (!isdefined(shield) || isnullweapon(shield))
+        return;
+
+    self give_weapon(zombie, shield);
+}
+
+function camo_weapon(zombie)
+{
+    if (!isdefined(zombie) || !isalive(zombie))
+        return;
+
+    weapon = zombie.weapon;
+
+    if (!isdefined(weapon) || isnullweapon(weapon) || weapon.basename == "none")
+    {
+        self cicada_util::message(cicada_util::warn("give it a weapon first"));
+        return;
+    }
+
+    root = scripts\cp_mp\weapon::getweaponrootname(weapon);
+    variant = isdefined(weapon.variantid) ? weapon.variantid : -1;
+
+    self give_weapon(zombie, cicada_loadout::build(root, cicada_catalog::random_camo(), weapon.attachments, variant));
+}
+
+function agent_under_crosshair()
+{
+    ent = self cicada_util::crosshair_ent();
+
+    if (isdefined(ent) && isagent(ent) && isalive(ent))
+        return ent;
+
+    return undefined;
+}
+
+function marked_agent()
+{
+    foreach (zombie in zombies())
+        if (istrue(zombie.cicada_bind_target))
+            return zombie;
+
+    return undefined;
+}
+
+function picked_agent()
+{
+    ent = self agent_under_crosshair();
+
+    if (isdefined(ent))
+        return ent;
+
+    return self marked_agent();
+}
+
+function possessing()
+{
+    return isdefined(self.cicada_possessed) && isdefined(self.playerproxyagent) && isalive(self.playerproxyagent);
+}
+
+function possess_summary()
+{
+    if (!self possessing())
+        return "^1nobody";
+
+    return "^:" + zombie_name(self.cicada_possessed);
+}
+
+function release_agent()
+{
+    if (!isdefined(self.cicada_possessed))
+        return;
+
+    agent = self.cicada_possessed;
+    self.cicada_possessed = undefined;
+
+    self notify("cicada_possess_done");
+
+    if (isdefined(self.playerproxyagent))
+    {
+        self restorecontrolagent();
+        self.playerproxyagent = undefined;
+    }
+
+    setdvar("cg_drawgun", 1);
+    setdvar("cg_drawcrosshair", 1);
+
+    if (self possess_vision() != "none")
+        self visionsetnakedforplayer("", 0);
+
+    self cicada_util::message("let go of ^:" + zombie_name(agent));
+    self cicada_menu::update_menu();
+}
+
+function possess_visions()
+{
+    list = [];
+    list[0] = "none";
+
+    foreach (name in cicada_catalog::vision_refs())
+        list[list.size] = name;
+
+    return list;
+}
+
+function possess_vision()
+{
+    name = self cicada_util::getpers("possess_vision");
+
+    if (!isdefined(name) || name == "")
+        return "none";
+
+    return name;
+}
+
+function possess_agent(agent)
+{
+    if (self possessing())
+    {
+        self release_agent();
+        return;
+    }
+
+    if (!isdefined(agent))
+        agent = self picked_agent();
+
+    if (!isdefined(agent) || !isalive(agent))
+    {
+        self cicada_util::message_bold("^1look at an agent or mark one first");
+        return;
+    }
+
+    if (!isalive(self))
+    {
+        self cicada_util::message_bold("^1stay alive for this");
+        return;
+    }
+
+    self.cicada_possessed = agent;
+    self controlagent(agent);
+    self.playerproxyagent = agent;
+
+    if (self possess_vision() != "none")
+        self visionsetnakedforplayer(self possess_vision(), 0);
+
+    self thread [[&watch_possession]](agent);
+    self thread [[&watch_possess_round]]();
+
+    self cicada_util::message("riding ^:" + zombie_name(agent));
+    self cicada_menu::update_menu();
+}
+
+function private watch_possession(agent)
+{
+    self endon("disconnect");
+    self endon("cicada_possess_done");
+
+    for (;;)
+    {
+        waitframe();
+
+        if (!isdefined(agent) || !isalive(agent))
+            break;
+
+        if (!isalive(self))
+            break;
+    }
+
+    self release_agent();
+}
+
+function private watch_possess_round()
+{
+    self endon("disconnect");
+    self endon("cicada_possess_done");
+
+    level waittill("game_ended");
+    self release_agent();
+}
+
+function gesture_names()
+{
+    return cicada_util::list("talk,military_point,casual_point,beckon,stop,look,hide,glance,yes,no,cough");
+}
+
+function gesture_takes_target(name)
+{
+    switch (name)
+    {
+        case "military_point":
+        case "casual_point":
+        case "beckon":
+        case "stop":
+        case "look":
+        case "hide":
+            return true;
+    }
+
+    return false;
+}
+
+function gesture_name()
+{
+    name = self cicada_util::getpers("agent_gesture");
+
+    if (!isdefined(name) || name == "")
+        return "talk";
+
+    return name;
+}
+
+function set_agent_gesture(name, agent)
+{
+    self cicada_util::setpers("agent_gesture", name);
+
+    if (isdefined(agent))
+        self play_gesture(agent, name);
+
+    self cicada_menu::update_menu();
+}
+
+function play_gesture(agent, name)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    if (!isdefined(name))
+        name = self gesture_name();
+
+    hold = self cicada_util::getpersint("gesture_hold");
+
+    if (hold < 250)
+        hold = 1000;
+
+    target = gesture_takes_target(name) ? self : undefined;
+
+    agent thread scripts\asm\gesture::ai_request_gesture(name, target, hold, undefined);
+}
+
+function gesture_every_agent()
+{
+    name = self gesture_name();
+    sent = 0;
+
+    foreach (zombie in zombies())
+    {
+        self play_gesture(zombie, name);
+        sent++;
+    }
+
+    self cicada_util::message("^:" + name + " ^7sent to ^:" + sent);
+}
+
+function private settle_lookat(ent)
+{
+    self endon("death");
+
+    self clearlookatent();
+    waitframe();
+
+    if (!isdefined(ent) || !isdefined(self))
+        return;
+
+    self setlookatent(ent);
+}
+
+function look_at_ent(agent, ent)
+{
+    if (!isdefined(agent) || !isalive(agent) || !isdefined(ent))
+        return;
+
+    agent thread [[&settle_lookat]](ent);
+}
+
+function watch_me(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    self look_at_ent(agent, self);
+    self cicada_util::message(zombie_name(agent) + " ^7is watching you");
+}
+
+function stop_watching(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent clearlookatent();
+    agent stoplookat();
+    self cicada_util::message(zombie_name(agent) + " ^7looked away");
+}
+
+function orient_modes()
+{
+    return cicada_util::list("face current,face motion,face enemy,face enemy or motion,face angle");
+}
+
+function orient_mode(agent)
+{
+    if (isdefined(agent) && isdefined(agent.cicada_orient))
+        return agent.cicada_orient;
+
+    return "face current";
+}
+
+function set_orient(mode, agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent.cicada_orient = mode;
+
+    if (mode == "face angle")
+        agent orientmode(mode, vectortoyaw(self.origin - agent.origin));
+    else
+        agent orientmode(mode);
+}
+
+function aim_agent_at(agent, target)
+{
+    if (!isdefined(agent) || !isalive(agent) || !isdefined(target) || !issentient(target))
+        return;
+
+    agent aieventlistenerevent("combat", target, target.origin);
+    agent agentsetfavoriteenemy(target);
+    agent setagentattacker(target);
+    agent getenemyinfo(target);
+    agent forcethreatupdate();
+}
+
+function hunt_me(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent.ignoreme = 0;
+    agent.ignoreall = 0;
+
+    self aim_agent_at(agent, self);
+    self cicada_util::message(zombie_name(agent) + " ^7wants you");
+}
+
+function hunt_marked(agent)
+{
+    target = self marked_agent();
+
+    if (!isdefined(target) || target == agent)
+    {
+        self cicada_util::message_bold("^1mark another one first");
+        return;
+    }
+
+    self aim_agent_at(agent, target);
+    self cicada_util::message(zombie_name(agent) + " ^7wants ^:" + zombie_name(target));
+}
+
+function forget_target(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent agentsetfavoriteenemy(undefined);
+    agent forcethreatupdate();
+    self cicada_util::message(zombie_name(agent) + " ^7forgot its target");
+}
+
+function hunt_every_agent()
+{
+    foreach (zombie in zombies())
+        self hunt_me(zombie);
+
+    self cicada_util::message("every agent wants you");
+}
+
+function behaviour_on(agent, key)
+{
+    if (!isdefined(agent) || !isdefined(agent.cicada_behaviour))
+        return false;
+
+    return istrue(agent.cicada_behaviour[key]);
+}
+
+function apply_behaviour(agent, key, state)
+{
+    switch (key)
+    {
+        case "no traversals":
+            agent enabletraversals(state ? 0 : 1);
+            break;
+
+        case "stand only":
+            if (state)
+                agent allowedstances("stand");
+            else
+                agent allowedstances("stand", "crouch", "prone");
+            break;
+
+        case "never shoot":
+            agent.dontevershoot = state ? 1 : 0;
+            break;
+
+        case "never melee":
+            agent.dontmelee = state ? 1 : 0;
+
+            if (isdefined(agent.bt))
+                agent.bt.cannotmelee = state ? 1 : 0;
+            break;
+
+        case "ignore me":
+            agent.ignoreme = state ? 1 : 0;
+            break;
+
+        case "ignore everyone":
+            agent.ignoreall = state ? 1 : 0;
+            break;
+
+        case "aggressive":
+            agent.aggressivemode = state ? 1 : 0;
+            break;
+
+        case "no flinch":
+            agent.disablebulletwhizbyreaction = state ? 1 : 0;
+            break;
+
+        case "no run and gun":
+            agent.disablerunngun = state ? 1 : 0;
+            break;
+
+        case "no dodge":
+            agent.disabledodge = state ? 1 : 0;
+            break;
+    }
+}
+
+function toggle_behaviour(key, agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    if (!isdefined(agent.cicada_behaviour))
+        agent.cicada_behaviour = [];
+
+    state = !behaviour_on(agent, key);
+    agent.cicada_behaviour[key] = state;
+
+    apply_behaviour(agent, key, state);
+    self cicada_menu::update_menu();
+}
+
+function behaviour_keys()
+{
+    return cicada_util::list("no traversals,stand only,never shoot,never melee,ignore me,ignore everyone,aggressive,no flinch,no run and gun,no dodge");
+}
+
+function archetypes()
+{
+    return cicada_util::list("tier 1,tier 2,tier 3,riot shield,special");
+}
+
+function set_archetype(kind, agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent.cicada_archetype = kind;
+
+    switch (kind)
+    {
+        case "tier 1":
+            agent_utils::overridetier1(agent);
+            break;
+
+        case "tier 2":
+            agent_utils::overridetier2(agent);
+            break;
+
+        case "tier 3":
+            agent_utils::overridetier3(agent, 0);
+            break;
+
+        case "riot shield":
+            agent_utils::overrideriotshield(agent);
+            break;
+
+        case "special":
+            agent_utils::overridespecial(agent);
+            break;
+    }
+
+    self cicada_util::message(zombie_name(agent) + " ^7is now ^:" + kind);
+}
+
+function archetype_of(agent)
+{
+    if (isdefined(agent) && isdefined(agent.cicada_archetype))
+        return agent.cicada_archetype;
+
+    return "tier 1";
+}
+
+function drop_ragdoll(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    agent startragdoll();
+}
+
+function clone_agent(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    copy = agent cloneagent(10);
+
+    if (!isdefined(copy))
+    {
+        self cicada_util::message_bold("^1no clone came back");
+        return;
+    }
+
+    self cicada_util::message("clone of ^:" + zombie_name(agent) + " ^7dropped");
+}
+
+function near_agents(radius)
+{
+    if (!isdefined(radius))
+        radius = 1000;
+
+    return getaiarrayinradius(self.origin, radius);
+}
+
 function private setup_agents()
 {
     setdvar("scr_default_maxagents", max(getdvarint("scr_default_maxagents", 0), 60));
@@ -2038,17 +2614,31 @@ function private killcam_victim(deathtime)
     if (isdefined(level.cicada_pve_victim))
         level.cicada_pve_victim delete();
 
-    victim = spawn("script_origin", self.origin);
+    spot = isdefined(self.body) ? self.body.origin : self.origin;
+
+    victim = spawn("script_origin", spot);
 
     victim.deathtime = deathtime;
     victim.attackers = self.attackers;
     victim.attackerdata = self.attackerdata;
 
     if (isdefined(self.body))
-        victim linkto(self.body);
+        victim thread [[&follow_body]](self.body);
 
     level.cicada_pve_victim = victim;
     return victim;
+}
+
+function private follow_body(body)
+{
+    self endon("death");
+    level endon("game_ended");
+
+    while (isdefined(body) && isdefined(self))
+    {
+        self.origin = body.origin;
+        waitframe();
+    }
 }
 
 function private pick_aitype()

@@ -90,10 +90,38 @@ function private equipment_target()
     return closest;
 }
 
+function private safe_to_steer(projectile)
+{
+    if (!isdefined(projectile) || !isdefined(projectile.origin))
+        return false;
+
+    if (isplayer(projectile) || isagent(projectile))
+        return false;
+
+    if (projectile isscriptable())
+        return false;
+
+    return true;
+}
+
+function private aim_allowed()
+{
+    if (self cicada_mods::riding_helmet())
+        return false;
+
+    if (self cicada_pve::possessing())
+        return false;
+
+    return true;
+}
+
 function private home_projectile(projectile, target)
 {
     self endon("disconnect");
     level endon("game_ended");
+
+    projectile endon("death");
+    projectile endon("explode");
 
     speed = self cicada_util::getpersint("equipment_aim_speed");
     lift = self cicada_util::getpersint("equipment_aim_height");
@@ -101,7 +129,7 @@ function private home_projectile(projectile, target)
 
     for (i = 0; i < 400; i++)
     {
-        if (!isdefined(projectile) || !isdefined(target) || !isalive(target))
+        if (!safe_to_steer(projectile) || !isdefined(target) || !isalive(target))
             return;
 
         spot = target.origin + (0, 0, lift);
@@ -133,13 +161,24 @@ function private missile_aimbot(key)
         if (!isdefined(projectile) || !istrue(self cicada_util::getpers("equipment_aim_rockets")))
             continue;
 
+        if (!self aim_allowed() || !isvalidmissile(projectile))
+            continue;
+
         target = self equipment_target();
 
         if (!isdefined(target))
             continue;
 
         projectile missile_settargetent(target, (0, 0, 0));
-        self thread [[&home_projectile]](projectile, target);
+
+        if (istrue(self cicada_util::getpers("equipment_aim_top")))
+            projectile missile_setflightmodetop();
+
+        if (istrue(self cicada_util::getpers("equipment_aim_outline")))
+            projectile missileoutline();
+
+        if (istrue(self cicada_util::getpers("equipment_aim_steer")))
+            self thread [[&home_projectile]](projectile, target);
     }
 }
 
@@ -156,6 +195,9 @@ function equipment_aimbot(key)
         self waittill("grenade_fire", projectile, weapon);
 
         if (!isdefined(projectile) || !isdefined(weapon))
+            continue;
+
+        if (!self aim_allowed() || !safe_to_steer(projectile))
             continue;
 
         if (!self wanted_equipment(weapon))

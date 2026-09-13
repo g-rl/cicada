@@ -637,7 +637,13 @@ function in_slot(name, slot)
 
 function sound_groups()
 {
-    return cicada_util::list("interface,multiplayer,jupiter,killstreaks,weapons,zombies,events,warzone,vehicles,ambient,shared,misc");
+    groups = [];
+
+    foreach (group in cicada_util::list("interface,multiplayer,jupiter,killstreaks,weapons,zombies,events,warzone,vehicles,ambient,shared,misc"))
+        if (sounds_in(group).size)
+            groups[groups.size] = group;
+
+    return groups;
 }
 
 function private add_sounds(list, text)

@@ -318,6 +318,8 @@ function ride_points(key, rider, leg)
     }
 
     rider thread [[&stop_ride_on_death]]();
+    rider thread [[&stop_ride_on_end]]();
+    self thread [[&stop_ride_on_owner_gone]](rider);
 
     for (i = 0; i < total; i++)
     {
@@ -342,6 +344,24 @@ function stop_ride_on_death()
     self stop_ride();
 }
 
+function private stop_ride_on_end()
+{
+    self endon("disconnect");
+    self endon("cicada_ride_ended");
+
+    level waittill("game_ended");
+    self stop_ride();
+}
+
+function private stop_ride_on_owner_gone(rider)
+{
+    rider endon("cicada_ride_ended");
+    level endon("game_ended");
+
+    self waittill("disconnect");
+    rider stop_ride();
+}
+
 function stop_ride()
 {
     if (!isdefined(self.cicada_rig))
@@ -355,6 +375,12 @@ function stop_ride()
     {
         self.cicada_rig_ai = undefined;
         cicada_pve::release_ai(self);
+    }
+
+    if (isplayer(self))
+    {
+        self setorigin(self.origin);
+        self setvelocity((0, 0, -10));
     }
 
     self notify("cicada_ride_ended");

@@ -701,7 +701,7 @@ function private settle_state()
 {
     self endon("disconnect");
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 15; i++)
     {
         waitframe();
 
@@ -710,9 +710,20 @@ function private settle_state()
 
         self clear_archive_fields();
         self drop_spectate();
+        self blank_overlay();
         player_utility::updatesessionstate("playing");
         self setclientomnvar("ui_session_state", "playing");
+        self setclientomnvar("ui_hide_full_hud", 0);
     }
+
+    if (self scene_running())
+        return;
+
+    setdvar("cg_drawgun", 1);
+    setdvar("cg_drawcrosshair", 1);
+
+    if (isalive(self))
+        self freezecontrols(0);
 }
 
 function private stop_archive()
@@ -762,8 +773,8 @@ function end_scene()
     self undress_nodes();
     self drop_scene_vision();
 
-    self blank_overlay();
     self stop_archive();
+    self blank_overlay();
     self cicada_mods::restore_timescale();
 
     if (self islinked())
@@ -796,6 +807,8 @@ function end_scene()
         self give_back(saved);
     }
 
+    self blank_overlay();
+    self setclientomnvar("ui_hide_full_hud", 0);
     self cicada_menu::update_menu();
 }
 
@@ -1182,6 +1195,8 @@ function private run_scene()
 
     if (self cicada_util::in_menu())
         self cicada_menu::close_menu();
+
+    self cicada_mods::drop_helmet_cam();
 
     self takeallweapons();
     self hide_player();

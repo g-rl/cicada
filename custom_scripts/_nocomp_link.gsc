@@ -81,7 +81,7 @@ function private follow_rig(ent, rig)
     }
 }
 
-function private attach(ent)
+function private attach_link(ent)
 {
     view = self cicada_util::getpersfloat("link_view");
     right = self cicada_util::getpersint("link_arc_right");
@@ -347,7 +347,7 @@ function ride(ent)
     if (!isalive(self))
         return;
 
-    self attach(ent);
+    self attach_link(ent);
     self.cicada_link_on = true;
 
     if (istrue(self cicada_util::getpers("link_god")))
