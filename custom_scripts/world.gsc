@@ -22,7 +22,6 @@ function init()
 
     if (!isdefined(level.maxvehiclecount))
         level.maxvehiclecount = 16;
-
 }
 
 function private map_vehicle_types()
@@ -560,7 +559,7 @@ function load_turrets()
     }
 
     if (back)
-        self cicada_util::message("^:" + back + " ^7turrets back from the last round");
+        self cicada_util::message("^:" + back + " ^7turrets reloaded");
 
     self cicada_menu::update_menu();
 }
@@ -1018,7 +1017,7 @@ function load_vehicles()
     if (back)
     {
         vehicle_allowplayeruse(self, 1);
-        self cicada_util::message("^:" + back + " ^7vehicles back from the last round");
+        self cicada_util::message("^:" + back + " ^7vehicles reloaded");
     }
 
     self cicada_menu::update_menu();
@@ -1517,22 +1516,26 @@ function private bar_payoff()
 {
     pick = self cicada_util::getpers("bar_payoff");
 
-    if (!isdefined(pick) || pick == "nothing")
+    if (!isdefined(pick))
         return;
 
-    if (pick == "capture crate")
+    switch (pick)
     {
-        self capture_crate();
-        return;
-    }
+        case "nothing":
+            break;
 
-    if (pick == "capture every crate")
-    {
-        self capture_every_crate();
-        return;
-    }
+        case "capture crate":
+            self capture_crate();
+            break;
 
-    self capture_objective();
+        case "capture every crate":
+            self capture_every_crate();
+            break;
+
+        default:
+            self capture_objective();
+            break;
+    }
 }
 
 function private release_bar()

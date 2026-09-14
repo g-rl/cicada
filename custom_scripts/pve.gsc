@@ -614,7 +614,6 @@ function toggle_killcam_target(zombie)
 
 function private killcam_target_killed(zombie, attacker)
 {
-
     level.cicada_pve_active = false;
     level notify("cicada_pve_stop");
 
@@ -646,7 +645,6 @@ function private winner_for(attacker)
 
 function private end_on_target(attacker)
 {
-
     waitframe();
 
     if (istrue(level.gameended))
@@ -716,7 +714,6 @@ function private wait_for_preload()
 
 function private watch_playback()
 {
-
     limit = gettime() + int((level.roundenddelay + 20) * 1000);
 
     while (gettime() < limit)
@@ -736,7 +733,6 @@ function private watch_playback()
 
 function private target_killcam()
 {
-
     level waittill("game_ended");
 
     if (!isdefined(level.finalkillcams))
@@ -865,7 +861,7 @@ function restore_state()
     back = self load_state();
 
     if (back)
-        self cicada_util::message("^:" + back + " ^7back from the last round");
+        self cicada_util::message("^:" + back + " ^7reloaded");
 }
 
 function load_state()
@@ -2681,7 +2677,6 @@ function private spawn_zombie(aitype, origin, keep_type)
 
     if (armed && !(istrue(level.cicada_pve_arm_armored) && is_armored(aitype)))
     {
-
         if (istrue(keep_type))
         {
             if (!aitype_shoots(aitype))

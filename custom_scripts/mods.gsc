@@ -775,7 +775,7 @@ function crouch_bind(command)
 
     for (;;)
     {
-        self waittill("button_pressed_-" + command);
+        self waittill("button_pressed_+" + command);
 
         if (self getstance() != "crouch" || self cicada_util::in_menu())
             continue;
@@ -846,12 +846,20 @@ function nudge_position(value, axis)
 
     origin = self cicada_util::getmappers("position");
 
-    if (axis == "x")
-        origin = (float(value), origin[1], origin[2]);
-    else if (axis == "y")
-        origin = (origin[0], float(value), origin[2]);
-    else
-        origin = (origin[0], origin[1], float(value));
+    switch (axis)
+    {
+        case "x":
+            origin = (float(value), origin[1], origin[2]);
+            break;
+
+        case "y":
+            origin = (origin[0], float(value), origin[2]);
+            break;
+
+        default:
+            origin = (origin[0], origin[1], float(value));
+            break;
+    }
 
     self cicada_util::setmappers("position", origin);
 }
@@ -881,63 +889,6 @@ function private hold_freeze_spot(player_)
 
     if (distance(player_.origin, player_.cicada_freeze_spot) > 32)
         mark_freeze_spot(player_);
-}
-
-function pin_frozen(player_)
-{
-    if (!isdefined(player_) || istrue(player_.cicada_pinned))
-        return;
-
-    player_.cicada_pinned = true;
-    player_ thread [[&pin_loop]]();
-}
-
-function drop_pin(player_)
-{
-    if (!isdefined(player_))
-        return;
-
-    player_.cicada_pinned = undefined;
-    player_ notify("cicada_unpin");
-}
-
-function private pin_loop()
-{
-    self endon("disconnect");
-    self endon("death");
-    self endon("cicada_unpin");
-    level endon("game_ended");
-
-    for (;;)
-    {
-        if (!frozen_now(self) || istrue(self.cicada_launched))
-        {
-            self.cicada_pinned = undefined;
-            return;
-        }
-
-        if (isdefined(self.cicada_freeze_spot) && isdefined(self.origin))
-        {
-            spot = self.cicada_freeze_spot;
-
-            if (self isonground())
-            {
-                if (distance(self.origin, spot) > 0.05)
-                    self setorigin(spot);
-
-                self setvelocity((0, 0, 0));
-            }
-            else
-            {
-                self.cicada_freeze_spot = (spot[0], spot[1], self.origin[2]);
-
-                drop = self getvelocity();
-                self setvelocity((0, 0, drop[2]));
-            }
-        }
-
-        waitframe();
-    }
 }
 
 function private restore_freeze_spot(player_)
@@ -985,7 +936,6 @@ function guard_frozen()
 
                 player_ freezecontrols(1);
                 restore_freeze_spot(player_);
-                pin_frozen(player_);
             }
 
             waitframe();
@@ -1008,7 +958,6 @@ function freeze_bots(key)
 
             player_ freezecontrols(1);
             hold_freeze_spot(player_);
-            pin_frozen(player_);
         }
 
         wait 0.5;
@@ -1019,10 +968,7 @@ function unfreeze_bots(key)
 {
     foreach (player_ in level.players)
         if (cicada_util::is_bot(player_))
-        {
-            drop_pin(player_);
             player_ freezecontrols(0);
-        }
 }
 
 function is_frozen(player_)
@@ -1042,7 +988,6 @@ function toggle_freeze(player_)
     {
         player_.cicada_frozen = false;
         player_ notify("cicada_unfreeze");
-        drop_pin(player_);
         player_ freezecontrols(0);
         return;
     }
@@ -1064,7 +1009,6 @@ function hold_freeze()
         {
             self freezecontrols(1);
             hold_freeze_spot(self);
-            pin_frozen(self);
         }
 
         wait 0.5;
@@ -2198,14 +2142,17 @@ function aimbot_matches(mode, weapon, keys)
     if (!isdefined(mode))
         return false;
 
-    if (mode == "selected weapons")
-        return self weapon_in_keys(weapon, keys);
+    switch (mode)
+    {
+        case "selected weapons":
+            return self weapon_in_keys(weapon, keys);
 
-    if (mode == "all weapons")
-        return isdefined(cicada_catalog::weapon_class(weapon));
+        case "all weapons":
+            return isdefined(cicada_catalog::weapon_class(weapon));
 
-    if (mode == "all snipers")
-        return cicada_catalog::is_weapon_type(weapon, "snipers");
+        case "all snipers":
+            return cicada_catalog::is_weapon_type(weapon, "snipers");
+    }
 
     return cicada_catalog::is_weapon_type(weapon, mode);
 }
@@ -2238,14 +2185,48 @@ function aimbot(key)
 
 function damage_zombie(zombie, amount)
 {
+    if (!isdefined(zombie) || !isalive(zombie))
+        return;
+
+    before = zombie.health;
+
     zombie dodamage(amount, zombie.origin, self, self, "MOD_RIFLE_BULLET", self getcurrentweapon(), "torso_upper");
+
+    if (isalive(zombie) && isdefined(before) && isdefined(zombie.health) && zombie.health >= before)
+        zombie dodamage(amount, zombie.origin);
+}
+
+function aimbot_ai(center, range)
+{
+    list = [];
+
+    foreach (agent in getaiarrayinradius(center, range))
+        if (isdefined(agent) && isalive(agent))
+            list[list.size] = agent;
+
+    foreach (zombie in cicada_pve::zombies())
+    {
+        if (!isdefined(zombie) || !isalive(zombie) || distance(zombie.origin, center) > range)
+            continue;
+
+        known = false;
+
+        foreach (agent in list)
+            if (agent == zombie)
+                known = true;
+
+        if (!known)
+            list[list.size] = zombie;
+    }
+
+    return list;
 }
 
 function shoot_nearest_zombies(feedback_only, center, range, delay)
 {
-    foreach (zombie in cicada_pve::zombies())
+    foreach (zombie in aimbot_ai(center, range))
     {
-        if (!isdefined(zombie) || !isalive(zombie) || distance(zombie.origin, center) > range)
+        if (!isdefined(zombie) || !isalive(zombie))
             continue;
 
         if (delay > 0)
@@ -2257,10 +2238,11 @@ function shoot_nearest_zombies(feedback_only, center, range, delay)
             continue;
         }
 
+        spot = zombie.origin;
         self damage_zombie(zombie, 350);
 
         if (istrue(self cicada_util::getpers("kill_effects")))
-            self play_stack("kill_effect", zombie.origin + (0, 0, 50));
+            self play_stack("kill_effect", spot + (0, 0, 50));
     }
 }
 
@@ -2823,12 +2805,19 @@ function watch_timescale_reset()
 
     mode = self cicada_util::getpers("timescale_mode");
 
-    if (mode == "round end")
-        level waittill("game_ended");
-    else if (mode == "start of killcam")
-        self waittill("showing_final_killcam");
-    else
-        return;
+    switch (mode)
+    {
+        case "round end":
+            level waittill("game_ended");
+            break;
+
+        case "start of killcam":
+            self waittill("showing_final_killcam");
+            break;
+
+        default:
+            return;
+    }
 
     setslowmotion(1, 1, 0);
 }
@@ -2990,6 +2979,7 @@ function apply_round_scores()
     if (!isdefined(game["roundsWon"]))
         return;
 
+    /*
     allies_score = self round_score();
     axis_score = self round_score();
     game["roundsWon"]["allies"] = allies_score;
@@ -2998,12 +2988,13 @@ function apply_round_scores()
     game["teamScores"]["axis"] = axis_score;
     setteamscore("allies", allies_score);
     setteamscore("axis", axis_score);
+    */
 
     // erm
-    // state = spawnstruct();
-    // state.team1score = self round_score();
-    // state.team2score = self round_score();
-    // gamestaterestore::function_cc67f138614157c4(state);
+    state = spawnstruct();
+    state.team1score = self round_score();
+    state.team2score = self round_score();
+    gamestaterestore::function_cc67f138614157c4(state);
 
     // self cicada_util::message("round scores ^:" + state.team1score + " ^7- ^:" + state.team2score + " ^7for the next round");
 }
@@ -3012,6 +3003,9 @@ function round_reset(key)
 {
     self endon("disconnect");
     self endon(cicada_util::stop_event(key));
+
+    if (scripts\mp\utility\game::getbasegametype() != "sd")
+        return;
 
     level waittill("game_ended");
 
@@ -3691,11 +3685,14 @@ function teleport_choice()
 
     pick = self cicada_util::getpers("teleport_pick");
 
-    if (pick == "selected")
-        return self teleport_selected(mode);
+    switch (pick)
+    {
+        case "selected":
+            return self teleport_selected(mode);
 
-    if (pick == "random")
-        return pool[randomint(pool.size)];
+        case "random":
+            return pool[randomint(pool.size)];
+    }
 
     spot = pick == "crosshair" ? self cicada_util::crosshair() : self.origin;
 

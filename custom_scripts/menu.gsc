@@ -196,18 +196,13 @@ function structure()
             self add_menu(istrue(self cicada_util::getpers("menu_version")) ? ("cicada ^5" + cicada_util::get_current_build()) : "cicada");
             self add_option("mods & toggles", credits, &new_menu, "mods & toggles");
             self add_option("binds", credits, &new_menu, "bind settings");
-            self add_option("position", credits, &new_menu, "position");
-            self add_option("cinematics", credits, &new_menu, "cinematics");
-            self add_option("aimbot", credits, &new_menu, "aimbot settings");
-            self add_option("class", credits, &new_menu, "class manager");
-            self add_option("game", credits, &new_menu, "game manager");
-            self add_option("session", credits, &new_menu, "session manager");
             self add_option("bots", credits, &new_menu, "bot manager");
-            self add_option("killcam", undefined, &new_menu, "killcam manager");
             self add_option("zombies & actors", credits, &new_menu, "zombies & actors");
-            self add_option("models", credits, &new_menu, "model manager");
-            self add_option("effects", credits, &new_menu, "effect manager");
-            self add_option("world", credits, &new_menu, "world");
+            self add_option("position", credits, &new_menu, "position");
+            self add_option("game", credits, &new_menu, "game manager");
+            self add_option("aimbot", credits, &new_menu, "aimbot settings");
+            self add_option("cinematics", credits, &new_menu, "cinematics");
+            self add_option("class", credits, &new_menu, "class manager");
             self add_option("customization", credits, &new_menu, "menu manager");
             self add_option("clients", credits, &new_menu, "manage clients");
             break;
@@ -215,18 +210,18 @@ function structure()
         case "weapon anims":
             self.bind_index = false;
             self add_menu(menu);
-            self add_array("anim to ^1replace", "which anim changes", &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_dst"), "anim_remap_dst");
-            self add_array("^2play anim ^7as", "which anim plays instead", &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_src"), "anim_remap_src");
-            self add_option("apply anim swap", undefined, &cicada_mods::remap_weapon_anim);
-            self add_option("steal from weapon", undefined, &new_menu, "anim donor list");
+            self add_array("anim to ^1replace", undefined, &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_dst"), "anim_remap_dst");
+            self add_array("play anim ^7as", "which anim plays instead", &cicada_mods::set_anim_pick, cicada_mods::anim_labels(), self cicada_mods::anim_pick_label("anim_remap_src"), "anim_remap_src");
+            self add_option("apply anim", undefined, &cicada_mods::remap_weapon_anim);
+            self add_option("steal from", undefined, &new_menu, "anim donor list");
             self add_option("steal from random weapon", "^:" + self cicada_mods::anim_pick_label("anim_remap_dst"), &cicada_mods::random_anim_here);
             self add_option("steal ^:random ^7smg anim", undefined, &cicada_mods::steal_weapon_anim, "sub machine guns");
-            self add_option("randomize every anim", "^1one steal per anim, slow", &cicada_mods::randomize_all_anims);
+            self add_option("randomize every anim", undefined, &cicada_mods::randomize_all_anims);
             self add_option("saved swaps", self cicada_mods::anim_swap_summary(), &new_menu, "anim swaps");
-            self add_state("restore on spawn", "puts the swaps back each round", "anim_restore");
-            self add_increment("raw anim to ^1replace", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_dst"), 0, 127, 1, "anim_remap_dst", undefined, &cicada_mods::preview_remap_anim);
-            self add_increment("raw anim to ^2play", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_src"), 0, 127, 1, "anim_remap_src", undefined, &cicada_mods::preview_remap_anim);
-            self add_option("^1reset anims", undefined, &cicada_mods::reset_weapon_anims);
+            self add_state("restore on spawn", "reloads each round", "anim_restore");
+            self add_increment("raw anim to " + self accent() + "replace", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_dst"), 0, 127, 1, "anim_remap_dst", undefined, &cicada_mods::preview_remap_anim);
+            self add_increment("raw anim to " + self accent() + "play", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_remap_src"), 0, 127, 1, "anim_remap_src", undefined, &cicada_mods::preview_remap_anim);
+            self add_option(self accent() + "reset anims", undefined, &cicada_mods::reset_weapon_anims);
             break;
 
         case "anim donor list":
@@ -263,12 +258,9 @@ function structure()
             self add_menu(menu);
             self add_option("glitches", undefined, &new_menu, "glitches");
             self add_option("afterhits", self cicada_afterhits::summary(), &new_menu, "afterhits");
-            self add_option("parachute", self cicada_mechanics::summary(), &new_menu, "parachute settings");
-            self add_option("movement rules", self cicada_mechanics::move_summary(), &new_menu, "movement rules");
             self add_option("leftovers", "warzone and zombies bits", &new_menu, "leftovers");
             self add_option("visions", undefined, &new_menu, "visions");
-            if (cicada_mods::may_manage_score())
-                self add_array_pers("score manager", cicada_mods::score_limit() ? ("^:" + self cicada_mods::score_now() + " ^7of ^:" + cicada_mods::score_limit()) : "^1no score limit", &cicada_mods::manage_score, cicada_util::list("fast last,two piece,reset scores"), "pick_score");
+            self add_option("weapon " + self accent() + "xanims", "swap xanims on the held weapon", &new_menu, "weapon anims");
             self add_feature("invincibility", undefined, "invincible");
             self add_feature("unlimited lives", undefined, "unlimited_lives");
             self add_feature("ufo", "[{+gostand}] ^5+ ^7[{+melee}] to noclip", "ufo_mode");
@@ -280,17 +272,17 @@ function structure()
             self add_dvar_toggle("freeze anim", undefined, "pan_freezeanim");
             self add_dvar_toggle("canzooms", undefined, "pan_canzooms");
             self add_dvar_toggle("always altswap", undefined, "pan_alwaysaltswap");
-            self add_option("weapon ^1xanims", "swap xanims on the held weapon", &new_menu, "weapon anims");
 
             self add_feature("always nac", "[{+weapnext}] to easily swap", "always_nac");
             self add_feature("elevators", "[{+speed_throw}] ^5+ ^7[{+stance}] on the ground", "elevators");
-            // alt swaps
             self add_feature("instaswaps", "[{+frag}] to swap", "instaswaps");
             self add_feature("auto prone", undefined, "auto_prone");
             self add_feature("auto reload", undefined, "auto_reload");
             self add_feature("headbounces", undefined, "headbounces");
             self add_increment("instaswaps time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("instaswaps_time"), 0.05, 1, 0.05, "instaswaps_time");
             self add_array("auto prone mode", sliders, &cicada_mods::set_value, cicada_util::list("air,always"), self cicada_util::getpers("auto_prone_mode"), "auto_prone_mode");
+            self add_option("parachute", self cicada_mechanics::summary(), &new_menu, "parachute settings");
+            self add_option("movement rules", self cicada_mechanics::move_summary(), &new_menu, "movement rules");
             break;
 
         case "glitches":
@@ -300,7 +292,6 @@ function structure()
             self add_option("switch to equipment", "^:" + cicada_catalog::count("equipment") + " ^7equipment available", &new_menu, "switch to equipment");
             break;
 
-            // extension of glitches
         case "switch to equipment":
             self.bind_index = false;
             self add_menu(menu);
@@ -319,7 +310,7 @@ function structure()
             self add_array("pain vision", sliders, &cicada_mods::set_vision_effect, cicada_util::list("off,on"), self cicada_util::getpers("vision_pain"), "pain");
             self add_array("night vision", sliders, &cicada_mods::set_vision_effect, cicada_util::list("off,on"), self cicada_util::getpers("vision_night"), "night");
             self add_increment("vision fade time", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("vision_time"), 0, 5, 0.05, "vision_time");
-            self add_option("color screen", undefined, &new_menu, "color screen");
+            // self add_option("color screen", undefined, &new_menu, "color screen");
             break;
 
         case "color screen":
@@ -881,7 +872,7 @@ function structure()
                 self add_option("clear aimbot weapons", "aimbot off until one is set", &cicada_mods::clear_aimbot_weapons);
             self add_increment("range", increments, &cicada_mods::set_value, self cicada_util::getpersint("aimbot_range"), 100, 5000, 100, "aimbot_range");
             self add_array("delay", sliders, &cicada_mods::set_value, cicada_util::list("0,0.1,0.2,0.3,0.4,0.5"), self cicada_util::getpers("aimbot_delay"), "aimbot_delay");
-            self add_state("works on zombies", "aimbot shoots zombies too", "aimbot_zombies");
+            self add_state("works on agents", "zombies, actors and agents too", "aimbot_zombies");
             self add_option("equipment " + self accent() + "aimbot", self cicada_util::getpers("equipment_aimbot") ? "^:" + self cicada_util::getpers("equipment_aim_mode") : "^1off", &new_menu, "equipment aimbot");
             break;
 
@@ -1074,19 +1065,8 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
 
             self add_option("reset all binds", "turns every bind off", &cicada_binds::reset_all);
 
-            foreach (name in level.cicada_bind_names)
-            {
-                if (self cicada_binds::hidden(name))
-                    continue;
-
-                if (cicada_binds::has_settings(name))
-                {
-                    self add_option(name, "button and settings for ^:" + name, &new_menu, name);
-                    continue;
-                }
-
-                self add_array_live(name, live_sliders, &cicada_binds::set_slot, self cicada_binds::slot_labels(), self cicada_binds::slot_label(self cicada_util::getpers(cicada_binds::slot_key(name))), name);
-            }
+            foreach (name in cicada_binds::group_names())
+                self add_option(cicada_binds::group_menu(name), self cicada_binds::group_summary(name), &new_menu, cicada_binds::group_menu(name));
             break;
 
         case "bind settings":
@@ -1412,7 +1392,14 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
         case "game manager":
             self.bind_index = false;
             self add_menu(menu);
+            if (cicada_mods::may_manage_score())
+                self add_array_pers("score manager", cicada_mods::score_limit() ? ("^:" + self cicada_mods::score_now() + " ^7of ^:" + cicada_mods::score_limit()) : "^1no score limit", &cicada_mods::manage_score, cicada_util::list("fast last,two piece,reset scores"), "pick_score");
             self add_option("dvars", undefined, &new_menu, "dvars");
+            self add_option("session", credits, &new_menu, "session manager");
+            self add_option("killcam", undefined, &new_menu, "killcam manager");
+            self add_option("models", credits, &new_menu, "model manager");
+            self add_option("effects", credits, &new_menu, "effect manager");
+            self add_option("world", credits, &new_menu, "world");
             self add_option("sound " + self accent() + "manager", "play any loaded sound", &new_menu, "sound manager");
             self add_feature("no hud", undefined, "no_hud");
             self add_feature("bounces", "^:" + self cicada_mods::bounce_count() + " ^7saved", "bounce_pads");
@@ -1426,7 +1413,7 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_state("sounds", "menu sounds etc", "sounds");
             self add_feature("out of bounds off", undefined, "no_oob");
             self add_feature("remove barriers", undefined, "no_barriers");
-            self add_feature("round resetting", "randomizes the round score", "round_reset");
+            self add_feature("round resetting", "randomizes score", "round_reset");
             if (istrue(self cicada_util::getpers("round_reset")))
             {
                 self add_state("randomize scores", "off uses the highest score", "round_random");
@@ -1441,12 +1428,12 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             }
             if (game_utility::getgametype() == "sd")
             {
-                self add_feature("freeze round timer", "holds the clock at prematch", "freeze_timer");
-                self add_feature("auto plant", "plants before time runs out", "auto_plant");
+                self add_feature("freeze round timer", undefined, "freeze_timer");
+                self add_feature("auto plant", undefined, "auto_plant");
                 if (istrue(self cicada_util::getpers("auto_plant")))
                 {
-                    self add_increment("plant no sooner than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_early"), 1, 60, 1, "plant_early");
-                    self add_increment("plant no later than", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_late"), 1, 60, 1, "plant_late");
+                    self add_increment("plant time (min)", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_early"), 1, 60, 1, "plant_early");
+                    self add_increment("plant time (max)", increments, &cicada_mods::set_value, self cicada_util::getpersint("plant_late"), 1, 60, 1, "plant_late");
                 }
                 self add_option("take the bomb", self cicada_mods::carrying_bomb() ? "^2already holding" : (self cicada_mods::may_take_bomb() ? "^:available^7 to pickup" : "^1not^7 planting"), &cicada_mods::grab_bomb);
                 self add_option(cicada_util::warn("end round"), undefined, &cicada_mods::end_round);
@@ -1484,7 +1471,7 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_increment("x position", increments, &set_layout, self cicada_util::getpersint("menu_x"), -300, 300, 5, "menu_x");
             self add_increment("y position", increments, &set_layout, self cicada_util::getpersint("menu_y"), -200, 300, 5, "menu_y");
             self add_increment("option spacing", increments, &set_layout, self cicada_util::getpersint("menu_spacing"), 10, 30, 1, "menu_spacing");
-            self add_increment("options shown", increments, &set_layout, self cicada_util::getpersint("menu_limit"), 4, 7, 1, "menu_limit");
+            self add_increment("options shown", increments, &set_layout, self cicada_util::getpersint("menu_limit"), 4, 10, 1, "menu_limit");
             self add_increment("font scale", increments, &set_layout, self cicada_util::getpersfloat("menu_scale"), 0.5, 1.5, 0.05, "menu_scale");
             break;
 
@@ -1521,7 +1508,7 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self.bind_index = false;
             self add_menu(menu);
             self add_array("spawn model", "^5[{+gostand}] ^7to spawn", &cicada_props::spawn_of_model, cicada_props::model_labels(), cicada_props::model_label(self cicada_util::getpers("prop_model")), "prop_model");
-            self add_option("spawn random model", "picks any model in the list", &cicada_props::spawn_random);
+            self add_option("spawn random model", undefined, &cicada_props::spawn_random);
             self add_option("manage models", "^:" + cicada_props::count() + " ^7spawned", &new_menu, "manage models");
             self add_option("randomize every model", "^:" + cicada_props::count() + " ^7spawned", &cicada_props::randomize_all);
             self add_option("model paths", self cicada_movement::summary("prop_path"), &new_menu, "model paths");
@@ -1585,8 +1572,6 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_menu(menu);
             self add_option("manage zombies", "^:" + cicada_pve::horde_count() + " ^7alive", &new_menu, "manage zombies");
             self add_option("actor " + self accent() + "manager", "^:" + cicada_pve::actor_count() + " ^7types loaded", &new_menu, "actor manager");
-            self add_option("zombie paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
-            self add_feature("zombie horde", "keeps zombies spawning", "pve");
             self add_toggle("zombie killcams", undefined, self cicada_util::getpers("pve_killcam"), &cicada_pve::flip_value, "pve_killcam");
             self add_array("spawn type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
@@ -1595,13 +1580,15 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_toggle("freeze zombies", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
             self add_toggle("kill score", "points on a zombie kill", self cicada_util::getpers("pve_score"), &cicada_pve::flip_value, "pve_score");
             self add_toggle("save zombies", "keeps them for next round", self cicada_util::getpers("pve_save_state"), &cicada_pve::flip_value, "pve_save_state");
-            self add_toggle("autosave zombies", "saves every edit as you go", self cicada_util::getpers("pve_autosave"), &cicada_pve::flip_value, "pve_autosave");
+            self add_toggle("autosave zombies", "always save edits", self cicada_util::getpers("pve_autosave"), &cicada_pve::flip_value, "pve_autosave");
+            self add_option("zombie paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
             self add_toggle("auto respawn", "respawns it with its settings", self cicada_util::getpers("pve_respawn"), &cicada_pve::flip_value, "pve_respawn");
             self add_increment("respawn delay", increments, &cicada_pve::set_value, self cicada_util::getpersfloat("pve_respawn_delay"), 0.5, 30, 0.5, "pve_respawn_delay");
             self add_array_pers("zombie state", sliders, &cicada_pve::manage_state, cicada_util::list("save,load,clear"), "pick_state");
             self add_option(cicada_util::warn("clear zombies"), "^:" + cicada_pve::horde_count() + " ^7alive", &cicada_pve::clear_horde);
             self add_array("horde type", sliders, &cicada_pve::set_value, cicada_pve::type_names(), self cicada_util::getpers("pve_type"), "pve_type");
             self add_array("zombie speed", sliders, &cicada_pve::set_value, cicada_util::list("walk,run,sprint"), self cicada_util::getpers("pve_speed"), "pve_speed");
+            self add_feature("zombie horde", "keeps zombies spawning", "pve");
             self add_increment("horde size", increments, &cicada_pve::set_value, self cicada_util::getpersint("pve_max"), 5, 100, 5, "pve_max");
             self add_increment("zombie health", increments, &cicada_pve::set_value, self cicada_util::getpersint("pve_health"), 100, 5000, 25, "pve_health");
             self add_increment("spawn delay", increments, &cicada_pve::set_value, self cicada_util::getpersfloat("pve_delay"), 0.05, 3, 0.05, "pve_delay");
@@ -1619,10 +1606,13 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
         case "actor manager":
             self.bind_index = false;
             self add_menu(menu);
+            self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("spawn this actor", "^:" + cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), &cicada_pve::spawn_chosen_actor);
             self add_option("spawn random actor", "^:" + cicada_pve::actor_count() + " ^7types loaded", &cicada_pve::random_actor);
-            self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
+            self add_array_pers("teleport actors", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
+            self add_toggle("freeze actors", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
+            self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
             self add_option("possess", self cicada_pve::possess_summary(), &cicada_pve::possess_agent);
             self add_option("helmet cam", self cicada_mods::helmet_summary(), &cicada_mods::helmet_cam);
             self add_array("helmet cam tag", sliders, &cicada_mods::set_value, cicada_util::list("tag_eye,tag_player,j_head"), self cicada_util::getpers("helmet_tag"), "helmet_tag");
@@ -1630,9 +1620,6 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_array("possess vision", sliders, &cicada_mods::set_value, cicada_pve::possess_visions(), self cicada_util::getpers("possess_vision"), "possess_vision");
             self add_option("every agent hunts me", "pins you on all of them", &cicada_pve::hunt_every_agent);
             self add_option("kill agents", "^:" + self cicada_util::getpers("kill_agent_mode"), &cicada_binds::kill_agents);
-            self add_array_pers("teleport actors", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
-            self add_toggle("freeze actors", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
-            self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
             self add_option("actor paths", self cicada_movement::summary("zombie_path"), &new_menu, "zombie & actor paths");
             self add_array_pers("actor state", sliders, &cicada_pve::manage_state, cicada_util::list("save,load,clear"), "pick_state");
             self add_toggle("auto respawn", "respawns it with its settings", self cicada_util::getpers("pve_respawn"), &cicada_pve::flip_value, "pve_respawn");
@@ -1643,17 +1630,17 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
         case "auto ai setup":
             self.bind_index = false;
             self add_menu(menu);
-            self add_state("final killcam target", "its death ends on killcam", "auto_ai_killcam");
-            self add_state("teleport near target", "for the teleport near bind", "auto_ai_teleport");
-            self add_state("bind target", "for the velocity and bolt binds", "auto_ai_bind");
+            self add_state("final killcam target", undefined, "auto_ai_killcam");
+            self add_state("teleport near target", "for: teleport near bind", "auto_ai_teleport");
+            self add_state("bind target", "for: velocity & bolt binds", "auto_ai_bind");
             break;
 
         case "auto bot setup":
             self.bind_index = false;
             self add_menu(menu);
-            self add_state("final killcam target", "others respawn until it dies", "auto_bot_killcam");
-            self add_state("teleport near target", "for the teleport near bind", "auto_bot_teleport");
-            self add_state("bind target", "for the bot velocity and bolt binds", "auto_bot_bind");
+            self add_state("final killcam target", undefined, "auto_bot_killcam");
+            self add_state("teleport near target", "for: teleport near bind", "auto_bot_teleport");
+            self add_state("bind target", "for: velocity & bolt binds", "auto_bot_bind");
             break;
 
         case "manage zombies":
@@ -1960,6 +1947,11 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
                 self add_menu(menu);
                 self add_bind_slots(menu, increments, sliders);
             }
+            else if (cicada_binds::is_group_menu(menu))
+            {
+                self add_menu(menu);
+                self add_bind_group(cicada_binds::group_of_menu(menu), live_sliders);
+            }
             else
             {
                 self add_menu("error");
@@ -2069,182 +2061,233 @@ function teleport_bind_options(increments, sliders)
         self add_increment("damage amount", increments, &cicada_mods::set_value, self cicada_util::getpersint("teleport_damage_amount"), 10, 500, 10, "teleport_damage_amount");
 }
 
+function add_bind_group(group, live_sliders)
+{
+    foreach (name in self cicada_binds::binds_in_group(group))
+    {
+        if (cicada_binds::has_settings(name))
+        {
+            self add_option(name, "button and settings for ^:" + name, &new_menu, name);
+            continue;
+        }
+
+        self add_array_live(name, live_sliders, &cicada_binds::set_slot, self cicada_binds::slot_labels(), self cicada_binds::slot_label(self cicada_util::getpers(cicada_binds::slot_key(name))), name);
+    }
+}
+
 function add_bind_slots(name, increments, sliders)
 {
     self add_array_live("button", live_slider_hint(), &cicada_binds::set_slot, self cicada_binds::slot_labels(), self cicada_binds::slot_label(self cicada_util::getpers(cicada_binds::slot_key(name))), name);
 
-    if (name == "snapshot delay")
-    {
-        self add_increment(
-            "lag while held",
-            increments,
-            &cicada_mods::set_value,
-            self cicada_util::getpersint("snapshot_bind_delay"),
-            0,
-            5000,
-            100,
-            "snapshot_bind_delay"
-            );
-
-        self add_increment(
-            "seconds held",
-            increments,
-            &cicada_mods::set_value,
-            self cicada_util::getpersfloat("snapshot_bind_time"),
-            0.1,
-            10,
-            0.1,
-            "snapshot_bind_time"
-            );
-    }
-    if (name == "kill bots")
-    {
-        self add_array("target", sliders, &cicada_mods::set_value, cicada_binds::bot_targets(), self cicada_util::getpers("kill_bot_mode"), "kill_bot_mode");
-
-        if (self cicada_util::getpers("kill_bot_mode") == "selected bot")
-            self add_array("which bot", sliders, &cicada_mods::set_value, cicada_binds::bot_names(), self cicada_util::getpers("kill_bot_name"), "kill_bot_name");
-    }
-    if (name == "kill agents")
-    {
-        self add_array("target", sliders, &cicada_mods::set_value, cicada_binds::agent_targets(), self cicada_util::getpers("kill_agent_mode"), "kill_agent_mode");
-
-        if (self cicada_util::getpers("kill_agent_mode") == "selected agent")
-            self add_array("which one", sliders, &cicada_mods::set_value, cicada_binds::agent_names(), self cicada_util::getpers("kill_agent_name"), "kill_agent_name");
-    }
-    if (name == "teleport near")
-        self teleport_bind_options(increments, sliders);
-    if (name == "bot velocity" || name == "bot bolt movement")
-        self ai_bind_options("bot");
-    if (name == "agent velocity" || name == "agent bolt movement")
-        self ai_bind_options("agent");
-    if (name == "zombie velocity" || name == "zombie bolt movement")
-        self ai_bind_options("zombie");
-    //if (name == "link ride")
-    //{
-    //    self add_array("ride what", sliders, &cicada_mods::set_value, cicada_link::targets(), self cicada_util::getpers("link_target"), "link_target");
-    //    self add_option("link settings", self cicada_link::summary(), &new_menu, "link manager");
-    //}
-    if (name == "place station")
-    {
-        self add_array("what to place", sliders, &cicada_mods::set_value, cicada_stations::kinds(), self cicada_util::getpers("station_kind"), "station_kind");
-        self add_option("station settings", self cicada_stations::summary(), &new_menu, "station manager");
-    }
-    if (name == "parachute")
-        self add_option("parachute settings", self cicada_mechanics::summary(), &new_menu, "parachute settings");
-    if (name == "knockback")
-    {
-        self add_increment(
-            "knockback distance",
-            increments,
-            &cicada_mods::set_value,
-            self cicada_util::getpersint("knockback_power"),
-            100,
-            3000,
-            50,
-            "knockback_power"
-            );
-
-        self add_increment(
-            "knockback height",
-            increments,
-            &cicada_mods::set_value,
-            self cicada_util::getpersint("knockback_lift"),
-            0,
-            1500,
-            50,
-            "knockback_lift"
-            );
-
-        self add_state("take the damage", "the shot hurts you as well", "knockback_damage");
-    }
     if (cicada_binds::is_anim_slot(name))
     {
-        index = cicada_binds::anim_slot_index(name);
-
-        self add_increment(
-            "anim id",
-            "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
-            &cicada_mods::set_anim_slot_id,
-            self cicada_mods::anim_slot_id(index),
-            0,
-            255,
-            1,
-            index,
-            undefined,
-            &cicada_mods::preview_anim_slot
-            );
-
-        self add_array("hands", sliders, &cicada_mods::set_anim_slot_hands, cicada_util::list("right,both"), self cicada_mods::anim_slot_hands(index), index);
-        self add_option("^:random ^7anim", "picks anim ^:1 ^7to ^:150", &cicada_mods::randomize_anim_slot, index);
-        self add_state("always random", self toggle_summary(cicada_mods::anim_slot_key(index, "random"), self cicada_mods::anim_slot_range_summary(index)), cicada_mods::anim_slot_key(index, "random"));
-        if (istrue(self cicada_util::getpers(cicada_mods::anim_slot_key(index, "random"))))
-        {
-            self add_state("randomize range", "^:1 ^7to ^:150 ^7when on", cicada_mods::anim_slot_key(index, "range"));
-            if (!istrue(self cicada_util::getpers(cicada_mods::anim_slot_key(index, "range"))))
-            {
-                self add_increment("lowest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint(cicada_mods::anim_slot_key(index, "min")), 1, 255, 1, cicada_mods::anim_slot_key(index, "min"));
-                self add_increment("highest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint(cicada_mods::anim_slot_key(index, "max")), 1, 255, 1, cicada_mods::anim_slot_key(index, "max"));
-            }
-        }
-        self add_option("remove this slot", "clears its anim and button", &cicada_mods::remove_anim_slot, index);
+        self anim_slot_bind_options(cicada_binds::anim_slot_index(name), increments, sliders);
+        return;
     }
 
-    if (name == "play anim")
+    switch (name)
     {
-        self add_increment(
-            "anim id",
-            "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
-            &cicada_mods::set_anim,
-            self cicada_util::getpersint("anim_id"),
-            0,
-            255, // max anims usually
-            1,
-            undefined,
-            undefined,
-            &cicada_mods::play_anim_once
-            );
-
-        self add_array(
-            "hands",
-            sliders,
-            &cicada_mods::set_anim_hands,
-            cicada_util::list("right,both"),
-            self cicada_util::getpers("anim_hands")
-            );
-
-        self add_option("^:random ^7anim", "picks anim ^:1 ^7to ^:150", &cicada_mods::randomize_anim, "anim_id", "anim_hands");
-        self add_state("always random", self toggle_summary("anim_random", self cicada_mods::anim_range_summary("anim_random", "anim_random_range", "anim_min", "anim_max")), "anim_random");
-        if (istrue(self cicada_util::getpers("anim_random")))
-        {
-            self add_state("randomize range", "^:1 ^7to ^:150 ^7when on", "anim_random_range");
-            if (!istrue(self cicada_util::getpers("anim_random_range")))
-            {
-                self add_increment("lowest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_min"), 1, 255, 1, "anim_min");
-                self add_increment("highest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_max"), 1, 255, 1, "anim_max");
-            }
-        }
-    }
-
-    if (name == "play gesture")
-    {
-        gestures = cicada_catalog::gestures();
-
-        if (!gestures.size)
-            self add_option("^1no gestures loaded");
-        else
+        case "snapshot delay":
             self add_increment(
-                "gesture id",
-                "^:" + gestures.size + " ^7loaded - ^5[{+gostand}] ^7to preview",
-                &cicada_mods::set_gesture,
-                self cicada_util::getpersint("gesture_id"),
+                "lag while held",
+                increments,
+                &cicada_mods::set_value,
+                self cicada_util::getpersint("snapshot_bind_delay"),
                 0,
-                gestures.size - 1,
-                1,
-                undefined,
-                undefined,
-                &cicada_mods::play_gesture_once
+                5000,
+                100,
+                "snapshot_bind_delay"
                 );
+
+            self add_increment(
+                "seconds held",
+                increments,
+                &cicada_mods::set_value,
+                self cicada_util::getpersfloat("snapshot_bind_time"),
+                0.1,
+                10,
+                0.1,
+                "snapshot_bind_time"
+                );
+            break;
+
+        case "kill bots":
+            self add_array("target", sliders, &cicada_mods::set_value, cicada_binds::bot_targets(), self cicada_util::getpers("kill_bot_mode"), "kill_bot_mode");
+
+            if (self cicada_util::getpers("kill_bot_mode") == "selected bot")
+                self add_array("which bot", sliders, &cicada_mods::set_value, cicada_binds::bot_names(), self cicada_util::getpers("kill_bot_name"), "kill_bot_name");
+            break;
+
+        case "kill agents":
+            self add_array("target", sliders, &cicada_mods::set_value, cicada_binds::agent_targets(), self cicada_util::getpers("kill_agent_mode"), "kill_agent_mode");
+
+            if (self cicada_util::getpers("kill_agent_mode") == "selected agent")
+                self add_array("which one", sliders, &cicada_mods::set_value, cicada_binds::agent_names(), self cicada_util::getpers("kill_agent_name"), "kill_agent_name");
+            break;
+
+        case "teleport near":
+            self teleport_bind_options(increments, sliders);
+            break;
+
+        case "bot velocity":
+        case "bot bolt movement":
+            self ai_bind_options("bot");
+            break;
+
+        case "agent velocity":
+        case "agent bolt movement":
+            self ai_bind_options("agent");
+            break;
+
+        case "zombie velocity":
+        case "zombie bolt movement":
+            self ai_bind_options("zombie");
+            break;
+
+        /* case "link ride":
+            self add_array("ride what", sliders, &cicada_mods::set_value, cicada_link::targets(), self cicada_util::getpers("link_target"), "link_target");
+            self add_option("link settings", self cicada_link::summary(), &new_menu, "link manager");
+            break;
+        */
+
+        case "place station":
+            self add_array("what to place", sliders, &cicada_mods::set_value, cicada_stations::kinds(), self cicada_util::getpers("station_kind"), "station_kind");
+            self add_option("station settings", self cicada_stations::summary(), &new_menu, "station manager");
+            break;
+
+        case "parachute":
+            self add_option("parachute settings", self cicada_mechanics::summary(), &new_menu, "parachute settings");
+            break;
+
+        case "knockback":
+            self add_increment(
+                "knockback distance",
+                increments,
+                &cicada_mods::set_value,
+                self cicada_util::getpersint("knockback_power"),
+                100,
+                3000,
+                50,
+                "knockback_power"
+                );
+
+            self add_increment(
+                "knockback height",
+                increments,
+                &cicada_mods::set_value,
+                self cicada_util::getpersint("knockback_lift"),
+                0,
+                1500,
+                50,
+                "knockback_lift"
+                );
+
+            self add_state("take the damage", "the shot hurts you as well", "knockback_damage");
+            break;
+
+        case "play anim":
+            self anim_bind_options(increments, sliders);
+            break;
+
+        case "play gesture":
+            self gesture_bind_options();
+            break;
     }
+}
+
+function anim_slot_bind_options(index, increments, sliders)
+{
+    self add_increment(
+        "anim id",
+        "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
+        &cicada_mods::set_anim_slot_id,
+        self cicada_mods::anim_slot_id(index),
+        0,
+        255,
+        1,
+        index,
+        undefined,
+        &cicada_mods::preview_anim_slot
+        );
+
+    self add_array("hands", sliders, &cicada_mods::set_anim_slot_hands, cicada_util::list("right,both"), self cicada_mods::anim_slot_hands(index), index);
+    self add_option("^:random ^7anim", "picks anim ^:1 ^7to ^:150", &cicada_mods::randomize_anim_slot, index);
+    self add_state("always random", self toggle_summary(cicada_mods::anim_slot_key(index, "random"), self cicada_mods::anim_slot_range_summary(index)), cicada_mods::anim_slot_key(index, "random"));
+
+    if (istrue(self cicada_util::getpers(cicada_mods::anim_slot_key(index, "random"))))
+    {
+        self add_state("randomize range", "^:1 ^7to ^:150 ^7when on", cicada_mods::anim_slot_key(index, "range"));
+
+        if (!istrue(self cicada_util::getpers(cicada_mods::anim_slot_key(index, "range"))))
+        {
+            self add_increment("lowest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint(cicada_mods::anim_slot_key(index, "min")), 1, 255, 1, cicada_mods::anim_slot_key(index, "min"));
+            self add_increment("highest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint(cicada_mods::anim_slot_key(index, "max")), 1, 255, 1, cicada_mods::anim_slot_key(index, "max"));
+        }
+    }
+
+    self add_option("remove this slot", "clears its anim and button", &cicada_mods::remove_anim_slot, index);
+}
+
+function anim_bind_options(increments, sliders)
+{
+    self add_increment(
+        "anim id",
+        "^5[{+actionslot 3}] ^7/ ^5[{+actionslot 4}] ^7to pick, ^5[{+gostand}] ^7to preview",
+        &cicada_mods::set_anim,
+        self cicada_util::getpersint("anim_id"),
+        0,
+        255, // max anims usually
+        1,
+        undefined,
+        undefined,
+        &cicada_mods::play_anim_once
+        );
+
+    self add_array(
+        "hands",
+        sliders,
+        &cicada_mods::set_anim_hands,
+        cicada_util::list("right,both"),
+        self cicada_util::getpers("anim_hands")
+        );
+
+    self add_option("^:random ^7anim", "picks anim ^:1 ^7to ^:150", &cicada_mods::randomize_anim, "anim_id", "anim_hands");
+    self add_state("always random", self toggle_summary("anim_random", self cicada_mods::anim_range_summary("anim_random", "anim_random_range", "anim_min", "anim_max")), "anim_random");
+
+    if (istrue(self cicada_util::getpers("anim_random")))
+    {
+        self add_state("randomize range", "^:1 ^7to ^:150 ^7when on", "anim_random_range");
+
+        if (!istrue(self cicada_util::getpers("anim_random_range")))
+        {
+            self add_increment("lowest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_min"), 1, 255, 1, "anim_min");
+            self add_increment("highest anim", increments, &cicada_mods::set_value, self cicada_util::getpersint("anim_max"), 1, 255, 1, "anim_max");
+        }
+    }
+}
+
+function gesture_bind_options()
+{
+    gestures = cicada_catalog::gestures();
+
+    if (!gestures.size)
+    {
+        self add_option("^1no gestures loaded");
+        return;
+    }
+
+    self add_increment(
+        "gesture id",
+        "^:" + gestures.size + " ^7loaded - ^5[{+gostand}] ^7to preview",
+        &cicada_mods::set_gesture,
+        self cicada_util::getpersint("gesture_id"),
+        0,
+        gestures.size - 1,
+        1,
+        undefined,
+        undefined,
+        &cicada_mods::play_gesture_once
+        );
 }
 
 function position_options(increments)
@@ -2416,7 +2459,7 @@ function prop_head_options(prop, sliders)
 
     self add_menu(cicada_props::prop_name(prop));
     self add_array("how to pick", sliders, &cicada_props::set_head_mode, cicada_props::head_modes(), cicada_props::head_mode(prop), prop);
-    self add_option("what it found", cicada_props::head_label(cicada_props::head_for_body(prop.cicada_prop_model)), &cicada_props::set_head_mode, "automatic", prop);
+    self add_option("findings", cicada_props::head_label(cicada_props::head_for_body(prop.cicada_prop_model)), &cicada_props::set_head_mode, "automatic", prop);
     self add_option("^:random ^7head", cicada_props::head_summary(prop), &cicada_props::random_head, prop);
     self add_option(cicada_util::warn("no head"), undefined, &cicada_props::clear_head, prop);
 
@@ -2451,6 +2494,14 @@ function zombie_options(zombie, increments, sliders)
     }
 
     self add_menu(cicada_pve::zombie_name(zombie));
+    self add_option("gestures", "^:" + self cicada_pve::gesture_name(), &new_menu, "agent gestures");
+    self add_option("behaviour", "how it acts and what it ignores", &new_menu, "agent behaviour");
+    self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
+    self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);
+    self add_array("archetype", sliders, &cicada_pve::set_archetype, cicada_pve::archetypes(), cicada_pve::archetype_of(zombie), zombie);
+    self add_toggle("final killcam target", undefined, cicada_pve::is_killcam_target(zombie), &cicada_pve::toggle_killcam_target, zombie);
+    self add_toggle("teleport near target", "for the teleport near bind", cicada_mods::is_teleport_target(zombie), &cicada_mods::toggle_teleport_target, zombie);
+    self add_toggle("bind target", "for the " + cicada_mods::ai_class(zombie) + " velocity and bolt binds", cicada_mods::is_ai_target(zombie), &cicada_mods::toggle_ai_target, zombie);
     self add_option("kill", "^:" + zombie.health + " ^7hp", &cicada_pve::kill_zombie, zombie);
     self add_option("possess", self cicada_pve::possess_summary(), &cicada_pve::possess_agent, zombie);
     self add_option("helmet cam", self cicada_mods::helmet_summary(), &cicada_mods::helmet_cam, zombie);
@@ -2461,16 +2512,11 @@ function zombie_options(zombie, increments, sliders)
     self add_option("look away", "drops the look at target", &cicada_pve::stop_watching, zombie);
     self add_option("face me", undefined, &cicada_pve::look_at_me, zombie);
     self add_array("facing mode", sliders, &cicada_pve::set_orient, cicada_pve::orient_modes(), cicada_pve::orient_mode(zombie), zombie);
-    self add_option("gestures", "^:" + self cicada_pve::gesture_name(), &new_menu, "agent gestures");
-    self add_option("behaviour", "how it acts and what it ignores", &new_menu, "agent behaviour");
-    self add_option("hunt me", "pins you as its favourite enemy", &cicada_pve::hunt_me, zombie);
-    self add_option("hunt the marked one", "needs another one marked", &cicada_pve::hunt_marked, zombie);
+    self add_option("hunt me", "picks you as fav enemy", &cicada_pve::hunt_me, zombie);
+    self add_option("hunt the marked one", "needs another marked", &cicada_pve::hunt_marked, zombie);
     self add_option("forget target", undefined, &cicada_pve::forget_target, zombie);
-    self add_array("archetype", sliders, &cicada_pve::set_archetype, cicada_pve::archetypes(), cicada_pve::archetype_of(zombie), zombie);
     self add_option("ragdoll", "drops it into physics", &cicada_pve::drop_ragdoll, zombie);
     self add_option("clone", "leaves a copy behind", &cicada_pve::clone_agent, zombie);
-    self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
-    self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);
     self add_array("speed", sliders, &cicada_pve::set_zombie_speed, cicada_util::list("walk,run,sprint"), cicada_pve::zombie_speed(zombie), zombie);
     self add_increment("health", increments, &cicada_pve::set_zombie_health, zombie.health, 25, 5000, 25, zombie);
     if (!cicada_pve::is_hellhound(zombie))
@@ -2479,13 +2525,10 @@ function zombie_options(zombie, increments, sliders)
         self add_option("give random weapon", undefined, &cicada_pve::give_random_weapon, zombie);
         self add_option("give killstreak weapon", "minigun & friends", &cicada_pve::give_streak_weapon, zombie);
         self add_option("give shield", undefined, &cicada_pve::give_shield, zombie);
-        self add_option("apply ^:random camo", "on the weapon it holds", &cicada_pve::camo_weapon, zombie);
+        self add_option("apply ^:random camo", "on current weapon", &cicada_pve::camo_weapon, zombie);
         self add_option("take weapon", undefined, &cicada_pve::take_weapon, zombie);
     }
     self add_toggle("boss", "its death ends the round", cicada_pve::is_boss(zombie), &cicada_pve::toggle_boss, zombie);
-    self add_toggle("final killcam target", "its death ends on killcam", cicada_pve::is_killcam_target(zombie), &cicada_pve::toggle_killcam_target, zombie);
-    self add_toggle("teleport near target", "for the teleport near bind", cicada_mods::is_teleport_target(zombie), &cicada_mods::toggle_teleport_target, zombie);
-    self add_toggle("bind target", "for the " + cicada_mods::ai_class(zombie) + " velocity and bolt binds", cicada_mods::is_ai_target(zombie), &cicada_mods::toggle_ai_target, zombie);
 }
 
 function get_cursor()
@@ -2769,11 +2812,14 @@ function control_label(button)
 
 function control_list(key)
 {
-    if (key == "control_hold")
-        return hold_names();
+    switch (key)
+    {
+        case "control_hold":
+            return hold_names();
 
-    if (key == "control_open")
-        return open_names();
+        case "control_open":
+            return open_names();
+    }
 
     return control_names();
 }
@@ -2912,6 +2958,9 @@ function initial_monitor()
                 menu   = self get_menu();
                 cursor = self get_cursor();
 
+                if (!self scroll_held(1) && !self scroll_held(-1))
+                    self.scroll_repeat = undefined;
+
                 // force close if melee pressed
                 if (self control_pressed("control_close", "melee_zoom"))
                 {
@@ -2934,12 +2983,12 @@ function initial_monitor()
 
                     wait 0.15;
                 }
-                else if (self cicada_util::isbuttonpressed("-actionslot 2") && !self cicada_util::isbuttonpressed("-actionslot 1") || self cicada_util::isbuttonpressed("-actionslot 1") && !self cicada_util::isbuttonpressed("-actionslot 2")) // up & down
+                else if (self scroll_held(1) && !self scroll_held(-1) || self scroll_held(-1) && !self scroll_held(1)) // up & down
                 {
                     if (isdefined(self.structure) && self.structure.size >= 2)
                     {
                         // self thread [[ &play_sound ]]("attachment_pickup");
-                        scrolling = self cicada_util::isbuttonpressed("-actionslot 2") ? 1 : -1;
+                        scrolling = self scroll_held(1) ? 1 : -1;
                         self set_cursor((cursor + scrolling));
 
                         res = self update_scrolling(scrolling);
@@ -2948,7 +2997,16 @@ function initial_monitor()
                             res = self update_scrolling(scrolling);
                         }
                     }
-                    wait 0.07;
+
+                    if (istrue(self.scroll_repeat))
+                    {
+                        wait (scroll_repeat_time());
+                    }
+                    else
+                    {
+                        self.scroll_repeat = true;
+                        wait (scroll_start_time());
+                    }
                 }
                 else if (self cicada_util::isbuttonpressed("-actionslot 4") && !self cicada_util::isbuttonpressed("-actionslot 3") || self cicada_util::isbuttonpressed("-actionslot 3") && !self cicada_util::isbuttonpressed("-actionslot 4"))
                 {
@@ -3022,6 +3080,24 @@ function initial_monitor()
 
         wait 0.05;
     }
+}
+
+function scroll_held(direction)
+{
+    if (direction == 1)
+        return self cicada_util::isbuttonheld("actionslot 2");
+
+    return self cicada_util::isbuttonheld("actionslot 1");
+}
+
+function scroll_start_time()
+{
+    return 0.28;
+}
+
+function scroll_repeat_time()
+{
+    return 0.08;
 }
 
 function set_slider(scrolling, index)
@@ -3277,6 +3353,9 @@ function open_menu(menu)
         menu = isdefined(self get_menu()) && self get_menu() != "cicada" ? self get_menu() : "cicada";
 
     self create_hud();
+
+    self cicada_util::clear_button_held();
+    self.scroll_repeat = undefined;
 
     self set_menu(menu);
     self set_procedure();

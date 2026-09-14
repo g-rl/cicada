@@ -24,10 +24,11 @@ function init()
 {
     level.cicada_binds = [];
     level.cicada_bind_names = [];
+    level.cicada_bind_group = [];
+    level.cicada_bind_groups = [];
+    level.cicada_bind_menus = [];
 
-    register("play anim", &cicada_mods::play_anim_once);
-    register("smooth anim", &smooth_anim);
-    register("play gesture", &cicada_mods::play_gesture_once);
+    open_group("weapon");
     register("nac", &nac);
     register("instaswap", &instaswap);
     register("canswap", &canswap);
@@ -36,74 +37,21 @@ function init()
     register("one bullet", &one_bullet);
     register("pull equipment", &pull_equipment);
     register("instant tac", &instant_tac);
-    register("change class", &change_class);
-    register("freeze anim", &freeze_anim);
-    register("third person", &third_person);
-    register("vision", &cicada_mods::toggle_vision);
-    register("bounce", &bounce);
-    register("invis crate", &cicada_mods::save_crate);
-    register("velocity", &apply_velocity);
-    register("bot velocity", &apply_bot_velocity);
-    register("agent velocity", &apply_agent_velocity);
-    register("zombie velocity", &apply_zombie_velocity);
-    register("bolt movement", &cicada_movement::play_bolt);
-    register("bot bolt movement", &cicada_movement::play_bot_bolt);
-    register("agent bolt movement", &cicada_movement::play_agent_bolt);
-    register("zombie bolt movement", &cicada_movement::play_zombie_bolt);
-    register("mimic grab", &cicada_pve::grab_me);
-    register("possess agent", &cicada_pve::possess_agent);
-    register("helmet cam", &cicada_mods::helmet_cam);
-    register("agent gesture", &agent_gesture);
-    register("agent looks at me", &agent_look);
-    register("agent hunts me", &agent_hunt);
-    register("place turret", &cicada_world::place_turret);
-    register("turrets aim at target", &cicada_world::aim_all_turrets);
-    register("spawn vehicle", &cicada_world::spawn_vehicle);
-    register("shockwave", &cicada_world::shockwave);
-    register("launch agents", &cicada_world::launch_ai);
-    register("launch models", &cicada_world::launch_models);
-    register("capture bar", &cicada_world::run_bar);
-    register("capture crate", &cicada_world::capture_crate);
-    register("capture every crate", &cicada_world::capture_every_crate);
-    register("capture objective", &cicada_world::capture_objective);
-    register("finish use bar", &cicada_world::finish_bar);
-    register("open doors near me", &open_doors);
-    register("close doors near me", &close_doors);
-    register("lock menu", &cicada_menu::lock_menu);
-    register("play scene", &cicada_cinematics::play_scene);
-    register("record movement", &cicada_movement::play_record);
-    register("bot movement", &cicada_movement::start_bot_path);
-    register("zombie movement", &cicada_pve::start_zombie_path);
-    register("load class", &cicada_loadout::load_class);
-    register("^:random ^7class", &cicada_loadout::random_class);
-    register("start camera", &cicada_cinematics::start_path);
-    register("fov", &cicada_cinematics::bind_fov);
-    register("save position", &save_position);
-    register("load position", &load_position);
-    register("unstuck", &unstuck);
-    register("reverse ele", &reverse_ele);
-    register("spectator", &spectator);
-    register("spectate repeater", &spectate_repeater);
-    register("spectate damage repeater", &spectate_damage_repeater);
-    register("damage", &self_damage);
-    register("scavenger", &scavenger);
-    register("hitmarker", &hitmarker);
-    register("snapshot delay", &cicada_mods::snapshot_burst);
-    register("flash", &flash);
-    register("shellshock", &shellshock_self);
-    register("stuck", &stuck);
-    register("kill bots", &kill_bots);
-    register("kill agents", &kill_agents);
-    register("knockback", &cicada_mods::knockback_push);
-    register("teleport near", &cicada_mods::teleport_near);
-    //register("link ride", &cicada_link::start_ride);
-    //register("unlink", &cicada_link::stop_ride);
-    register("parachute", &cicada_mechanics::pull_chute);
     register("max ammo", &cicada_extras::max_ammo);
     register("fill the clip", &cicada_extras::fill_clip);
     register("explosive rounds", &cicada_leftovers::explosive_rounds);
-    register("radiation zone", &cicada_leftovers::make_zone);
-    register("place station", &cicada_stations::place_station);
+    register("scavenger", &scavenger);
+    register("hitmarker", &hitmarker);
+    register("stuck", &stuck);
+    register("change class", &change_class);
+    register("load class", &cicada_loadout::load_class);
+    register("^:random ^7class", &cicada_loadout::random_class);
+
+    open_group("animation");
+    register("play anim", &cicada_mods::play_anim_once);
+    register("smooth anim", &smooth_anim);
+    register("play gesture", &cicada_mods::play_gesture_once);
+    register("freeze anim", &freeze_anim);
     register("anim slot 1", &anim_slot_1);
     register("anim slot 2", &anim_slot_2);
     register("anim slot 3", &anim_slot_3);
@@ -112,12 +60,145 @@ function init()
     register("anim slot 6", &anim_slot_6);
     register("anim slot 7", &anim_slot_7);
     register("anim slot 8", &anim_slot_8);
+
+    open_group("movement");
+    register("velocity", &apply_velocity);
+    register("bolt movement", &cicada_movement::play_bolt);
+    register("record movement", &cicada_movement::play_record);
+    register("bounce", &bounce);
+    register("unstuck", &unstuck);
+    register("reverse ele", &reverse_ele);
+    register("parachute", &cicada_mechanics::pull_chute);
+    register("knockback", &cicada_mods::knockback_push);
+    register("teleport near", &cicada_mods::teleport_near);
+    register("save position", &save_position);
+    register("load position", &load_position);
+
+    open_group("client");
+    register("bot velocity", &apply_bot_velocity);
+    register("agent velocity", &apply_agent_velocity);
+    register("zombie velocity", &apply_zombie_velocity);
+    register("bot bolt movement", &cicada_movement::play_bot_bolt);
+    register("agent bolt movement", &cicada_movement::play_agent_bolt);
+    register("zombie bolt movement", &cicada_movement::play_zombie_bolt);
+    register("bot movement", &cicada_movement::start_bot_path);
+    register("zombie movement", &cicada_pve::start_zombie_path);
+    register("kill bots", &kill_bots);
+    register("kill agents", &kill_agents);
+    register("launch agents", &cicada_world::launch_ai);
+    register("mimic grab", &cicada_pve::grab_me);
+    register("possess agent", &cicada_pve::possess_agent);
+    register("agent gesture", &agent_gesture);
+    register("agent looks at me", &agent_look);
+    register("agent hunts me", &agent_hunt);
+
+    open_group("world");
+    register("place turret", &cicada_world::place_turret);
+    register("turrets aim at target", &cicada_world::aim_all_turrets);
+    register("spawn vehicle", &cicada_world::spawn_vehicle);
+    register("shockwave", &cicada_world::shockwave);
+    register("launch models", &cicada_world::launch_models);
+    register("radiation zone", &cicada_leftovers::make_zone);
+    register("place station", &cicada_stations::place_station);
+    register("invis crate", &cicada_mods::save_crate);
+    register("open doors near me", &open_doors);
+    register("close doors near me", &close_doors);
+    register("capture bar", &cicada_world::run_bar);
+    register("capture crate", &cicada_world::capture_crate);
+    register("capture every crate", &cicada_world::capture_every_crate);
+    register("capture objective", &cicada_world::capture_objective);
+    register("finish use bar", &cicada_world::finish_bar);
+
+    open_group("camera");
+    register("third person", &third_person);
+    register("vision", &cicada_mods::toggle_vision);
+    register("helmet cam", &cicada_mods::helmet_cam);
+    register("start camera", &cicada_cinematics::start_path);
+    register("fov", &cicada_cinematics::bind_fov);
+    register("play scene", &cicada_cinematics::play_scene);
+    register("spectator", &spectator);
+    register("spectate repeater", &spectate_repeater);
+    register("spectate damage repeater", &spectate_damage_repeater);
+
+    open_group("player");
+    register("damage", &self_damage);
+    register("flash", &flash);
+    register("shellshock", &shellshock_self);
+    register("snapshot delay", &cicada_mods::snapshot_burst);
+    register("lock menu", &cicada_menu::lock_menu);
+    //register("link ride", &cicada_link::start_ride);
+    //register("unlink", &cicada_link::stop_ride);
+}
+
+function open_group(name)
+{
+    level.cicada_bind_open_group = name;
+    level.cicada_bind_groups[level.cicada_bind_groups.size] = name;
+    level.cicada_bind_menus[group_menu(name)] = name;
 }
 
 function register(name, action)
 {
     level.cicada_binds[name] = action;
     level.cicada_bind_names[level.cicada_bind_names.size] = name;
+    level.cicada_bind_group[name] = level.cicada_bind_open_group;
+}
+
+function group_menu(name)
+{
+    return name + " binds";
+}
+
+function group_names()
+{
+    return level.cicada_bind_groups;
+}
+
+function is_group_menu(menu)
+{
+    return isdefined(level.cicada_bind_menus) && isdefined(level.cicada_bind_menus[menu]);
+}
+
+function group_of_menu(menu)
+{
+    return level.cicada_bind_menus[menu];
+}
+
+function binds_in_group(name)
+{
+    list = [];
+
+    foreach (bind in level.cicada_bind_names)
+    {
+        if (!isdefined(level.cicada_bind_group[bind]) || level.cicada_bind_group[bind] != name)
+            continue;
+
+        if (self hidden(bind))
+            continue;
+
+        list[list.size] = bind;
+    }
+
+    return list;
+}
+
+function group_summary(name)
+{
+    list = self binds_in_group(name);
+    used = 0;
+
+    foreach (bind in list)
+    {
+        slot = self cicada_util::getpers(slot_key(bind));
+
+        if (isdefined(slot) && slot != "off")
+            used++;
+    }
+
+    if (!used)
+        return "^:" + list.size + " ^7binds";
+
+    return "^:" + list.size + " ^7binds ^7- ^:" + used + " ^7in use";
 }
 
 function anim_slot_1()
@@ -351,7 +432,7 @@ function command_monitor(command)
 
     for (;;)
     {
-        self waittill("button_pressed_-" + command);
+        self waittill("button_pressed_+" + command);
 
         if (self cicada_util::in_menu())
             continue;
@@ -368,7 +449,7 @@ function smooth_anim()
 
 function nac()
 {
-    self cicada_weapon::nacto(self cicada_weapon::next_weapon(), true);
+    self cicada_weapon::nacto(self cicada_weapon::previous_weapon(), true);
 }
 
 function instaswap()
@@ -678,11 +759,14 @@ function bot_by_name(name)
 
 function bot_wanted(player_, mode)
 {
-    if (mode == "enemies only")
-        return !self cicada_mods::is_friendly(player_);
+    switch (mode)
+    {
+        case "enemies only":
+            return !self cicada_mods::is_friendly(player_);
 
-    if (mode == "friendlies only")
-        return self cicada_mods::is_friendly(player_);
+        case "friendlies only":
+            return self cicada_mods::is_friendly(player_);
+    }
 
     return true;
 }

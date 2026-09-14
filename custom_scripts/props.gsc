@@ -314,7 +314,6 @@ function heads_in(group)
             list = add_heads(list, "head_sp_civ_var_05_hat_b_civ,head_sp_civ_var_07_hat_b_civ,head_sp_hero_ghost_urban_lod,head_sp_hero_kyle_amsterdam_lod");
             list = add_heads(list, "head_spetsnaz_ar,head_usmc_basic_ar_4,head_usmc_lmg");
             break;
-
     }
 
     if (!isdefined(level.cicada_heads))
@@ -712,7 +711,6 @@ function private mapped_head(model)
 
         case "body_spetsnaz_ar":
             return "head_russian_army_balaclava_1";
-
     }
 
     return undefined;
@@ -1085,7 +1083,7 @@ function load_props()
             back++;
 
     if (back)
-        self cicada_util::message("^:" + back + " ^7models back from the last round");
+        self cicada_util::message("^:" + back + " ^7models reloaded");
 
     self cicada_menu::update_menu();
 }
