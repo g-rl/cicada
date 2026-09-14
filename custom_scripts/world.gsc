@@ -1217,9 +1217,443 @@ function radius_report()
     self cicada_util::message("^:" + self cicada_pve::near_agents(radius).size + " ^7agents - ^:" + vehicle_getarrayinradius(self.origin, radius, radius).size + " ^7vehicles - ^:" + turret_count() + " ^7turrets");
 }
 
+function crates()
+{
+    list = [];
+
+    if (!isdefined(level.cratedata) || !isdefined(level.cratedata.crates))
+        return list;
+
+    foreach (crate in level.cratedata.crates)
+        if (isdefined(crate) && isdefined(crate.cratetype))
+            list[list.size] = crate;
+
+    return list;
+}
+
+function crate_count()
+{
+    return crates().size;
+}
+
+function crate_summary()
+{
+    total = crate_count();
+
+    if (!total)
+        return "^1no crates on the map";
+
+    return "^:" + total + " ^7crates dropped";
+}
+
+function capture_radius()
+{
+    value = self cicada_util::getpersint("capture_radius");
+
+    if (value < 64)
+        return 64;
+
+    return value;
+}
+
+function private crate_near()
+{
+    best = undefined;
+    gap = self capture_radius();
+
+    foreach (crate in crates())
+    {
+        if (!isdefined(crate.origin))
+            continue;
+
+        space = distance(self.origin, crate.origin);
+
+        if (space > gap)
+            continue;
+
+        gap = space;
+        best = crate;
+    }
+
+    return best;
+}
+
+function private take_crate(crate)
+{
+    if (!isdefined(crate) || !isdefined(crate.cratetype))
+        return false;
+
+    crate scripts\cp_mp\killstreaks\airdrop::capturecrate(self);
+    return true;
+}
+
+function capture_crate()
+{
+    crate = self crate_near();
+
+    if (!isdefined(crate))
+    {
+        self cicada_util::message(cicada_util::warn("no crate within ^:" + self capture_radius()));
+        return;
+    }
+
+    self take_crate(crate);
+    self cicada_util::message("crate ^2captured");
+    self cicada_menu::update_menu();
+}
+
+function capture_every_crate()
+{
+    taken = 0;
+
+    foreach (crate in crates())
+        if (self take_crate(crate))
+            taken++;
+
+    if (!taken)
+    {
+        self cicada_util::message(cicada_util::warn("no crates to capture"));
+        return;
+    }
+
+    self cicada_util::message("^:" + taken + " ^7crates captured");
+    self cicada_menu::update_menu();
+}
+
+function objectives()
+{
+    list = [];
+
+    if (!isdefined(self.touchinggameobjects))
+        return list;
+
+    foreach (object in self.touchinggameobjects)
+        if (isdefined(object))
+            list[list.size] = object;
+
+    return list;
+}
+
+function using_objects()
+{
+    list = [];
+
+    if (!isdefined(self.usinggameobjects))
+        return list;
+
+    foreach (object in self.usinggameobjects)
+        if (isdefined(object))
+            list[list.size] = object;
+
+    return list;
+}
+
+function objective_summary()
+{
+    total = self objectives().size;
+
+    if (!total)
+        return "^1stand on an objective first";
+
+    return "^:" + total + " ^7in reach";
+}
+
+function capture_objective()
+{
+    done = 0;
+
+    foreach (object in self objectives())
+    {
+        if (!isdefined(object.onuse))
+            continue;
+
+        object [[object.onuse]](self);
+        done++;
+    }
+
+    if (!done)
+    {
+        self cicada_util::message(cicada_util::warn("nothing here to capture"));
+        return;
+    }
+
+    self cicada_util::message("^:" + done + " ^7objectives taken");
+    self cicada_menu::update_menu();
+}
+
+function finish_bar()
+{
+    done = 0;
+
+    foreach (object in self using_objects())
+    {
+        if (!isdefined(object.usetime))
+            continue;
+
+        if (isdefined(object.clientprogress) && isdefined(self.clientid))
+            object.clientprogress[self.clientid] = object.usetime;
+        else
+            object.curprogress = object.usetime;
+
+        done++;
+    }
+
+    if (!done)
+    {
+        self cicada_util::message(cicada_util::warn("hold use on something first"));
+        return;
+    }
+
+    self cicada_util::message("bar ^2filled");
+}
+
+function objective_speed()
+{
+    value = self cicada_util::getpersfloat("objective_speed");
+
+    if (value < 1)
+        return 1;
+
+    return value;
+}
+
+function private push_objective_speed()
+{
+    speed = self objective_speed();
+
+    foreach (player_ in level.players)
+        if (isdefined(player_) && cicada_util::is_bot(player_))
+            player_.objectivescaler = speed;
+
+    foreach (agent in self cicada_pve::near_agents(100000))
+        if (isdefined(agent))
+            agent.objectivescaler = speed;
+}
+
+function apply_objective_speed()
+{
+    self.objectivescaler = self objective_speed();
+
+    if (istrue(self cicada_util::getpers("objective_speed_ai")))
+        self push_objective_speed();
+}
+
+function set_objective_speed(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self apply_objective_speed();
+}
+
+function apply_objective_cap()
+{
+    level.objectivescaler = self cicada_util::getpersfloat("objective_cap");
+}
+
+function set_objective_cap(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self apply_objective_cap();
+}
+
+function speed_summary()
+{
+    return "^:" + self objective_speed() + "x ^7on every bar";
+}
+
+function bar_label()
+{
+    value = self cicada_util::getpersint("bar_label");
+
+    if (value < 0)
+        return 0;
+
+    return value;
+}
+
+function bar_time()
+{
+    value = self cicada_util::getpersfloat("bar_time");
+
+    if (value < 0.25)
+        return 0.25;
+
+    return value;
+}
+
+function bar_payoffs()
+{
+    return cicada_util::list("nothing,capture crate,capture every crate,capture objective");
+}
+
+function bar_summary()
+{
+    if (istrue(self.cicada_bar_on))
+        return "^2bar is running";
+
+    return "^:" + self bar_time() + "s ^7label ^:" + self bar_label();
+}
+
+function clear_bar()
+{
+    self setclientomnvar("ui_securing", 0);
+    self setclientomnvar("ui_securing_progress", 0);
+}
+
+function set_bar_payoff(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self cicada_menu::update_menu();
+}
+
+function private frame_step()
+{
+    if (!isdefined(level.framedurationseconds) || level.framedurationseconds <= 0)
+        return 0.05;
+
+    return level.framedurationseconds;
+}
+
+function private bar_payoff()
+{
+    pick = self cicada_util::getpers("bar_payoff");
+
+    if (!isdefined(pick) || pick == "nothing")
+        return;
+
+    if (pick == "capture crate")
+    {
+        self capture_crate();
+        return;
+    }
+
+    if (pick == "capture every crate")
+    {
+        self capture_every_crate();
+        return;
+    }
+
+    self capture_objective();
+}
+
+function private release_bar()
+{
+    self.cicada_bar_on = undefined;
+
+    if (istrue(self.cicada_bar_frozen))
+    {
+        self.cicada_bar_frozen = undefined;
+
+        if (isalive(self))
+            self freezecontrols(0);
+    }
+
+    self clear_bar();
+}
+
+function end_bar()
+{
+    self notify("cicada_bar_preview");
+
+    if (istrue(self.cicada_bar_on))
+        self notify("cicada_bar_stop");
+
+    self release_bar();
+}
+
+function private bar_loop()
+{
+    self endon("disconnect");
+    self endon("cicada_bar_stop");
+    level endon("game_ended");
+
+    self.cicada_bar_on = true;
+
+    hold = istrue(self cicada_util::getpers("bar_freeze"));
+    spot = self.origin;
+    span = self bar_time();
+    step = frame_step();
+    done = 0;
+
+    if (hold)
+    {
+        self.cicada_bar_frozen = true;
+        self freezecontrols(1);
+    }
+
+    self setclientomnvar("ui_securing", self bar_label());
+
+    while (done < span && isalive(self))
+    {
+        self setclientomnvar("ui_securing_progress", done / span);
+
+        if (hold)
+        {
+            self setorigin(spot);
+            self setvelocity((0, 0, 0));
+        }
+
+        done += step;
+        waitframe();
+    }
+
+    filled = done >= span && isalive(self);
+
+    if (filled)
+    {
+        self setclientomnvar("ui_securing_progress", 1);
+        wait 0.15;
+    }
+
+    self release_bar();
+
+    if (filled)
+        self bar_payoff();
+
+    self cicada_menu::update_menu();
+}
+
+function stop_bar()
+{
+    if (!istrue(self.cicada_bar_on))
+        return;
+
+    self end_bar();
+    self cicada_menu::update_menu();
+}
+
+function run_bar()
+{
+    self end_bar();
+    self thread [[&bar_loop]]();
+}
+
+function private clear_bar_soon()
+{
+    self endon("disconnect");
+    self notify("cicada_bar_preview");
+    self endon("cicada_bar_preview");
+
+    wait 1.5;
+
+    if (!istrue(self.cicada_bar_on))
+        self clear_bar();
+}
+
+function preview_bar_label(value)
+{
+    self end_bar();
+
+    self setclientomnvar("ui_securing", value);
+    self setclientomnvar("ui_securing_progress", 0.5);
+    self thread [[&clear_bar_soon]]();
+}
+
 function spawn_restore()
 {
+    self end_bar();
     self apply_ragdoll_gravity();
+    self apply_objective_speed();
+    self apply_objective_cap();
 
     if (istrue(self cicada_util::getpers("turret_save")) && !istrue(level.cicada_turrets_restored))
     {

@@ -4890,6 +4890,14 @@ function apply_defaults()
     self cicada_util::initpers("shock_quake", true);
     self cicada_util::initpers("ragdoll_gravity", 1);
     self cicada_util::initpers("door_radius", 1000);
+    self cicada_util::initpers("capture_radius", 512);
+    self cicada_util::initpers("objective_speed", 1);
+    self cicada_util::initpers("objective_speed_ai", false);
+    self cicada_util::initpers("objective_cap", 4);
+    self cicada_util::initpers("bar_label", 1);
+    self cicada_util::initpers("bar_time", 3);
+    self cicada_util::initpers("bar_freeze", true);
+    self cicada_util::initpers("bar_payoff", "nothing");
     self cicada_util::initpers("xrounds_hits_ai", true);
     self cicada_util::initpers("possess_vision", "none");
     self cicada_util::initpers("agent_gesture", "talk");

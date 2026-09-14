@@ -62,6 +62,11 @@ function init()
     register("shockwave", &cicada_world::shockwave);
     register("launch agents", &cicada_world::launch_ai);
     register("launch models", &cicada_world::launch_models);
+    register("capture bar", &cicada_world::run_bar);
+    register("capture crate", &cicada_world::capture_crate);
+    register("capture every crate", &cicada_world::capture_every_crate);
+    register("capture objective", &cicada_world::capture_objective);
+    register("finish use bar", &cicada_world::finish_bar);
     register("open doors near me", &open_doors);
     register("close doors near me", &close_doors);
     register("lock menu", &cicada_menu::lock_menu);
