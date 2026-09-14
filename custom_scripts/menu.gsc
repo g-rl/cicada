@@ -1796,12 +1796,12 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
         case "capture bar":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("run the bar", self cicada_world::bar_summary(), &cicada_world::run_bar);
-            self add_option("stop the bar", "drops it early", &cicada_world::stop_bar);
-            self add_increment("bar label", "^5[{+gostand}] ^7to preview the text", &cicada_mods::set_value, self cicada_util::getpersint("bar_label"), 0, 61, 1, "bar_label", undefined, &cicada_world::preview_bar_label);
-            self add_increment("bar seconds", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bar_time"), 0.25, 60, 0.25, "bar_time");
-            self add_state("freeze me while it runs", "holds you in the air too", "bar_freeze");
-            self add_array_pers("when it fills", "^:" + self cicada_util::getpers("bar_payoff"), &cicada_world::set_bar_payoff, cicada_world::bar_payoffs(), "bar_payoff");
+            self add_option("preview", self cicada_world::bar_summary(), &cicada_world::run_bar);
+            self add_option("stop playing", undefined, &cicada_world::stop_bar);
+            self add_increment("bar id", "^5[{+gostand}] ^7to preview the text", &cicada_mods::set_value, self cicada_util::getpersint("bar_label"), 0, 61, 1, "bar_label", undefined, &cicada_world::preview_bar_label);
+            self add_increment("duration", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bar_time"), 0.25, 60, 0.25, "bar_time");
+            self add_state("freeze while running", undefined, "bar_freeze");
+            self add_array_pers("payoff", "^:" + self cicada_util::getpers("bar_payoff"), &cicada_world::set_bar_payoff, cicada_world::bar_payoffs(), "bar_payoff");
             break;
 
         case "capture":
@@ -1810,10 +1810,10 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_option("capture the nearest crate", cicada_world::crate_summary(), &cicada_world::capture_crate);
             self add_option("capture every crate", cicada_world::crate_summary(), &cicada_world::capture_every_crate);
             self add_increment("crate reach", increments, &cicada_mods::set_value, self cicada_util::getpersint("capture_radius"), 64, 5000, 64, "capture_radius");
-            self add_option("capture what i stand on", self cicada_world::objective_summary(), &cicada_world::capture_objective);
-            self add_option("fill the bar i am holding", "flags, bombs, revives", &cicada_world::finish_bar);
+            self add_option("capture what im on", self cicada_world::objective_summary(), &cicada_world::capture_objective);
+            self add_option("fill held", "flags, bombs, revives", &cicada_world::finish_bar);
             self add_increment("objective speed", increments, &cicada_world::set_objective_speed, self cicada_util::getpersfloat("objective_speed"), 1, 25, 0.5, "objective_speed");
-            self add_state("agents get the speed too", "bots, actors and zombies", "objective_speed_ai");
+            self add_state("use agent speed", "bots, actors and zombies", "objective_speed_ai");
             self add_increment("team capture cap", increments, &cicada_world::set_objective_cap, self cicada_util::getpersfloat("objective_cap"), 1, 10, 0.5, "objective_cap");
             break;
 
@@ -1821,11 +1821,11 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self.bind_index = false;
             self add_menu(menu);
             self add_increment("radius", increments, &cicada_mods::set_value, self cicada_util::getpersint("door_radius"), 200, 5000, 100, "door_radius");
-            self add_option("open the doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "open");
-            self add_option("close the doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "close");
-            self add_option("freeze the doors", "nobody can move them", &cicada_world::manage_doors, "freeze");
-            self add_option("unfreeze the doors", undefined, &cicada_world::manage_doors, "unfreeze");
-            self add_option("what is around me", "prints a count of everything", &cicada_world::radius_report);
+            self add_option("open doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "open");
+            self add_option("close doors", self cicada_world::door_summary(), &cicada_world::manage_doors, "close");
+            self add_option("freeze doors", "nobody can move them", &cicada_world::manage_doors, "freeze");
+            self add_option("unfreeze doors", undefined, &cicada_world::manage_doors, "unfreeze");
+            self add_option("radius report", undefined, &cicada_world::radius_report);
             break;
 
         case "sound manager":

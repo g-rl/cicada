@@ -7,6 +7,7 @@
 #using scripts\mp\gamelogic;
 #using scripts\mp\gameobjects;
 #using scripts\mp\gamescore;
+#using scripts\mp\gamestaterestore;
 #using scripts\mp\gametypes\obj_bombzone;
 #using scripts\mp\menus;
 #using scripts\mp\outofbounds;
@@ -2991,13 +2992,18 @@ function apply_round_scores()
 
     allies_score = self round_score();
     axis_score = self round_score();
-
     game["roundsWon"]["allies"] = allies_score;
     game["roundsWon"]["axis"] = axis_score;
     game["teamScores"]["allies"] = allies_score;
     game["teamScores"]["axis"] = axis_score;
     setteamscore("allies", allies_score);
     setteamscore("axis", axis_score);
+
+    // erm
+    // state = spawnstruct();
+    // state.team1score = self round_score();
+    // state.team2score = self round_score();
+    // gamestaterestore::function_cc67f138614157c4(state);
 
     // self cicada_util::message("round scores ^:" + state.team1score + " ^7- ^:" + state.team2score + " ^7for the next round");
 }
