@@ -3085,19 +3085,19 @@ function initial_monitor()
 function scroll_held(direction)
 {
     if (direction == 1)
-        return self cicada_util::isbuttonheld("actionslot 2");
+        return self cicada_util::isbuttonheld("actionslot 2") || self cicada_util::isbuttonpressed("+actionslot 2");
 
-    return self cicada_util::isbuttonheld("actionslot 1");
+    return self cicada_util::isbuttonheld("actionslot 1") || self cicada_util::isbuttonpressed("+actionslot 1");
 }
 
 function scroll_start_time()
 {
-    return 0.28;
+    return 0.16;
 }
 
 function scroll_repeat_time()
 {
-    return 0.08;
+    return 0.03;
 }
 
 function set_slider(scrolling, index)

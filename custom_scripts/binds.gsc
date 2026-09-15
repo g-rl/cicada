@@ -421,6 +421,8 @@ function start_monitors()
 {
     self migrate_binds();
 
+    self.bind_fired = [];
+
     foreach (command in commands())
         self thread [[&command_monitor]](command);
 }
@@ -430,16 +432,43 @@ function command_monitor(command)
     self endon("disconnect");
     level endon("game_ended");
 
+    self thread [[&command_edge]](command, "+");
+    self thread [[&command_edge]](command, "-");
+}
+
+function command_edge(command, edge)
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
     for (;;)
     {
-        self waittill("button_pressed_+" + command);
+        self waittill("button_pressed_" + edge + command);
 
-        if (self cicada_util::in_menu())
+        if (edge == "+")
+        {
+            self.bind_fired[command] = true;
+
+            if (!self cicada_util::in_menu())
+                self run_binds(command);
+
+            continue;
+        }
+
+        handled = istrue(self.bind_fired[command]);
+        self.bind_fired[command] = undefined;
+
+        if (handled || self cicada_util::in_menu())
             continue;
 
-        foreach (name in self binds_on_command(command))
-            self thread [[level.cicada_binds[name]]]();
+        self run_binds(command);
     }
+}
+
+function run_binds(command)
+{
+    foreach (name in self binds_on_command(command))
+        self thread [[level.cicada_binds[name]]]();
 }
 
 function smooth_anim()
