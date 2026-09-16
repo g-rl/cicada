@@ -821,6 +821,7 @@ function structure()
             self add_option("bot paths", self cicada_movement::summary("path"), &new_menu, "bot paths");
             self add_array("spawn bot", "^5[{+gostand}] ^7to spawn", &cicada_mods::spawn_bot_of, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_bot"), &new_menu, "auto bot setup");
+            self add_option("experimental combat", self cicada_mods::bot_combat_summary(), &new_menu, "bot combat");
             self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
             self add_array_pers("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "pick_bots");
             self add_feature("freeze bots", undefined, "frozen_bots");
@@ -1300,6 +1301,8 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
 
             self add_feature("infinite equipment", undefined, "inf_equipment");
+            self add_state("no lethals", "always takes your lethal", "no_lethal");
+            self add_state("no tacticals", "always takes your tactical", "no_tactical");
 
             self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
             self add_state("replace weapon", "swaps the current weapon", "replace_weapon");
@@ -1576,6 +1579,8 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_array("spawn type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_type, cicada_pve::type_names(), self cicada_util::getpers("pve_spawn_type"), "pve_spawn_type");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
+            self add_option("experimental combat", self cicada_pve::combat_summary(), &new_menu, "experimental combat");
+            self add_array_pers("spawn location", sliders, &cicada_pve::set_value, cicada_util::list("crosshair,self"), "pve_spawn_where", "pve_spawn_where");
             self add_array_pers("teleport zombies", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
             self add_toggle("freeze zombies", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
             self add_toggle("kill score", "points on a zombie kill", self cicada_util::getpers("pve_score"), &cicada_pve::flip_value, "pve_score");
@@ -1607,9 +1612,11 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self.bind_index = false;
             self add_menu(menu);
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_ai"), &new_menu, "auto ai setup");
+            self add_option("experimental combat", self cicada_pve::combat_summary(), &new_menu, "experimental combat");
             self add_array("actor type", "^5[{+gostand}] ^7to spawn", &cicada_pve::spawn_of_actor, cicada_pve::actor_labels(), cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), "pve_actor_type");
             self add_option("spawn this actor", "^:" + cicada_pve::actor_label(self cicada_util::getpers("pve_actor_type")), &cicada_pve::spawn_chosen_actor);
             self add_option("spawn random actor", "^:" + cicada_pve::actor_count() + " ^7types loaded", &cicada_pve::random_actor);
+            self add_array_pers("spawn location", sliders, &cicada_pve::set_value, cicada_util::list("crosshair,self"), "pve_spawn_where", "pve_spawn_where");
             self add_array_pers("teleport actors", sliders, &cicada_pve::move_zombies, cicada_util::list("crosshair,self"), "pick_ai");
             self add_toggle("freeze actors", "pins them all in place", cicada_pve::all_frozen(), &cicada_pve::freeze_all);
             self add_option("manage actors", "^:" + cicada_pve::live_actor_count() + " ^7alive", &new_menu, "manage actors");
@@ -1633,6 +1640,9 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_state("final killcam target", undefined, "auto_ai_killcam");
             self add_state("teleport near target", "for: teleport near bind", "auto_ai_teleport");
             self add_state("bind target", "for: velocity & bolt binds", "auto_ai_bind");
+            self add_state("freeze on spawn", "pins the next one in place", "auto_ai_freeze");
+            if (self cicada_mods::crate_count())
+                self add_array_pers("spawn on invis crate", sliders, &cicada_mods::set_auto_crate, self cicada_mods::crate_labels(), "auto_ai_crate", "auto_ai_crate");
             break;
 
         case "auto bot setup":
@@ -1641,6 +1651,34 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_state("final killcam target", undefined, "auto_bot_killcam");
             self add_state("teleport near target", "for: teleport near bind", "auto_bot_teleport");
             self add_state("bind target", "for: velocity & bolt binds", "auto_bot_bind");
+            self add_state("freeze on spawn", "pins the next one in place", "auto_bot_freeze");
+            if (self cicada_mods::crate_count())
+                self add_array_pers("spawn on invis crate", sliders, &cicada_mods::set_auto_crate, self cicada_mods::crate_labels(), "auto_bot_crate", "auto_bot_crate");
+            break;
+
+        case "experimental combat":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_toggle("combat behaviour", "swaps the tree on every new one", self cicada_util::getpers("pve_combat"), &cicada_pve::flip_value, "pve_combat");
+            self add_array_pers("behaviour tree", sliders, &cicada_pve::set_value, cicada_pve::combat_trees(), "pve_combat_tree", "pve_combat_tree");
+            self add_array_pers("combat mode", sliders, &cicada_pve::set_value, cicada_pve::combat_modes(), "pve_combat_mode", "pve_combat_mode");
+            self add_array_pers("shoot style", sliders, &cicada_pve::set_value, cicada_pve::combat_styles(), "pve_combat_style", "pve_combat_style");
+            self add_increment("accuracy", increments, &cicada_pve::set_value, self cicada_util::getpersfloat("pve_combat_accuracy"), 0.05, 1, 0.05, "pve_combat_accuracy");
+            self add_increment("fight distance", increments, &cicada_pve::set_value, self cicada_util::getpersint("pve_combat_fight_dist"), 0, 1024, 32, "pve_combat_fight_dist");
+            self add_option("convert every actor", "^:" + cicada_pve::combat_count() + " ^7converted", &cicada_pve::convert_every_agent);
+            self add_option(cicada_util::warn("restore every actor"), "^:" + cicada_pve::combat_count() + " ^7converted", &cicada_pve::restore_every_agent);
+            break;
+
+        case "bot combat":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_toggle("combat behaviour", "extended movement & aim", self cicada_util::getpers("bot_combat"), &cicada_mods::flip_bot_combat, "bot_combat");
+            self add_increment("awareness", increments, &cicada_mods::set_bot_combat_value, self cicada_util::getpersfloat("bot_combat_awareness"), 0, 1, 0.05, "bot_combat_awareness");
+            self add_increment("min spread", increments, &cicada_mods::set_bot_combat_value, self cicada_util::getpersfloat("bot_combat_min_spread"), 0, 10, 0.5, "bot_combat_min_spread");
+            self add_increment("max spread", increments, &cicada_mods::set_bot_combat_value, self cicada_util::getpersfloat("bot_combat_max_spread"), 0, 20, 0.5, "bot_combat_max_spread");
+            self add_increment("strategy level", increments, &cicada_mods::set_bot_combat_value, self cicada_util::getpersint("bot_combat_strategy"), 0, 5, 1, "bot_combat_strategy");
+            self add_increment("sprint energy", increments, &cicada_mods::set_bot_combat_value, self cicada_util::getpersint("bot_combat_energy"), 100, 2000, 100, "bot_combat_energy");
+            self add_option("apply to every bot", self cicada_mods::bot_combat_summary(), &cicada_mods::apply_bot_combat_all);
             break;
 
         case "manage zombies":
@@ -2496,6 +2534,7 @@ function zombie_options(zombie, increments, sliders)
     self add_menu(cicada_pve::zombie_name(zombie));
     self add_option("gestures", "^:" + self cicada_pve::gesture_name(), &new_menu, "agent gestures");
     self add_option("behaviour", "how it acts and what it ignores", &new_menu, "agent behaviour");
+    self add_toggle("combat behaviour", self cicada_pve::combat_summary(zombie), cicada_pve::is_combat_agent(zombie), &cicada_pve::toggle_combat_agent, zombie);
     self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
     self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);
     self add_array("archetype", sliders, &cicada_pve::set_archetype, cicada_pve::archetypes(), cicada_pve::archetype_of(zombie), zombie);
@@ -2517,7 +2556,7 @@ function zombie_options(zombie, increments, sliders)
     self add_option("forget target", undefined, &cicada_pve::forget_target, zombie);
     self add_option("ragdoll", "drops it into physics", &cicada_pve::drop_ragdoll, zombie);
     self add_option("clone", "leaves a copy behind", &cicada_pve::clone_agent, zombie);
-    self add_array("speed", sliders, &cicada_pve::set_zombie_speed, cicada_util::list("walk,run,sprint"), cicada_pve::zombie_speed(zombie), zombie);
+    self add_array("speed", sliders, &cicada_pve::set_zombie_speed, cicada_util::list("walk,run,sprint,super_sprint"), cicada_pve::zombie_speed(zombie), zombie);
     self add_increment("health", increments, &cicada_pve::set_zombie_health, zombie.health, 25, 5000, 25, zombie);
     if (!cicada_pve::is_hellhound(zombie))
     {

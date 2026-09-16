@@ -181,6 +181,8 @@ function refresh_on_spawn()
 
     if (!self cicada_builds::spawn_apply())
         self cicada_loadout::spawn_class();
+
+    self cicada_loadout::strip_equipment();
 }
 
 function anyone_using(key)
@@ -647,6 +649,73 @@ function crate_top(origin)
     return spot;
 }
 
+function ensure_crates()
+{
+    if (!self crate_count())
+        return;
+
+    if (!isdefined(self.cicada_crates) || !self.cicada_crates.size)
+        self build_crates();
+}
+
+function crate_labels()
+{
+    labels = [];
+    labels[0] = "off";
+
+    for (i = 0; i < self crate_count(); i++)
+        labels[labels.size] = "crate " + i;
+
+    return labels;
+}
+
+function crate_label(index)
+{
+    if (!isdefined(index))
+        return "off";
+
+    return "crate " + index;
+}
+
+function crate_spot(index)
+{
+    if (!isdefined(index))
+        return undefined;
+
+    origin = self cicada_util::getmappers("crate_" + index);
+
+    if (!isdefined(origin))
+        return undefined;
+
+    self ensure_crates();
+
+    return crate_top(origin);
+}
+
+function place_on_crate(ent, index)
+{
+    if (!isdefined(ent) || !isalive(ent))
+        return false;
+
+    spot = self crate_spot(index);
+
+    if (!isdefined(spot))
+        return false;
+
+    if (isplayer(ent))
+    {
+        ent setorigin(spot);
+        ent setvelocity((0, 0, 0));
+    }
+    else
+    {
+        ent forceteleport(spot, ent.angles);
+        cicada_pve::settle_after_move(ent);
+    }
+
+    return true;
+}
+
 function crate_landing(origin)
 {
     self endon("disconnect");
@@ -991,6 +1060,14 @@ function toggle_freeze(player_)
         player_ freezecontrols(0);
         return;
     }
+
+    self freeze_player(player_);
+}
+
+function freeze_player(player_)
+{
+    if (!isdefined(player_) || player_ == self || is_frozen(player_))
+        return;
 
     player_.cicada_frozen = true;
     mark_freeze_spot(player_);
@@ -1337,6 +1414,9 @@ function private settle_bot_targets(bot)
     for (i = 0; i < 60 && bot.sessionstate != "playing"; i++)
         wait 0.1;
 
+    if (self bot_combat_on())
+        self apply_bot_combat(bot, true);
+
     self auto_target_apply(bot, "auto_bot");
 }
 
@@ -1357,11 +1437,111 @@ function spawn_bot()
     if (wanted != "none")
         self thread [[&hold_bot_team]](wanted);
 
-    if (self auto_target_on("auto_bot"))
+    if (self auto_target_on("auto_bot") || self bot_combat_on())
         self thread [[&hold_bot_targets]]();
 
     self cicada_util::message("spawning ^:" + difficulty + " ^7bot on ^:" + team);
     self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function bot_combat_on()
+{
+    return istrue(self cicada_util::getpers("bot_combat"));
+}
+
+function private apply_bot_movement(bot, state)
+{
+    bot allowjump(1);
+    bot allowsprint(1);
+    bot allowmantle(1);
+    bot allowdodge(state);
+    bot allowslide(state);
+    bot allowsupersprint(state);
+    bot allowdoublejump(state);
+    bot allowwallrun(state);
+
+    if (!state)
+        return;
+
+    energy = self cicada_util::getpersint("bot_combat_energy");
+
+    bot energy_setmax(0, energy);
+    bot energy_setrestorerate(0, energy);
+}
+
+function apply_bot_combat(bot, state)
+{
+    if (!isdefined(bot) || !isalive(bot) || !cicada_util::is_bot(bot))
+        return false;
+
+    bot.cicada_bot_combat = state;
+
+    self apply_bot_movement(bot, state);
+
+    if (!state)
+    {
+        bot botsetawareness(0.5);
+        return true;
+    }
+
+    bot botsetawareness(self cicada_util::getpersfloat("bot_combat_awareness"));
+    bot botsetdifficultysetting("minInaccuracy", self cicada_util::getpersfloat("bot_combat_min_spread"));
+    bot botsetdifficultysetting("maxInaccuracy", self cicada_util::getpersfloat("bot_combat_max_spread"));
+    bot botsetdifficultysetting("strategyLevel", self cicada_util::getpersint("bot_combat_strategy"));
+    bot botsetdifficultysetting("allowGrenades", 1);
+
+    return true;
+}
+
+function bot_combat_count()
+{
+    total = 0;
+
+    foreach (player_ in level.players)
+        if (cicada_util::is_bot(player_) && istrue(player_.cicada_bot_combat))
+            total++;
+
+    return total;
+}
+
+function bot_combat_summary()
+{
+    if (!self bot_combat_on())
+        return "^1off";
+
+    return "^2on ^7- ^:" + self bot_combat_count() + " ^7bots";
+}
+
+function apply_bot_combat_all()
+{
+    state = self bot_combat_on();
+    done = 0;
+
+    foreach (player_ in level.players)
+        if (self apply_bot_combat(player_, state))
+            done++;
+
+    self cicada_util::message("^:" + done + " ^7bots set to ^:" + (state ? "combat" : "default"));
+    self cicada_util::sound("scavenger_pack_pickup");
+    self cicada_menu::update_menu();
+}
+
+function flip_bot_combat(key)
+{
+    self cicada_util::flippers(key);
+    self apply_bot_combat_all();
+}
+
+function set_bot_combat_value(value, key)
+{
+    self cicada_util::setpers(key, value);
+
+    if (!self bot_combat_on())
+        return;
+
+    foreach (player_ in level.players)
+        if (istrue(player_.cicada_bot_combat))
+            self apply_bot_combat(player_, true);
 }
 
 function clear_perk(perk_name)
@@ -1750,9 +1930,29 @@ function toggle_ai_target(ent)
     self cicada_menu::update_menu();
 }
 
+function auto_crate_index(prefix)
+{
+    label = self cicada_util::getpers(prefix + "_crate");
+
+    if (!isdefined(label) || label == "off")
+        return undefined;
+
+    for (i = 0; i < self crate_count(); i++)
+        if (label == crate_label(i))
+            return i;
+
+    return undefined;
+}
+
+function set_auto_crate(value, key)
+{
+    self cicada_util::setpers(key, value);
+    self cicada_menu::update_menu();
+}
+
 function auto_target_on(prefix)
 {
-    return istrue(self cicada_util::getpers(prefix + "_killcam")) || istrue(self cicada_util::getpers(prefix + "_teleport")) || istrue(self cicada_util::getpers(prefix + "_bind"));
+    return istrue(self cicada_util::getpers(prefix + "_killcam")) || istrue(self cicada_util::getpers(prefix + "_teleport")) || istrue(self cicada_util::getpers(prefix + "_bind")) || istrue(self cicada_util::getpers(prefix + "_freeze")) || isdefined(self auto_crate_index(prefix));
 }
 
 function auto_target_summary(prefix)
@@ -1767,6 +1967,14 @@ function auto_target_summary(prefix)
 
     if (istrue(self cicada_util::getpers(prefix + "_bind")))
         picked[picked.size] = "bind";
+
+    if (istrue(self cicada_util::getpers(prefix + "_freeze")))
+        picked[picked.size] = "freeze";
+
+    index = self auto_crate_index(prefix);
+
+    if (isdefined(index))
+        picked[picked.size] = crate_label(index);
 
     if (!picked.size)
         return "^1nothing carried over";
@@ -1835,7 +2043,54 @@ function private auto_target_settle(ent, prefix)
         }
     }
 
+    index = self auto_crate_index(prefix);
+
+    if (isdefined(index) && self place_on_crate(ent, index))
+    {
+        ent.cicada_crate_index = index;
+
+        if (isplayer(ent))
+            self thread [[&hold_bot_crate]](ent);
+    }
+
+    if (istrue(self cicada_util::getpers(prefix + "_freeze")))
+    {
+        if (isplayer(ent))
+            self freeze_player(ent);
+        else
+            cicada_pve::freeze_zombie(ent);
+    }
+
     self cicada_menu::update_menu();
+}
+
+function private hold_bot_crate(bot)
+{
+    self endon("disconnect");
+    bot endon("disconnect");
+
+    if (istrue(bot.cicada_crate_watch))
+        return;
+
+    bot.cicada_crate_watch = true;
+
+    for (;;)
+    {
+        bot waittill("death");
+
+        for (i = 0; i < 600 && (!isalive(bot) || bot.sessionstate != "playing"); i++)
+            wait 0.25;
+
+        if (!isalive(bot) || !isdefined(bot.cicada_crate_index))
+            return;
+
+        wait 0.25;
+
+        self place_on_crate(bot, bot.cicada_crate_index);
+
+        if (istrue(self cicada_util::getpers("auto_bot_freeze")))
+            self freeze_player(bot);
+    }
 }
 
 function ai_pick_key(kind)
@@ -3955,6 +4210,8 @@ function after_class_change()
 
     wait 0.1;
 
+    self cicada_loadout::strip_equipment();
+
     if (istrue(self cicada_util::getpers("class_empty_clip")))
         self cicada_weapon::empty_clip();
 
@@ -4799,6 +5056,8 @@ function apply_defaults()
     self cicada_util::initpers("random_secondary", "random");
     self cicada_util::initpers("random_lethal", "random");
     self cicada_util::initpers("random_tactical", "random");
+    self cicada_util::initpers("no_lethal", false);
+    self cicada_util::initpers("no_tactical", false);
     self cicada_util::initpers("random_class_streaks", false); // TODO: improve in a bit
     self cicada_util::initpers("random_class_super", false);
     self cicada_util::initpers("random_class_camo", false);
@@ -5025,6 +5284,25 @@ function apply_defaults()
     self cicada_util::initpers("auto_bot_killcam", false);
     self cicada_util::initpers("auto_bot_teleport", false);
     self cicada_util::initpers("auto_bot_bind", false);
+    self cicada_util::initpers("auto_ai_freeze", false);
+    self cicada_util::initpers("auto_bot_freeze", false);
+    self cicada_util::initpers("auto_ai_crate", "off");
+    self cicada_util::initpers("auto_bot_crate", "off");
+    self cicada_util::initpers("pve_spawn_where", "crosshair");
+
+    self cicada_util::initpers("pve_combat", false);
+    self cicada_util::initpers("pve_combat_tree", "soldier_agent");
+    self cicada_util::initpers("pve_combat_style", "keep");
+    self cicada_util::initpers("pve_combat_mode", "cover");
+    self cicada_util::initpers("pve_combat_accuracy", 0.66);
+    self cicada_util::initpers("pve_combat_fight_dist", 192);
+
+    self cicada_util::initpers("bot_combat", false);
+    self cicada_util::initpers("bot_combat_energy", 400);
+    self cicada_util::initpers("bot_combat_awareness", 1);
+    self cicada_util::initpers("bot_combat_min_spread", 0);
+    self cicada_util::initpers("bot_combat_max_spread", 1);
+    self cicada_util::initpers("bot_combat_strategy", 3);
 
     self cicada_util::initpers("freeze_timer", false);
     self cicada_util::initpers("round_reset", true);

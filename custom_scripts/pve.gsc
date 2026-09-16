@@ -165,6 +165,7 @@ function apply_settings()
     level.cicada_pve_score = istrue(self cicada_util::getpers("pve_score"));
     level.cicada_pve_respawn = istrue(self cicada_util::getpers("pve_respawn"));
     level.cicada_pve_respawn_delay = self cicada_util::getpersfloat("pve_respawn_delay");
+    level.cicada_pve_combat = istrue(self cicada_util::getpers("pve_combat"));
 
     if (isdefined(level.cicada_pve_aiscore_orig))
         level.var_3749fd90367bc366 = level.cicada_pve_score ? 1 : 0;
@@ -200,6 +201,165 @@ function flip_value(key)
     self cicada_menu::update_menu();
 }
 
+function private clear_weapon_slot(zombie)
+{
+    if (!isdefined(zombie.weapon) || isnullweapon(zombie.weapon))
+        return undefined;
+
+    old = zombie.weapon;
+    name = getcompleteweaponname(old);
+
+    zombie takeweapon(old);
+
+    if (isdefined(zombie.a) && isdefined(zombie.a.weaponpos))
+    {
+        foreach (slot in weapon_slots())
+            if (isdefined(zombie.a.weaponpos[slot]) && zombie.a.weaponpos[slot] == old)
+                zombie.a.weaponpos[slot] = undefined;
+    }
+
+    if (isdefined(zombie.weaponinfo) && isdefined(zombie.weaponinfo[name]))
+        zombie.weaponinfo[name] = undefined;
+}
+
+function private register_weapon_info(zombie, weapon)
+{
+    name = getcompleteweaponname(weapon);
+
+    if (!isdefined(zombie.weaponinfo))
+        zombie.weaponinfo = [];
+
+    zombie.weaponinfo[name] = spawnstruct();
+    zombie.weaponinfo[name].position = "none";
+    zombie.weaponinfo[name].hasclip = 1;
+    zombie.weaponinfo[name].useclip = 0;
+}
+
+function private rebuild_weapon_array(zombie)
+{
+    if (!isdefined(zombie.secondaryweapon))
+        zombie.secondaryweapon = nullweapon();
+
+    if (!isdefined(zombie.sidearm))
+        zombie.sidearm = nullweapon();
+
+    zombie.weapons = [];
+
+    if (!isnullweapon(zombie.primaryweapon))
+        zombie.weapons[zombie.weapons.size] = zombie.primaryweapon;
+
+    if (!isnullweapon(zombie.secondaryweapon))
+        zombie.weapons[zombie.weapons.size] = zombie.secondaryweapon;
+
+    if (!isnullweapon(zombie.sidearm))
+        zombie.weapons[zombie.weapons.size] = zombie.sidearm;
+}
+
+function private apply_weapon_archetype(zombie, weapclass)
+{
+    if (!isdefined(zombie._blackboard) || !isdefined(zombie.asm) || !isdefined(zombie.animsetname))
+        return;
+
+    suffix = undefined;
+
+    if (weapclass == "pistol")
+        suffix = "_pistol";
+    else if (weapclass == "mg")
+        suffix = "_lmg";
+
+    if (!isdefined(suffix))
+    {
+        zombie clearoverridearchetype("weapon");
+        return;
+    }
+
+    if (archetypeassetloaded(zombie.animsetname + suffix))
+    {
+        zombie setoverridearchetype("weapon", zombie.animsetname + suffix);
+        return;
+    }
+
+    base = zombie getbasearchetype();
+
+    if (isdefined(base) && archetypeassetloaded(base + suffix))
+    {
+        zombie setoverridearchetype("weapon", base + suffix);
+        return;
+    }
+
+    zombie clearoverridearchetype("weapon");
+}
+
+function private weapon_slots()
+{
+    return cicada_util::list("right,left,chest,back,thigh,inhand");
+}
+
+function private weapon_slot_tags()
+{
+    return cicada_util::list("tag_weapon_right,tag_weapon_left,tag_stowed_chest,tag_stowed_back,tag_stowed_thigh,tag_inhand");
+}
+
+function private refresh_weapon_models(zombie)
+{
+    if (!isdefined(zombie.a) || !isdefined(zombie.a.weaponpos))
+        return;
+
+    slots = weapon_slots();
+    tags = weapon_slot_tags();
+
+    held = [];
+    used = [];
+
+    for (i = 0; i < slots.size; i++)
+    {
+        weapon = zombie.a.weaponpos[slots[i]];
+
+        if (!isdefined(weapon) || isnullweapon(weapon))
+            continue;
+
+        if (!zombie tagexists(tags[i]))
+            continue;
+
+        held[held.size] = weapon;
+        used[used.size] = tags[i];
+    }
+
+    zombie updateentitywithweapons(held[0], used[0], held[1], used[1], held[2], used[2], held[3], used[3]);
+}
+
+function private hold_weapon(zombie, weapon)
+{
+    if (!isdefined(zombie.a))
+        zombie.a = spawnstruct();
+
+    if (!isdefined(zombie.a.weaponpos))
+        zombie.a.weaponpos = [];
+
+    if (!isdefined(zombie.a.weaponposdropping))
+        zombie.a.weaponposdropping = [];
+
+    foreach (slot in weapon_slots())
+        if (isdefined(zombie.a.weaponpos[slot]) && zombie.a.weaponpos[slot] == weapon)
+            zombie.a.weaponpos[slot] = undefined;
+
+    zombie.a.weaponpos["right"] = weapon;
+    zombie.weaponinfo[getcompleteweaponname(weapon)].position = "right";
+
+    refresh_weapon_models(zombie);
+}
+
+function private replace_behaviour_tree(agent, tree)
+{
+    agent btterminatetreeinstance();
+
+    if (!isdefined(tree))
+        return;
+
+    agent.behaviortreeasset = tree;
+    agent btregistertreeinstance(tree);
+}
+
 function give_weapon(zombie, weapon)
 {
     if (!isdefined(zombie) || !isalive(zombie))
@@ -208,11 +368,23 @@ function give_weapon(zombie, weapon)
     if (!isdefined(weapon) || isnullweapon(weapon) || weapon.basename == "none")
         return false;
 
-    if (isdefined(zombie.weapon) && !isnullweapon(zombie.weapon))
-        zombie takeweapon(zombie.weapon);
+    clear_weapon_slot(zombie);
 
-    zombie mp_agent::setupweapon(weapon);
+    zombie.weapon = weapon;
+    register_weapon_info(zombie, weapon);
+    zombie giveweapon(weapon);
+    zombie setspawnweapon(weapon);
+    zombie.bulletsinclip = weaponclipsize(weapon);
+    zombie.primaryweapon = weapon;
+    zombie.grenadeweapon = isdefined(zombie.grenadeweapon) ? zombie.grenadeweapon : nullweapon();
+    zombie.grenadeammo = isdefined(zombie.grenadeammo) ? zombie.grenadeammo : 0;
+
+    hold_weapon(zombie, weapon);
+    rebuild_weapon_array(zombie);
+
     zombie switchtoweaponimmediate(weapon);
+    apply_weapon_archetype(zombie, weaponclass(weapon));
+
     return true;
 }
 
@@ -785,7 +957,17 @@ function private state_weapon(name)
 
 function private state_fields()
 {
-    return cicada_util::list("type,origin,angles,health,speed,weapon,boss,marked,target,frozen,armed,streak,actor");
+    return cicada_util::list("type,origin,angles,health,speed,weapon,boss,marked,target,frozen,armed,streak,actor,offmesh,crate");
+}
+
+function private off_navmesh(origin)
+{
+    spot = getclosestpointonnavmesh(origin);
+
+    if (!isdefined(spot))
+        return true;
+
+    return distance(origin, spot) > 16;
 }
 
 function save_state()
@@ -816,6 +998,8 @@ function save_state()
         self cicada_util::setmappers(state_key(total, "armed"), istrue(zombie.cicada_pve_armed));
         self cicada_util::setmappers(state_key(total, "streak"), istrue(zombie.cicada_pve_streak));
         self cicada_util::setmappers(state_key(total, "actor"), is_actor(zombie));
+        self cicada_util::setmappers(state_key(total, "offmesh"), off_navmesh(zombie.origin));
+        self cicada_util::setmappers(state_key(total, "crate"), zombie.cicada_crate_index);
 
         if (isdefined(zombie.weapon) && !isnullweapon(zombie.weapon))
             self cicada_util::setmappers(state_key(total, "weapon"), zombie.weapon.basename);
@@ -874,6 +1058,7 @@ function load_state()
     self apply_settings();
     self ensure_ready();
     wait_for_agents();
+    self cicada_mods::ensure_crates();
 
     restored = 0;
 
@@ -885,15 +1070,28 @@ function load_state()
         if (!isdefined(aitype) || !isdefined(origin) || !ai_loaded(aitype))
             continue;
 
-        spot = getclosestpointonnavmesh(origin);
+        crate = self cicada_util::getmappers(state_key(i, "crate"));
+        perch = self cicada_mods::crate_spot(crate);
 
-        if (!isdefined(spot))
+        if (isdefined(perch))
+            origin = perch;
+
+        if (isdefined(perch) || istrue(self cicada_util::getmappers(state_key(i, "offmesh"))))
             spot = origin;
+        else
+        {
+            spot = getclosestpointonnavmesh(origin);
+
+            if (!isdefined(spot))
+                spot = origin;
+        }
 
         zombie = spawn_zombie(aitype, spot, true);
 
         if (!isdefined(zombie))
             continue;
+
+        zombie.cicada_crate_index = crate;
 
         if (istrue(self cicada_util::getmappers(state_key(i, "actor"))))
             zombie.cicada_pve_actor = 1;
@@ -1237,16 +1435,36 @@ function private ensure_ready()
     return true;
 }
 
+function spawn_point()
+{
+    where = self cicada_util::getpers("pve_spawn_where");
+
+    if (isdefined(where) && where == "self")
+        return self.origin;
+
+    return self cicada_util::crosshair();
+}
+
+function private no_navmesh_warning()
+{
+    where = self cicada_util::getpers("pve_spawn_where");
+
+    if (isdefined(where) && where == "self")
+        return cicada_util::warn("no navmesh where you are standing");
+
+    return cicada_util::warn("no navmesh where you are aiming");
+}
+
 function spawn_single()
 {
     self apply_settings();
     self ensure_ready();
 
-    origin = getclosestpointonnavmesh(self cicada_util::crosshair());
+    origin = getclosestpointonnavmesh(self spawn_point());
 
     if (!isdefined(origin))
     {
-        self cicada_util::message(cicada_util::warn("no navmesh where you are aiming"));
+        self cicada_util::message(self no_navmesh_warning());
         return;
     }
 
@@ -1360,11 +1578,11 @@ function spawn_actor(aitype)
         return;
     }
 
-    origin = getclosestpointonnavmesh(self cicada_util::crosshair());
+    origin = getclosestpointonnavmesh(self spawn_point());
 
     if (!isdefined(origin))
     {
-        self cicada_util::message(cicada_util::warn("no navmesh where you are aiming"));
+        self cicada_util::message(self no_navmesh_warning());
         return;
     }
 
@@ -2294,6 +2512,29 @@ function apply_behaviour(agent, key, state)
 
         case "no dodge":
             agent.disabledodge = state ? 1 : 0;
+            agent.nododgemove = state ? 1 : 0;
+            break;
+
+        case "crouch only":
+            if (state)
+                agent allowedstances("crouch");
+            else
+                agent allowedstances("stand", "crouch", "prone");
+            break;
+
+        case "no reload":
+            agent.disablereload = state ? 1 : 0;
+            break;
+
+        case "force pistol":
+            agent.forcesidearm = state ? 1 : 0;
+            break;
+
+        case "super sprint":
+            if (state)
+                apply_speed(agent, "super_sprint");
+            else
+                apply_speed(agent, isdefined(level.cicada_pve_speed) ? level.cicada_pve_speed : "run");
             break;
     }
 }
@@ -2315,7 +2556,265 @@ function toggle_behaviour(key, agent)
 
 function behaviour_keys()
 {
-    return cicada_util::list("no traversals,stand only,never shoot,never melee,ignore me,ignore everyone,aggressive,no flinch,no run and gun,no dodge");
+    return cicada_util::list("no traversals,stand only,crouch only,never shoot,never melee,ignore me,ignore everyone,aggressive,no flinch,no run and gun,no dodge,no reload,force pistol,super sprint");
+}
+
+function combat_trees()
+{
+    return cicada_util::list("soldier_agent,soldier_jup_ob,rusher_jup_ob,juggernaut_agent");
+}
+
+function private combat_asm(tree)
+{
+    if (tree == "rusher_jup_ob")
+        return "rusher";
+
+    return "soldier";
+}
+
+function combat_tree()
+{
+    tree = self cicada_util::getpers("pve_combat_tree");
+
+    if (!isdefined(tree))
+        return "soldier_agent";
+
+    return tree;
+}
+
+function combat_styles()
+{
+    return cicada_util::list("keep,full");
+}
+
+function combat_modes()
+{
+    return cicada_util::list("cover,ambush,guard_location,follow_player");
+}
+
+function is_combat_agent(agent)
+{
+    return isdefined(agent) && istrue(agent.cicada_combat);
+}
+
+function combat_count()
+{
+    total = 0;
+
+    foreach (zombie in zombies())
+        if (is_combat_agent(zombie))
+            total++;
+
+    return total;
+}
+
+function combat_summary(agent)
+{
+    if (isdefined(agent))
+        return is_combat_agent(agent) ? ("^2on ^7- ^:" + agent.cicada_combat_tree) : "^1off";
+
+    return "^:" + combat_count() + " ^7converted";
+}
+
+function private apply_combat_tuning(agent)
+{
+    agent.aggressivemode = 1;
+    agent.dontevershoot = 0;
+    agent.disablerunngun = 0;
+    agent.disabledodge = 0;
+    agent.nododgemove = 0;
+    agent.disablepistol = 0;
+    agent.disablereload = 0;
+    agent.disablebulletwhizbyreaction = 0;
+    agent.ignoreall = 0;
+    agent.ignoreme = 0;
+    agent.combatmode = self cicada_util::getpers("pve_combat_mode");
+    agent.pathenemyfightdist = self cicada_util::getpersint("pve_combat_fight_dist");
+
+    if (isdefined(agent.bt))
+        agent.bt.cannotmelee = 0;
+
+    agent allowedstances("stand", "crouch", "prone");
+    agent enabletraversals(1);
+
+    accuracy = self cicada_util::getpersfloat("pve_combat_accuracy");
+
+    if (accuracy > 0)
+        agent.baseaccuracy = accuracy;
+
+    style = self cicada_util::getpers("pve_combat_style");
+    agent.shootstyleoverride = (isdefined(style) && style == "full") ? "full" : undefined;
+}
+
+function private tree_shoots(tree)
+{
+    return isdefined(tree) && !issubstr(tree, "zombie") && !issubstr(tree, "civilian") && !issubstr(tree, "capture_bot");
+}
+
+function private combat_ready(agent)
+{
+    return isdefined(agent) && isalive(agent) && !isplayer(agent) && isdefined(agent.behaviortreeasset) && isdefined(agent.asm) && isdefined(agent._blackboard) && isdefined(agent.animsetname);
+}
+
+function private swap_combat_tree(agent, tree, asm_name)
+{
+    if (!archetypeassetloaded(asm_name))
+        return false;
+
+    agent.cicada_combat_swapped = true;
+    agent.cicada_combat_oldtree = agent.behaviortreeasset;
+    agent.cicada_combat_oldasm = agent.asmasset;
+    agent.cicada_combat_oldbase = agent getbasearchetype();
+
+    agent.ignoreall = 1;
+    agent.enemy = undefined;
+    agent clearbtgoal(3);
+    agent clearbtgoal(4);
+    agent clearpath();
+    agent forceupdategoalpos();
+
+    replace_behaviour_tree(agent, tree);
+
+    agent setbasearchetype(asm_name);
+    agent setoverridearchetype("default", asm_name);
+    agent.asmasset = asm_name;
+    agent.defaultasm = asm_name;
+
+    return true;
+}
+
+function combat_convert(agent)
+{
+    if (!combat_ready(agent) || is_combat_agent(agent))
+        return false;
+
+    tree = self combat_tree();
+    asm_name = combat_asm(tree);
+
+    if (tree_shoots(agent.behaviortreeasset))
+    {
+        agent.cicada_combat = true;
+        agent.cicada_combat_tree = agent.behaviortreeasset;
+        self apply_combat_tuning(agent);
+        return true;
+    }
+
+    if (!swap_combat_tree(agent, tree, asm_name))
+        return false;
+
+    agent.cicada_combat = true;
+    agent.cicada_combat_tree = tree;
+
+    self apply_combat_tuning(agent);
+
+    weapon = agent.weapon;
+
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        weapon = random_weapon();
+
+    if (isdefined(weapon))
+    {
+        self give_weapon(agent, weapon);
+        agent.cicada_pve_armed = 1;
+    }
+
+    return true;
+}
+
+function combat_restore(agent)
+{
+    if (!is_combat_agent(agent))
+        return false;
+
+    agent.cicada_combat = false;
+    agent.shootstyleoverride = undefined;
+    agent.aggressivemode = 0;
+
+    if (!istrue(agent.cicada_combat_swapped) || !isalive(agent))
+        return true;
+
+    agent.cicada_combat_swapped = false;
+
+    agent.enemy = undefined;
+    agent clearbtgoal(3);
+    agent clearbtgoal(4);
+    agent clearpath();
+
+    if (isdefined(agent.cicada_combat_oldtree))
+        replace_behaviour_tree(agent, agent.cicada_combat_oldtree);
+
+    agent clearoverridearchetype("weapon");
+    agent clearoverridearchetype("default");
+
+    if (isdefined(agent.cicada_combat_oldbase))
+        agent setbasearchetype(agent.cicada_combat_oldbase);
+
+    if (isdefined(agent.cicada_combat_oldasm))
+    {
+        agent.asmasset = agent.cicada_combat_oldasm;
+        agent.defaultasm = agent.cicada_combat_oldasm;
+    }
+
+    return true;
+}
+
+function toggle_combat_agent(agent)
+{
+    if (!isdefined(agent) || !isalive(agent))
+        return;
+
+    if (is_combat_agent(agent))
+    {
+        self combat_restore(agent);
+        self cicada_util::message(zombie_name(agent) + " ^7combat ^1off");
+    }
+    else if (self combat_convert(agent))
+        self cicada_util::message(zombie_name(agent) + " ^7combat ^2on ^7- ^:" + self combat_tree());
+    else
+        self cicada_util::message(cicada_util::warn("this actor cannot take a combat tree"));
+
+    self cicada_menu::update_menu();
+}
+
+function convert_every_agent()
+{
+    done = 0;
+
+    foreach (zombie in zombies())
+        if (self combat_convert(zombie))
+            done++;
+
+    self cicada_util::message("^:" + done + " ^7given combat behaviour");
+    self cicada_util::sound("scavenger_pack_pickup");
+    self cicada_menu::update_menu();
+}
+
+function restore_every_agent()
+{
+    done = 0;
+
+    foreach (zombie in zombies())
+        if (self combat_restore(zombie))
+            done++;
+
+    self cicada_util::message("^:" + done + " ^7back to default behaviour");
+    self cicada_menu::update_menu();
+}
+
+function private combat_settle(agent)
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    wait 0.25 + randomfloat(0.25);
+
+    for (i = 0; i < 40 && !combat_ready(agent); i++)
+        waitframe();
+
+    if (!combat_ready(agent))
+        return;
+
+    self combat_convert(agent);
 }
 
 function archetypes()
@@ -2730,6 +3229,9 @@ function private spawn_zombie(aitype, origin, keep_type)
     level.cicada_pve_zombies[level.cicada_pve_zombies.size] = zombie;
     zombie thread [[&watch_zombie]](zombie);
 
+    if (istrue(level.cicada_pve_combat))
+        self thread [[&combat_settle]](zombie);
+
     return zombie;
 }
 
@@ -2835,8 +3337,109 @@ function private watch_zombie(zombie)
         }
     }
 
-    if (istrue(level.cicada_pve_respawn))
+    respawn = istrue(level.cicada_pve_respawn) && !istrue(zombie.cicada_pve_adopted);
+
+    zombie.cicada_pve_zombie = undefined;
+    zombie.cicada_pve_adopted = undefined;
+    zombie.cicada_pve_actor = undefined;
+
+    if (respawn)
         level thread [[&respawn_from]](seed);
+}
+
+function tracked(agent)
+{
+    if (!isdefined(agent) || !isdefined(level.cicada_pve_zombies))
+        return false;
+
+    foreach (zombie in level.cicada_pve_zombies)
+        if (zombie == agent)
+            return true;
+
+    return false;
+}
+
+function private adopt_is_actor(aitype)
+{
+    if (!isdefined(aitype))
+        return true;
+
+    return !issubstr(aitype, "zombie") && !issubstr(aitype, "hellhound");
+}
+
+function private adopt_agent(agent)
+{
+    if (!isdefined(agent) || !isalive(agent) || isplayer(agent))
+        return false;
+
+    if (istrue(agent.cicada_station_actor) || isdefined(level.cicada_pve_victim) && agent == level.cicada_pve_victim)
+        return false;
+
+    if (tracked(agent))
+        return false;
+
+    agent.cicada_pve_zombie = 1;
+    agent.cicada_pve_adopted = 1;
+    agent.cicada_pve_aitype = agent.agent_type;
+
+    if (adopt_is_actor(agent.cicada_pve_aitype))
+        agent.cicada_pve_actor = 1;
+    else
+        agent.cicada_pve_actor = undefined;
+
+    if (isdefined(agent.weapon) && !isnullweapon(agent.weapon))
+        agent.cicada_pve_armed = 1;
+
+    level.cicada_pve_zombies[level.cicada_pve_zombies.size] = agent;
+    agent thread [[&watch_zombie]](agent);
+
+    return true;
+}
+
+function private adopt_pass()
+{
+    if (!isdefined(level.agentarray))
+        return;
+
+    if (!isdefined(level.cicada_pve_zombies))
+        level.cicada_pve_zombies = [];
+
+    kept = [];
+
+    foreach (zombie in level.cicada_pve_zombies)
+        if (isdefined(zombie) && isalive(zombie))
+            kept[kept.size] = zombie;
+
+    level.cicada_pve_zombies = kept;
+
+    found = false;
+
+    foreach (agent in level.agentarray)
+        if (adopt_agent(agent))
+            found = true;
+
+    if (!found)
+        return;
+
+    foreach (player in level.players)
+        if (isdefined(player) && !cicada_util::is_bot(player))
+            player cicada_menu::update_menu();
+}
+
+function adopt_watch()
+{
+    level endon("game_ended");
+
+    if (istrue(level.cicada_pve_adopt_watch))
+        return;
+
+    level.cicada_pve_adopt_watch = true;
+
+    for (;;)
+    {
+        adopt_pass();
+        wait 0.5;
+    }
 }
 
 function private spawn_origin()

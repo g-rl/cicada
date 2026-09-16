@@ -478,7 +478,7 @@ function smooth_anim()
 
 function nac()
 {
-    self cicada_weapon::nacto(self cicada_weapon::previous_weapon(), true);
+    self cicada_weapon::nacto(self cicada_weapon::next_weapon(), true);
 }
 
 function instaswap()

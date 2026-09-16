@@ -6,6 +6,7 @@
 #using custom_scripts\catalog;
 #using custom_scripts\cinematics;
 #using custom_scripts\killcam;
+#using custom_scripts\loadout;
 #using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
@@ -14,6 +15,7 @@
 //#using custom_scripts\link;
 #using custom_scripts\mechanics;
 #using custom_scripts\props;
+#using custom_scripts\pve;
 #using custom_scripts\stations;
 #using custom_scripts\session;
 #using custom_scripts\util;
@@ -49,6 +51,7 @@ function private init()
     level thread [[&cicada_mods::skip_prematch]]();
     level thread [[&cicada_mods::guard_frozen]]();
     level thread [[&cicada_afterhits::watch]]();
+    level thread [[&cicada_pve::adopt_watch]]();
 
     level callback::add("player_spawned", &on_player_spawned);
 }
@@ -97,6 +100,7 @@ function private on_player_spawned(params)
         self thread [[&cicada_mods::restore_super_charge_rate]]();
 
         self thread [[&cicada_mods::monitor_class]]();
+        self thread [[&cicada_loadout::watch_equipment]]();
     }
 
     self thread [[&cicada_menu::close_menu_on_death]]();

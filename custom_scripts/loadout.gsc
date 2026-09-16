@@ -101,6 +101,36 @@ function set_equipment(ref, slot)
     self cicada_util::sound("ui_mp_weapon_pickup");
 }
 
+function no_equipment(slot)
+{
+    key = (slot == "primary") ? "no_lethal" : "no_tactical";
+
+    return istrue(self cicada_util::getpers(key));
+}
+
+function strip_equipment()
+{
+    if (self no_equipment("primary"))
+        self scripts\mp\equipment::takeequipment("primary");
+
+    if (self no_equipment("secondary"))
+        self scripts\mp\equipment::takeequipment("secondary");
+}
+
+function watch_equipment()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    for (;;)
+    {
+        if (isalive(self))
+            self strip_equipment();
+
+        wait 0.5;
+    }
+}
+
 function give_bot_shield(player_)
 {
     shield = build("iw9_me_riotshield_mp");
@@ -766,11 +796,11 @@ function random_class()
         weapons[weapons.size] = secondary;
 
     lethal = self fresh_choice("random_lethal", cicada_catalog::equipment_refs("primary"));
-    if (isdefined(lethal))
+    if (isdefined(lethal) && !self no_equipment("primary"))
         self scripts\mp\equipment::giveequipment(lethal, "primary");
 
     tactical = self fresh_choice("random_tactical", cicada_catalog::equipment_refs("secondary"));
-    if (isdefined(tactical))
+    if (isdefined(tactical) && !self no_equipment("secondary"))
         self scripts\mp\equipment::giveequipment(tactical, "secondary");
 
     if (istrue(self cicada_util::getpers("random_class_super")))
@@ -829,10 +859,10 @@ function load_random_class()
         self cicada_weapon::refill(weapon);
     }
 
-    if (isdefined(stored.lethal))
+    if (isdefined(stored.lethal) && !self no_equipment("primary"))
         self scripts\mp\equipment::giveequipment(stored.lethal, "primary");
 
-    if (isdefined(stored.tactical))
+    if (isdefined(stored.tactical) && !self no_equipment("secondary"))
         self scripts\mp\equipment::giveequipment(stored.tactical, "secondary");
 
     self give_class_perks();
