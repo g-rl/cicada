@@ -1306,8 +1306,8 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
 
             self add_option("take weapon", "^:" + self getcurrentweapon().basename, &cicada_mods::take_weapon);
             self add_state("replace weapon", "swaps the current weapon", "replace_weapon");
-            self add_option("primaries", "^:" + level.cicada_groups["primaries"].size + " ^7categories", &new_menu, "primaries");
-            self add_option("secondaries", "^:" + level.cicada_groups["secondaries"].size + " ^7categories", &new_menu, "secondaries");
+            self add_option("primaries", "^:" + cicada_catalog::live_count("primaries") + " ^7weapons", &new_menu, "primaries");
+            self add_option("secondaries", "^:" + cicada_catalog::live_count("secondaries") + " ^7weapons", &new_menu, "secondaries");
             self add_option("streak " + self accent() + "manager^7", undefined, &new_menu, "streaks");
             self add_option("equipment " + self accent() + "manager^7", undefined, &new_menu, "equipment manager");
             self add_option("camo " + self accent() + "manager^7", "currently set: ^:" + self cicada_loadout::camo(), &new_menu, "camo manager");
@@ -1326,8 +1326,54 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
         case "secondaries":
             self.bind_index = false;
             self add_menu(menu);
+            foreach (group in cicada_catalog::live_groups(menu))
+                self add_option(cicada_catalog::live_group_label(group), "^:" + cicada_catalog::live_weapons(group).size + " ^7weapons in game", &new_menu, "weapon group");
             foreach (category in level.cicada_groups[menu])
-                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons available", &new_menu, category);
+                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7picked by hand", &new_menu, category);
+            break;
+
+        case "weapon group":
+            self.bind_index = false;
+            self add_menu(cicada_catalog::live_group_label(self.select_group));
+            foreach (ref in cicada_catalog::live_weapons(self.select_group))
+                self add_option(cicada_catalog::label(ref), "^:" + ref, &new_menu, "weapon options");
+            break;
+
+        case "weapon options":
+            self.bind_index = false;
+            self add_menu(cicada_catalog::ref_label(self.select_ref));
+            self add_option("give ^:base ^7weapon", isdefined(self.select_ref) ? ("^:" + self.select_ref) : undefined, &cicada_loadout::give_weapon, self.select_ref);
+            self add_option("build with " + self accent() + "attachments^7", "^:" + self cicada_loadout::build_count() + " ^7fitted", &new_menu, "weapon build");
+            self add_option("blueprints", "^:" + cicada_loadout::blueprints(self.select_ref).size + " ^7variants", &new_menu, "weapon blueprints");
+            break;
+
+        case "weapon build":
+            self.bind_index = false;
+            self add_menu(cicada_catalog::ref_label(self.select_ref));
+            build_slots = self cicada_loadout::build_slots();
+            for (i = 0; i < build_slots.size; i++)
+                self add_option(build_slots[i], self cicada_loadout::build_slot_summary(build_slots[i]), &new_menu, "weapon build slot");
+            self add_option("give ^:this ^7build", "^:" + self cicada_loadout::build_count() + " ^7fitted", &cicada_loadout::give_build);
+            self add_option("^:random ^7attachments", "rolls a valid mix", &cicada_loadout::randomize_build);
+            self add_option(cicada_util::warn("clear attachments"), "^:" + self cicada_loadout::build_count() + " ^7fitted", &cicada_loadout::clear_build);
+            break;
+
+        case "weapon build slot":
+            self.bind_index = false;
+            self add_menu(self.select_slot);
+            self add_option("clear this slot", self cicada_loadout::build_slot_summary(self.select_slot), &cicada_loadout::clear_build_slot, self.select_slot);
+            foreach (name in self cicada_loadout::build_slot_options(self.select_slot))
+                self add_option(cicada_loadout::attachment_label(self.select_ref, name), "fits this build", &cicada_loadout::set_build_attachment, name, self.select_slot);
+            break;
+
+        case "weapon blueprints":
+            self.bind_index = false;
+            self add_menu(cicada_catalog::ref_label(self.select_ref));
+            variants = cicada_loadout::blueprints(self.select_ref);
+            for (i = 0; i < variants.size; i++)
+                self add_option("blueprint " + (i + 1), "^:variant " + variants[i], &cicada_loadout::give_blueprint, self.select_ref, variants[i]);
+            if (!variants.size)
+                self add_option(cicada_util::warn("no blueprints"), "this weapon has none");
             break;
 
         case "random class":
@@ -2105,7 +2151,12 @@ function add_bind_group(group, live_sliders)
     {
         if (cicada_binds::has_settings(name))
         {
-            self add_option(name, "button and settings for ^:" + name, &new_menu, name);
+            summary = "button and settings for ^:" + name;
+
+            if (cicada_binds::is_cycle(name))
+                summary = self cicada_binds::cycle_summary(cicada_binds::cycle_index(name));
+
+            self add_option(name, summary, &new_menu, name);
             continue;
         }
 
@@ -2120,6 +2171,12 @@ function add_bind_slots(name, increments, sliders)
     if (cicada_binds::is_anim_slot(name))
     {
         self anim_slot_bind_options(cicada_binds::anim_slot_index(name), increments, sliders);
+        return;
+    }
+
+    if (cicada_binds::is_cycle(name))
+    {
+        self cycle_bind_options(cicada_binds::cycle_index(name), sliders);
         return;
     }
 
@@ -2231,6 +2288,18 @@ function add_bind_slots(name, increments, sliders)
             self gesture_bind_options();
             break;
     }
+}
+
+function cycle_bind_options(index, sliders)
+{
+    options = self cicada_binds::cycle_options();
+
+    self add_array("mode", sliders, &cicada_mods::set_value, cicada_binds::cycle_modes(), self cicada_binds::cycle_mode(index), cicada_binds::cycle_mode_key(index));
+    self add_option("reset to the start", self cicada_binds::cycle_summary(index), &cicada_binds::reset_cycle, index);
+    self add_option(cicada_util::warn("clear every step"), undefined, &cicada_binds::clear_cycle, index);
+
+    for (step = 1; step <= cicada_binds::cycle_steps(); step++)
+        self add_array_pers("step " + step, self cicada_binds::cycle_step_summary(index, step), &cicada_mods::set_value, options, cicada_binds::cycle_step_key(index, step), cicada_binds::cycle_step_key(index, step));
 }
 
 function anim_slot_bind_options(index, increments, sliders)
@@ -3333,6 +3402,21 @@ function new_menu(menu)
 
     if (self get_menu() == "manage vehicles")
         self.select_vehicle = cicada_world::vehicle_at(self get_cursor());
+
+    if (self get_menu() == "primaries" || self get_menu() == "secondaries")
+    {
+        groups = cicada_catalog::live_groups(self get_menu());
+        self.select_group = (self get_cursor() < groups.size) ? groups[self get_cursor()] : undefined;
+    }
+
+    if (self get_menu() == "weapon group")
+    {
+        self.select_ref = cicada_catalog::live_weapon_at(self.select_group, self get_cursor());
+        self cicada_loadout::reset_build(self.select_ref);
+    }
+
+    if (self get_menu() == "weapon build")
+        self.select_slot = self cicada_loadout::build_slot_at(self get_cursor());
 
     if (self get_menu() == "attachment manager")
         self.select_weapon = self cicada_loadout::editable_at(self get_cursor());

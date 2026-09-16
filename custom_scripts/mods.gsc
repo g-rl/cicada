@@ -5058,6 +5058,14 @@ function apply_defaults()
     self cicada_util::initpers("random_tactical", "random");
     self cicada_util::initpers("no_lethal", false);
     self cicada_util::initpers("no_tactical", false);
+
+    for (cycle = 1; cycle <= cicada_binds::cycle_count(); cycle++)
+    {
+        self cicada_util::initpers(cicada_binds::cycle_mode_key(cycle), "loop");
+
+        for (step = 1; step <= cicada_binds::cycle_steps(); step++)
+            self cicada_util::initpers(cicada_binds::cycle_step_key(cycle, step), "off");
+    }
     self cicada_util::initpers("random_class_streaks", false); // TODO: improve in a bit
     self cicada_util::initpers("random_class_super", false);
     self cicada_util::initpers("random_class_camo", false);

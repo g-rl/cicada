@@ -447,6 +447,77 @@ function group_union(name, sources)
     level.cicada_groups[name] = list;
 }
 
+function ref_label(ref)
+{
+    if (!isdefined(ref))
+        return "weapon";
+
+    return label(ref);
+}
+
+function live_group_slot(group)
+{
+    foreach (token in cicada_util::list("assault,battle,rifle,smg,sub,shotgun,lmg,light,sniper,dmr,marksman"))
+        if (issubstr(group, token))
+            return "primaries";
+
+    return "secondaries";
+}
+
+function live_groups(slot)
+{
+    list = [];
+
+    if (!isdefined(level.weapongroupdata))
+        return list;
+
+    foreach (group in getarraykeys(level.weapongroupdata))
+    {
+        if (!level.weapongroupdata[group].size || live_group_slot(group) != slot)
+            continue;
+
+        list[list.size] = group;
+    }
+
+    return list;
+}
+
+function live_group_label(group)
+{
+    if (!isdefined(group))
+        return "weapons";
+
+    return pretty(group, "weapon");
+}
+
+function live_weapons(group)
+{
+    if (!isdefined(group) || !isdefined(level.weapongroupdata) || !isdefined(level.weapongroupdata[group]))
+        return [];
+
+    return level.weapongroupdata[group];
+}
+
+function live_weapon_at(group, index)
+{
+    list = live_weapons(group);
+
+    if (index < 0 || index >= list.size)
+        return undefined;
+
+    return list[index];
+}
+
+function live_count(slot)
+{
+    total = 0;
+
+    foreach (group in live_groups(slot))
+        total = total + live_weapons(group).size;
+
+    return total;
+}
+
 function weapon_categories()
 {
     return cicada_util::list("assault rifles,battle rifles,sub machine guns,shotguns,light machine guns,snipers,pistols,launchers,misc,equipment");

@@ -120,6 +120,11 @@ function init()
     register("spectate repeater", &spectate_repeater);
     register("spectate damage repeater", &spectate_damage_repeater);
 
+    open_group("cycle");
+    register("cycle 1", &run_cycle_1);
+    register("cycle 2", &run_cycle_2);
+    register("cycle 3", &run_cycle_3);
+
     open_group("player");
     register("damage", &self_damage);
     register("flash", &flash);
@@ -259,6 +264,205 @@ function hidden(name)
     return anim_slot_index(name) > self cicada_mods::anim_slot_count();
 }
 
+function cycle_count()
+{
+    return 3;
+}
+
+function cycle_steps()
+{
+    return 8;
+}
+
+function is_cycle(name)
+{
+    return isstartstr(name, "cycle ");
+}
+
+function cycle_index(name)
+{
+    return int(cicada_util::trim_start(name, "cycle "));
+}
+
+function cycle_name(index)
+{
+    return "cycle " + index;
+}
+
+function cycle_modes()
+{
+    return cicada_util::list("loop,once,random,all");
+}
+
+function cycle_mode(index)
+{
+    mode = self cicada_util::getpers(cycle_mode_key(index));
+
+    return isdefined(mode) ? mode : "loop";
+}
+
+function cycle_mode_key(index)
+{
+    return "cycle_" + index + "_mode";
+}
+
+function cycle_step_key(index, step)
+{
+    return "cycle_" + index + "_step_" + step;
+}
+
+function cycle_options()
+{
+    list = [];
+    list[0] = "off";
+
+    foreach (name in level.cicada_bind_names)
+    {
+        if (is_cycle(name) || self hidden(name))
+            continue;
+
+        list[list.size] = name;
+    }
+
+    return list;
+}
+
+function cycle_entries(index)
+{
+    list = [];
+
+    for (step = 1; step <= cycle_steps(); step++)
+    {
+        name = self cicada_util::getpers(cycle_step_key(index, step));
+
+        if (!isdefined(name) || name == "off" || !isdefined(level.cicada_binds[name]))
+            continue;
+
+        list[list.size] = name;
+    }
+
+    return list;
+}
+
+function cycle_position(index)
+{
+    if (!isdefined(self.cicada_cycle_at))
+        self.cicada_cycle_at = [];
+
+    if (!isdefined(self.cicada_cycle_at[index]))
+        self.cicada_cycle_at[index] = 0;
+
+    return self.cicada_cycle_at[index];
+}
+
+function cycle_summary(index)
+{
+    entries = self cycle_entries(index);
+
+    if (!entries.size)
+        return "^1nothing set";
+
+    mode = self cycle_mode(index);
+
+    if (mode == "all")
+        return "^:" + entries.size + " ^7at once";
+
+    if (mode == "random")
+        return "^:" + entries.size + " ^7binds ^7- ^:random";
+
+    at = self cycle_position(index);
+
+    if (at >= entries.size)
+    {
+        if (mode == "once")
+            return "^:" + entries.size + " ^7binds ^7- ^1finished";
+
+        at = 0;
+    }
+
+    return "^:" + entries.size + " ^7binds ^7- next ^:" + entries[at];
+}
+
+function cycle_step_summary(index, step)
+{
+    name = self cicada_util::getpers(cycle_step_key(index, step));
+
+    if (!isdefined(name) || name == "off")
+        return "^7skipped";
+
+    return "^:" + level.cicada_bind_group[name] + " ^7bind";
+}
+
+function reset_cycle(index)
+{
+    if (!isdefined(self.cicada_cycle_at))
+        self.cicada_cycle_at = [];
+
+    self.cicada_cycle_at[index] = 0;
+
+    self cicada_util::message(cycle_name(index) + " back to the ^:start");
+    self cicada_menu::update_menu();
+}
+
+function clear_cycle(index)
+{
+    for (step = 1; step <= cycle_steps(); step++)
+        self cicada_util::setpers(cycle_step_key(index, step), "off");
+
+    self reset_cycle(index);
+}
+
+function run_cycle(index)
+{
+    entries = self cycle_entries(index);
+
+    if (!entries.size)
+    {
+        self cicada_util::message(cicada_util::warn("nothing set on " + cycle_name(index)));
+        return;
+    }
+
+    mode = self cycle_mode(index);
+
+    if (mode == "all")
+    {
+        foreach (name in entries)
+            self thread [[level.cicada_binds[name]]]();
+
+        return;
+    }
+
+    at = self cycle_position(index);
+
+    if (mode == "random")
+        at = randomint(entries.size);
+    else if (at >= entries.size)
+    {
+        if (mode == "once")
+            return;
+
+        at = 0;
+    }
+
+    self.cicada_cycle_at[index] = at + 1;
+    self thread [[level.cicada_binds[entries[at]]]]();
+}
+
+function run_cycle_1()
+{
+    self run_cycle(1);
+}
+
+function run_cycle_2()
+{
+    self run_cycle(2);
+}
+
+function run_cycle_3()
+{
+    self run_cycle(3);
+}
+
 function visible_count()
 {
     total = 0;
@@ -355,7 +559,7 @@ function slot_from_label(label)
 
 function has_settings(name)
 {
-    return name == "play anim" || name == "play gesture" || name == "snapshot delay" || name == "knockback" || name == "kill bots" || name == "kill agents" || name == "teleport near" || name == "bot velocity" || name == "bot bolt movement" || name == "agent velocity" || name == "agent bolt movement" || name == "zombie velocity" || name == "zombie bolt movement" || name == "parachute" || name == "place station" || is_anim_slot(name);
+    return name == "play anim" || name == "play gesture" || name == "snapshot delay" || name == "knockback" || name == "kill bots" || name == "kill agents" || name == "teleport near" || name == "bot velocity" || name == "bot bolt movement" || name == "agent velocity" || name == "agent bolt movement" || name == "zombie velocity" || name == "zombie bolt movement" || name == "parachute" || name == "place station" || is_anim_slot(name) || is_cycle(name);
 }
 
 function assigned_command(name)

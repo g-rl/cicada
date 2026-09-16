@@ -30,8 +30,14 @@ function build(id, camo, attachments, variantid)
 
 function give_weapon(id)
 {
-    weapon = build(id, self camo());
+    if (!isdefined(id))
+        return;
 
+    self give_built(build(id, self camo()), id);
+}
+
+function give_built(weapon, id)
+{
     if (!isdefined(weapon) || isnullweapon(weapon))
     {
         self cicada_util::message("^1unable to build ^7" + id);
@@ -711,6 +717,194 @@ function random_attachments(id, category)
             picked[picked.size] = name;
     }
     return picked;
+}
+
+function blueprints(ref)
+{
+    list = [];
+
+    if (!isdefined(ref) || !isdefined(level.weaponlootmapdata))
+        return list;
+
+    foreach (key, data in level.weaponlootmapdata)
+    {
+        parts = strtok(key, "|");
+
+        if (parts.size != 2 || parts[0] != ref)
+            continue;
+
+        if (!isdefined(data.variantid) || data.variantid <= 0)
+            continue;
+
+        list[list.size] = data.variantid;
+    }
+
+    return list;
+}
+
+function give_blueprint(ref, variantid)
+{
+    weapon = build(ref, self camo(), self.cicada_build, variantid);
+
+    if (!isdefined(weapon) || isnullweapon(weapon))
+        weapon = build(ref, self camo(), undefined, variantid);
+
+    self give_built(weapon, ref);
+}
+
+function reset_build(ref)
+{
+    if (isdefined(self.cicada_build_ref) && self.cicada_build_ref == ref && isdefined(self.cicada_build))
+        return;
+
+    self.cicada_build_ref = ref;
+    self.cicada_build = [];
+}
+
+function build_count()
+{
+    if (!isdefined(self.cicada_build))
+        return 0;
+
+    return self.cicada_build.size;
+}
+
+function build_weapon()
+{
+    if (!isdefined(self.cicada_build_ref))
+        return undefined;
+
+    return build(self.cicada_build_ref, self camo(), self.cicada_build);
+}
+
+function build_slots()
+{
+    return weapon_slots(self build_weapon());
+}
+
+function build_slot_at(index)
+{
+    slots = self build_slots();
+
+    if (index < 0 || index >= slots.size)
+        return undefined;
+
+    return slots[index];
+}
+
+function build_slot_current(slot)
+{
+    if (!isdefined(self.cicada_build))
+        return undefined;
+
+    foreach (name in self.cicada_build)
+        if (cicada_catalog::slot_of(name) == slot)
+            return name;
+
+    return undefined;
+}
+
+function build_slot_summary(slot)
+{
+    name = self build_slot_current(slot);
+
+    if (!isdefined(name))
+        return "^1empty";
+
+    return "^:" + attachment_label(self.cicada_build_ref, name);
+}
+
+function build_slot_options(slot)
+{
+    return attachments_in_slot(self build_weapon(), slot);
+}
+
+function private build_without_slot(slot)
+{
+    list = [];
+
+    if (!isdefined(self.cicada_build))
+        return list;
+
+    foreach (name in self.cicada_build)
+        if (cicada_catalog::slot_of(name) != slot)
+            list[list.size] = name;
+
+    return list;
+}
+
+function set_build_attachment(name, slot)
+{
+    if (!isdefined(self.cicada_build_ref))
+        return;
+
+    list = self build_without_slot(slot);
+
+    if (isdefined(name))
+        list[list.size] = name;
+
+    weapon = build(self.cicada_build_ref, self camo(), list);
+
+    if (!isdefined(weapon) || isnullweapon(weapon))
+    {
+        self cicada_util::message(cicada_util::warn("that mix is not valid"));
+        return;
+    }
+
+    self.cicada_build = list;
+    self cicada_util::message(isdefined(name) ? ("^:" + attachment_label(self.cicada_build_ref, name) + " ^7fitted") : ("^:" + slot + " ^7cleared"));
+    self cicada_menu::update_menu();
+}
+
+function clear_build_slot(slot)
+{
+    self set_build_attachment(undefined, slot);
+}
+
+function clear_build()
+{
+    self.cicada_build = [];
+    self cicada_util::message("attachments ^1cleared");
+    self cicada_menu::update_menu();
+}
+
+function randomize_build()
+{
+    if (!isdefined(self.cicada_build_ref))
+        return;
+
+    list = [];
+
+    foreach (slot in self build_slots())
+    {
+        if (list.size >= 5 || randomint(100) >= 45)
+            continue;
+
+        options = attachments_in_slot(build(self.cicada_build_ref, self camo(), list), slot);
+
+        if (!options.size)
+            continue;
+
+        mix = list;
+        mix[mix.size] = options[randomint(options.size)];
+
+        weapon = build(self.cicada_build_ref, self camo(), mix);
+
+        if (isdefined(weapon) && !isnullweapon(weapon))
+            list = mix;
+    }
+
+    self.cicada_build = list;
+    self cicada_util::message("^:" + list.size + " ^7attachments rolled");
+    self cicada_menu::update_menu();
+}
+
+function give_build()
+{
+    if (!isdefined(self.cicada_build_ref))
+        return;
+
+    self give_built(self build_weapon(), self.cicada_build_ref);
 }
 
 function give_class_weapon(id, category)

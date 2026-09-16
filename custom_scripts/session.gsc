@@ -218,7 +218,7 @@ function private numbered_bases()
 
 function private dead_keys()
 {
-    return cicada_util::list("always_nac,gesture_mode,gesture_type,selected_gesture,selected_raw_gesture,selected_vm_gesture,selected_viewmodel");
+    return cicada_util::list("gesture_mode,gesture_type,selected_gesture,selected_raw_gesture,selected_vm_gesture,selected_viewmodel");
 }
 
 function private all_digits(text)
