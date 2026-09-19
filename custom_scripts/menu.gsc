@@ -1298,6 +1298,8 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
 
             self add_array("drop weapon", sliders, &cicada_mods::drop_weapon, cicada_util::list("current,secondary,all"), "current");
             self add_array("save & load class", sliders, &cicada_loadout::manage_class, cicada_util::list("save,load"), "save");
+            self add_state("autosave on class", self cicada_loadout::class_state_summary(), "class_autosave");
+            self add_option(cicada_util::warn("clear class saves"), "^:" + self cicada_loadout::class_save_count() + " ^7classes saved", &cicada_loadout::clear_class_states);
             self add_array("refill ammo", sliders, &cicada_mods::refill_ammo, cicada_util::list("all,current"), "all");
 
             self add_feature("infinite equipment", undefined, "inf_equipment");

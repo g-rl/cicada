@@ -432,11 +432,30 @@ function auto_reload(key)
     self setweaponammoclip(weapon, 0);
 }
 
+// stims and other used (not thrown) equipment never fire "grenade_fire"
+function private equipment_topup(key)
+{
+    self endon("disconnect");
+    self endon(cicada_util::stop_event(key));
+    level endon("game_ended");
+
+    for (;;)
+    {
+        if (isalive(self))
+            foreach (slot in cicada_util::list("primary,secondary"))
+                self scripts\mp\equipment::incrementequipmentslotammo(slot);
+
+        wait 0.25;
+    }
+}
+
 function infinite_equipment(key)
 {
     self endon("disconnect");
     self endon(cicada_util::stop_event(key));
     level endon("game_ended");
+
+    self thread [[&equipment_topup]](key);
 
     for (;;)
     {
@@ -3642,6 +3661,7 @@ function drop_weapon(which)
 function take_weapon()
 {
     self takeweapon(self getcurrentweapon());
+    self thread [[&cicada_loadout::autosave_class]]();
 }
 
 function refill_ammo(which)
@@ -4210,6 +4230,7 @@ function after_class_change()
 
     wait 0.1;
 
+    self cicada_loadout::load_class_state();
     self cicada_loadout::strip_equipment();
 
     if (istrue(self cicada_util::getpers("class_empty_clip")))
@@ -5121,7 +5142,7 @@ function apply_defaults()
     self cicada_util::initpers("pve_boss_death", "nothing");
     self cicada_util::initpers("pve_killcam", true);
     self cicada_util::initpers("pve_score", true);
-    self cicada_util::initpers("pve_save_state", false);
+    self cicada_util::initpers("pve_save_state", true);
     self cicada_util::initpers("pve_autosave", true);
     self cicada_util::initpers("pve_respawn", false);
     self cicada_util::initpers("pve_respawn_delay", 3);
@@ -5278,6 +5299,7 @@ function apply_defaults()
     self cicada_util::initpers("vision_pain", "off");
     self cicada_util::initpers("vision_night", "off");
     self cicada_util::initpers("replace_weapon", false);
+    self cicada_util::initpers("class_autosave", true);
 
     self cicada_util::initpers("camera_mode", "bezier");
     self cicada_util::initpers("camera_bezier_speed", 5);

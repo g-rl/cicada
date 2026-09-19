@@ -57,6 +57,7 @@ function give_built(weapon, id)
     self inventory_utility::_switchtoweaponimmediate(weapon);
     self cicada_weapon::refill(weapon);
     self cicada_util::sound("ui_mp_weapon_pickup");
+    self thread [[&autosave_class]]();
 }
 
 function give_equipment(id)
@@ -70,12 +71,15 @@ function give_equipment(id)
     }
 
     self cicada_weapon::nacto(weapon, true);
+    self thread [[&autosave_class]]();
 }
 
 function give_field_upgrade(ref)
 {
+    self.cicada_super_ref = ref;
     self scripts\mp\perks\perkpackage::perkpackage_givedebug(ref, 0);
     self cicada_util::sound("ui_killstreak_select");
+    self thread [[&autosave_class]]();
 }
 
 function use_field_upgrade(ref)
@@ -105,6 +109,7 @@ function set_equipment(ref, slot)
 {
     self scripts\mp\equipment::giveequipment(ref, slot);
     self cicada_util::sound("ui_mp_weapon_pickup");
+    self thread [[&autosave_class]]();
 }
 
 function no_equipment(slot)
@@ -587,6 +592,8 @@ function rebuild_with(weapon, attachments)
     if (holding)
         self inventory_utility::_switchtoweaponimmediate(rebuilt);
 
+    self thread [[&autosave_class]]();
+
     return true;
 }
 
@@ -1023,6 +1030,136 @@ function manage_class(action)
     else
         self load_class();
 }
+
+function class_key()
+{
+    if (!isdefined(self.pers) || !isdefined(self.pers["class"]))
+        return "none";
+
+    return self.pers["class"];
+}
+
+function class_saved(key)
+{
+    if (!isdefined(self.cicada_class_saves) || !isdefined(self.cicada_class_saves[key]))
+        return undefined;
+
+    return self.cicada_class_saves[key];
+}
+
+function class_save_count()
+{
+    if (!isdefined(self.cicada_class_saves))
+        return 0;
+
+    total = 0;
+
+    foreach (key, stored in self.cicada_class_saves)
+        total++;
+
+    return total;
+}
+
+function class_autosave_on()
+{
+    return istrue(self cicada_util::getpers("class_autosave"));
+}
+
+function save_class_state()
+{
+    if (!self class_autosave_on() || istrue(self.cicada_class_loading) || !isalive(self))
+        return;
+
+    stored = spawnstruct();
+    stored.weapons = self held_weapons();
+    stored.current = self getcurrentweapon();
+    stored.lethal = self scripts\mp\equipment::getcurrentequipment("primary");
+    stored.tactical = self scripts\mp\equipment::getcurrentequipment("secondary");
+    stored.super = self.cicada_super_ref;
+
+    if (!isdefined(self.cicada_class_saves))
+        self.cicada_class_saves = [];
+
+    self.cicada_class_saves[self class_key()] = stored;
+}
+
+function autosave_class()
+{
+    self endon("disconnect");
+    level endon("game_ended");
+
+    if (!self class_autosave_on())
+        return;
+
+    self notify("cicada_class_autosave");
+    self endon("cicada_class_autosave");
+
+    wait 0.25;
+
+    self save_class_state();
+}
+
+function load_class_state()
+{
+    if (!self class_autosave_on())
+        return;
+
+    stored = self class_saved(self class_key());
+
+    if (!isdefined(stored))
+        return;
+
+    self.cicada_class_loading = 1;
+
+    foreach (weapon in self held_weapons())
+        if (!was_carried(stored.weapons, weapon))
+            self inventory_utility::_takeweapon(weapon);
+
+    foreach (weapon in stored.weapons)
+    {
+        if (!isdefined(weapon) || isnullweapon(weapon) || weapon.basename == "none" || self hasweapon(weapon))
+            continue;
+
+        self inventory_utility::_giveweapon(weapon);
+        self cicada_weapon::refill(weapon);
+    }
+
+    if (isdefined(stored.lethal) && !self no_equipment("primary") && self scripts\mp\equipment::getcurrentequipment("primary") != stored.lethal)
+        self scripts\mp\equipment::giveequipment(stored.lethal, "primary");
+
+    if (isdefined(stored.tactical) && !self no_equipment("secondary") && self scripts\mp\equipment::getcurrentequipment("secondary") != stored.tactical)
+        self scripts\mp\equipment::giveequipment(stored.tactical, "secondary");
+
+    if (isdefined(stored.super))
+        self give_field_upgrade(stored.super);
+
+    self apply_camo();
+
+    if (isdefined(stored.current) && !isnullweapon(stored.current) && self hasweapon(stored.current))
+        self inventory_utility::_switchtoweaponimmediate(stored.current);
+    else if (stored.weapons.size)
+        self inventory_utility::_switchtoweaponimmediate(stored.weapons[0]);
+
+    self.cicada_class_loading = undefined;
+}
+
+function clear_class_states()
+{
+    self.cicada_class_saves = [];
+    self cicada_util::message("class saves ^1cleared");
+    self cicada_menu::update_menu();
+}
+
+function class_state_summary()
+{
+    stored = self class_saved(self class_key());
+
+    if (!isdefined(stored))
+        return "^:" + self class_save_count() + " ^7classes saved";
+
+    return "^:" + stored.weapons.size + " ^7items on this class";
+}
+
 
 function class_count()
 {
