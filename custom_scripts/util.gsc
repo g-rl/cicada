@@ -213,13 +213,9 @@ function button_monitor(button)
 
     self notifyonplayercommand("button_pressed_" + button, button);
 
-    down = isstartstr(button, "+");
-    action = trim_start(trim_start(button, "+"), "-");
-
     for (;;)
     {
         self waittill("button_pressed_" + button);
-        self.button_held[action] = down;
         self.button_time[button] = gettime();
     }
 }
@@ -230,7 +226,6 @@ function monitor_buttons()
     level endon("game_ended");
 
     self.button_actions = list("frag,smoke,special,melee,melee_zoom,melee_breath,stance,gostand,weapnext,usereload,actionslot 1,actionslot 2,actionslot 3,actionslot 4,actionslot 5,actionslot 6,actionslot 7,forward,back,moveleft,moveright");
-    self.button_held = [];
     self.button_time = [];
 
     for (i = 0; i < self.button_actions.size; i++)
@@ -250,15 +245,17 @@ function isbuttonpressed(button)
 
 function isbuttonheld(button)
 {
-    if (!isdefined(self.button_held) || !isdefined(self.button_held[button]))
+    if (!isdefined(self.button_time) || !isdefined(self.button_time["+" + button]))
         return false;
 
-    return self.button_held[button];
+    if (!isdefined(self.button_time["-" + button]))
+        return true;
+
+    return self.button_time["+" + button] > self.button_time["-" + button];
 }
 
 function clear_button_held()
 {
-    self.button_held = [];
     self.button_time = [];
 }
 
