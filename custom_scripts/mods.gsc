@@ -2496,28 +2496,40 @@ function aimbot_ai(center, range)
     return list;
 }
 
-function shoot_nearest_zombies(feedback_only, center, range, delay)
+function nearest_target(center, range)
 {
+    nearest = undefined;
+    best = range;
+
+    foreach (player_ in level.players)
+    {
+        if (player_ == self || !isalive(player_))
+            continue;
+
+        dist = distance(player_.origin, center);
+
+        if (dist > best)
+            continue;
+
+        nearest = player_;
+        best = dist;
+    }
+
+    if (!istrue(self cicada_util::getpers("aimbot_zombies")))
+        return nearest;
+
     foreach (zombie in aimbot_ai(center, range))
     {
-        if (!isdefined(zombie) || !isalive(zombie))
+        dist = distance(zombie.origin, center);
+
+        if (dist > best)
             continue;
 
-        if (delay > 0)
-            wait (delay);
-
-        if (istrue(feedback_only))
-        {
-            self damagefeedback::updatedamagefeedback("standard", 0, 0, "standard", 0);
-            continue;
-        }
-
-        spot = zombie.origin;
-        self damage_zombie(zombie, 350);
-
-        if (istrue(self cicada_util::getpers("kill_effects")))
-            self play_stack("kill_effect", spot + (0, 0, 50));
+        nearest = zombie;
+        best = dist;
     }
+
+    return nearest;
 }
 
 function shoot_nearest_target(feedback_only)
@@ -2526,28 +2538,32 @@ function shoot_nearest_target(feedback_only)
     range = self cicada_util::getpersint("aimbot_range");
     delay = self cicada_util::getpersfloat("aimbot_delay");
 
-    foreach (player_ in level.players)
+    target = self nearest_target(center, range);
+
+    if (!isdefined(target))
+        return;
+
+    if (delay > 0)
+        wait (delay);
+
+    if (istrue(feedback_only))
     {
-        if (player_ == self || !isalive(player_) || distance(player_.origin, center) > range)
-            continue;
-
-        if (delay > 0)
-            wait (delay);
-
-        if (istrue(feedback_only))
-        {
-            self damagefeedback::updatedamagefeedback("standard", 0, 0, "standard", 0);
-            continue;
-        }
-
-        self deal_damage(player_, 350);
-
-        if (istrue(self cicada_util::getpers("kill_effects")))
-            self play_stack("kill_effect", player_.origin + (0, 0, 50));
+        self damagefeedback::updatedamagefeedback("standard", 0, 0, "standard", 0);
+        return;
     }
 
-    if (istrue(self cicada_util::getpers("aimbot_zombies")))
-        self shoot_nearest_zombies(feedback_only, center, range, delay);
+    if (!isalive(target))
+        return;
+
+    spot = target.origin;
+
+    if (isplayer(target))
+        self deal_damage(target, 350);
+    else
+        self damage_zombie(target, 350);
+
+    if (istrue(self cicada_util::getpers("kill_effects")))
+        self play_stack("kill_effect", spot + (0, 0, 50));
 }
 
 function deal_damage(victim, amount, attacker)
