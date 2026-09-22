@@ -5885,7 +5885,7 @@ function anim_swap_source(index)
     donor = self anim_swap_donor(index);
 
     if (donor != "")
-        return "from ^5" + cicada_catalog::label(donor);
+        return "from ^5" + donor_label(donor);
 
     return "plays ^5" + anim_name(self anim_swap_src(index));
 }
@@ -5984,9 +5984,49 @@ function donor_weapon_at(category, index)
     return entries[index];
 }
 
-function private take_anim_from(entry, id, quiet)
+function donor_spec(ref, variantid, attachment)
 {
-    if (!isdefined(entry))
+    if (isdefined(variantid) && variantid > 0)
+        return ref + "|v" + variantid;
+
+    if (isdefined(attachment))
+        return ref + "|a" + attachment;
+
+    return ref;
+}
+
+function donor_weapon(spec)
+{
+    parts = strtok(spec, "|");
+
+    if (parts.size < 2)
+        return makeweapon(spec);
+
+    if (isstartstr(parts[1], "v"))
+        return cicada_loadout::build(parts[0], undefined, undefined, int(cicada_util::trim_start(parts[1], "v")));
+
+    attachments = [];
+    attachments[0] = cicada_util::trim_start(parts[1], "a");
+    return cicada_loadout::build(parts[0], undefined, attachments);
+}
+
+function donor_label(spec)
+{
+    parts = strtok(spec, "|");
+    text = cicada_catalog::label(parts[0]);
+
+    if (parts.size < 2)
+        return text;
+
+    if (isstartstr(parts[1], "v"))
+        return text + " ^7bp ^5" + cicada_util::trim_start(parts[1], "v");
+
+    return text + " ^7+ ^5" + cicada_loadout::attachment_label(parts[0], cicada_util::trim_start(parts[1], "a"));
+}
+
+function private take_anim_from(spec, id, quiet)
+{
+    if (!isdefined(spec))
         return false;
 
     slot = self anim_slot_for(id);
@@ -5994,7 +6034,7 @@ function private take_anim_from(entry, id, quiet)
     if (slot < 0)
         return false;
 
-    donor = makeweapon(entry.id);
+    donor = donor_weapon(spec);
 
     if (!isdefined(donor) || isnullweapon(donor))
         return false;
@@ -6002,13 +6042,140 @@ function private take_anim_from(entry, id, quiet)
     if (!self borrow_weapon_anim(donor, slot))
         return false;
 
-    self store_anim_swap(id, undefined, entry.id);
+    self store_anim_swap(id, undefined, spec);
     self refresh_weapon_anims();
 
     if (!istrue(quiet))
-        self cicada_util::message(anim_label(id) + " ^7taken from ^5" + entry.name);
+        self cicada_util::message(anim_label(id) + " ^7taken from ^5" + donor_label(spec));
 
     return true;
+}
+
+function private begin_anim_steal()
+{
+    if (istrue(self.cicada_anim_steal_busy))
+        return false;
+
+    self.cicada_anim_steal_busy = true;
+    return true;
+}
+
+function private end_anim_steal()
+{
+    self.cicada_anim_steal_busy = false;
+    self cicada_menu::update_menu();
+}
+
+function steal_from_blueprint(ref, variantid)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (!self begin_anim_steal())
+        return;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+
+    if (!self take_anim_from(donor_spec(ref, variantid), id))
+        self cicada_util::message(cicada_util::warn("that blueprint has no " + anim_name(id) + " anim"));
+
+    self end_anim_steal();
+}
+
+function private random_blueprint_spec(category)
+{
+    entries = cicada_catalog::get(category);
+
+    for (i = 0; i < 8 && entries.size; i++)
+    {
+        entry = entries[randomint(entries.size)];
+        variants = cicada_loadout::blueprints(entry.id);
+
+        if (variants.size)
+            return donor_spec(entry.id, variants[randomint(variants.size)]);
+    }
+
+    return undefined;
+}
+
+function steal_random_blueprint(category)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (!self begin_anim_steal())
+        return;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+    done = false;
+
+    for (i = 0; i < 8 && !done; i++)
+        done = self take_anim_from(random_blueprint_spec(category), id);
+
+    if (!done)
+        self cicada_util::message(cicada_util::warn("no " + category + " blueprint with a usable " + anim_name(id) + " anim"));
+
+    self end_anim_steal();
+}
+
+function anim_presets()
+{
+    return cicada_util::list("dual wield,underbarrel,magazine,optic,stock,barrel");
+}
+
+function private preset_spec(ref, slot)
+{
+    base = cicada_loadout::build(ref);
+
+    if (!isdefined(base) || isnullweapon(base) || !isdefined(level.weaponattachments))
+        return undefined;
+
+    names = cicada_loadout::attachment_names(base, slot);
+
+    if (!names.size)
+        return undefined;
+
+    return donor_spec(ref, undefined, names[randomint(names.size)]);
+}
+
+function steal_with_preset(entry, slot)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (!self begin_anim_steal())
+        return;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+    spec = preset_spec(entry.id, slot);
+
+    if (!isdefined(spec))
+        self cicada_util::message(cicada_util::warn(entry.name + " has no " + slot + " attachment"));
+    else if (!self take_anim_from(spec, id))
+        self cicada_util::message(cicada_util::warn("that build has no " + anim_name(id) + " anim"));
+
+    self end_anim_steal();
+}
+
+function steal_random_preset(category, slot)
+{
+    self endon("disconnect");
+    self endon("death");
+
+    if (!self begin_anim_steal())
+        return;
+
+    id = self cicada_util::getpersint("anim_remap_dst");
+    entries = cicada_catalog::get(category);
+    done = false;
+
+    for (i = 0; i < 8 && !done && entries.size; i++)
+        done = self take_anim_from(preset_spec(entries[randomint(entries.size)].id, slot), id);
+
+    if (!done)
+        self cicada_util::message(cicada_util::warn("no " + category + " with " + slot + " and a usable " + anim_name(id) + " anim"));
+
+    self end_anim_steal();
 }
 
 function steal_from_weapon(entry)
@@ -6023,14 +6190,14 @@ function steal_from_weapon(entry)
 
     id = self cicada_util::getpersint("anim_remap_dst");
 
-    if (!self take_anim_from(entry, id))
+    if (!self take_anim_from(entry.id, id))
         self cicada_util::message(cicada_util::warn("that weapon has no " + anim_name(id) + " anim"));
 
     self.cicada_anim_steal_busy = false;
     self cicada_menu::update_menu();
 }
 
-function private random_entry()
+function private random_donor()
 {
     categories = cicada_catalog::weapon_categories();
 
@@ -6040,7 +6207,7 @@ function private random_entry()
         entries = cicada_catalog::get(category);
 
         if (entries.size)
-            return entries[randomint(entries.size)];
+            return entries[randomint(entries.size)].id;
     }
 
     return undefined;
@@ -6060,7 +6227,7 @@ function random_anim_here()
     done = false;
 
     for (i = 0; i < 8 && !done; i++)
-        done = self take_anim_from(random_entry(), id);
+        done = self take_anim_from(random_donor(), id);
 
     if (!done)
         self cicada_util::message(cicada_util::warn("no weapon with a usable " + anim_name(id) + " anim"));
@@ -6086,7 +6253,7 @@ function randomize_all_anims()
     {
         for (i = 0; i < 4; i++)
         {
-            if (self take_anim_from(random_entry(), id, true))
+            if (self take_anim_from(random_donor(), id, true))
             {
                 done++;
                 break;
@@ -6132,11 +6299,7 @@ function restore_anims()
             continue;
         }
 
-        entry = spawnstruct();
-        entry.id = donor;
-        entry.name = cicada_catalog::label(donor);
-
-        if (self take_anim_from(entry, dst, true))
+        if (self take_anim_from(donor, dst, true))
             back++;
     }
 

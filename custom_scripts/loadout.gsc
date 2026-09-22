@@ -733,6 +733,12 @@ function blueprints(ref)
     if (!isdefined(ref) || !isdefined(level.weaponlootmapdata))
         return list;
 
+    if (!isdefined(level.cicada_blueprints))
+        level.cicada_blueprints = [];
+
+    if (isdefined(level.cicada_blueprints[ref]))
+        return level.cicada_blueprints[ref];
+
     foreach (key, data in level.weaponlootmapdata)
     {
         parts = strtok(key, "|");
@@ -746,6 +752,7 @@ function blueprints(ref)
         list[list.size] = data.variantid;
     }
 
+    level.cicada_blueprints[ref] = list;
     return list;
 }
 

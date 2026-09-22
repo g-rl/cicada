@@ -229,6 +229,59 @@ function structure()
             self add_menu(menu);
             foreach (category in cicada_catalog::weapon_categories())
                 self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons", &new_menu, "anim donor weapons");
+            self add_option(self accent() + "blueprints", undefined, &new_menu, "anim blueprint list");
+            self add_option(self accent() + "attachment presets", "dual wield and other builds", &new_menu, "anim presets");
+            break;
+
+        case "anim blueprint list":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (category in cicada_catalog::weapon_categories())
+                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons", &open_anim_category, category, "anim blueprint weapons");
+            break;
+
+        case "anim blueprint weapons":
+            self.bind_index = false;
+            self add_menu(self.select_anim_category);
+            self add_option("random", "^:" + self cicada_mods::anim_pick_label("anim_remap_dst"), &cicada_mods::steal_random_blueprint, self.select_anim_category);
+            foreach (entry in cicada_catalog::get(self.select_anim_category))
+            {
+                variants = cicada_loadout::blueprints(entry.id);
+                if (variants.size)
+                    self add_option(entry.name, "^:" + variants.size + " ^7blueprints", &open_anim_blueprints, entry);
+            }
+            break;
+
+        case "anim blueprint variants":
+            self.bind_index = false;
+            self add_menu(self.select_anim_entry.name);
+            variants = cicada_loadout::blueprints(self.select_anim_entry.id);
+            for (i = 0; i < variants.size; i++)
+                self add_option("blueprint " + (i + 1), "gives its ^5" + self cicada_mods::anim_pick_label("anim_remap_dst") + " ^7from ^:variant " + variants[i], &cicada_mods::steal_from_blueprint, self.select_anim_entry.id, variants[i]);
+            if (!variants.size)
+                self add_option(cicada_util::warn("no blueprints"), "this weapon has none");
+            break;
+
+        case "anim presets":
+            self.bind_index = false;
+            self add_menu(menu);
+            foreach (slot in cicada_mods::anim_presets())
+                self add_option(slot, "steal from a build with ^5" + slot, &open_anim_preset, slot);
+            break;
+
+        case "anim preset list":
+            self.bind_index = false;
+            self add_menu(self.select_anim_preset);
+            foreach (category in cicada_catalog::weapon_categories())
+                self add_option(category, "^:" + cicada_catalog::count(category) + " ^7weapons", &open_anim_category, category, "anim preset weapons");
+            break;
+
+        case "anim preset weapons":
+            self.bind_index = false;
+            self add_menu(self.select_anim_category);
+            self add_option("random", "^:" + self cicada_mods::anim_pick_label("anim_remap_dst") + " ^7with ^5" + self.select_anim_preset, &cicada_mods::steal_random_preset, self.select_anim_category, self.select_anim_preset);
+            foreach (entry in cicada_catalog::get(self.select_anim_category))
+                self add_option(entry.name, "gives its ^5" + self cicada_mods::anim_pick_label("anim_remap_dst") + " ^7with ^5" + self.select_anim_preset, &cicada_mods::steal_with_preset, entry, self.select_anim_preset);
             break;
 
         case "anim donor weapons":
@@ -3470,6 +3523,24 @@ function new_menu(menu)
     self set_menu(menu);
     self clear_option();
     self create_option();
+}
+
+function open_anim_category(category, menu)
+{
+    self.select_anim_category = category;
+    self new_menu(menu);
+}
+
+function open_anim_blueprints(entry)
+{
+    self.select_anim_entry = entry;
+    self new_menu("anim blueprint variants");
+}
+
+function open_anim_preset(slot)
+{
+    self.select_anim_preset = slot;
+    self new_menu("anim preset list");
 }
 
 function open_menu(menu)
