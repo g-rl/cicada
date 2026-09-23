@@ -5722,11 +5722,11 @@ function steal_weapon_anim(category)
     if (slot < 0)
         return;
 
-    entries = cicada_catalog::get(category);
+    entries = cicada_catalog::donors(category);
 
     if (!entries.size)
     {
-        self cicada_util::message(cicada_util::warn("nothing in " + category));
+        self cicada_util::message(cicada_util::warn("nothing in " + cicada_catalog::live_group_label(category)));
         return;
     }
 
@@ -5759,7 +5759,7 @@ function steal_weapon_anim(category)
         }
     }
 
-    self cicada_util::message(cicada_util::warn("no " + category + " with a usable " + anim_name(id) + " anim"));
+    self cicada_util::message(cicada_util::warn("no " + cicada_catalog::live_group_label(category) + " with a usable " + anim_name(id) + " anim"));
     self.cicada_anim_steal_busy = false;
 }
 
@@ -6013,7 +6013,7 @@ function donor_weapon(spec)
 function donor_label(spec)
 {
     parts = strtok(spec, "|");
-    text = cicada_catalog::label(parts[0]);
+    text = cicada_catalog::donor_name(parts[0]);
 
     if (parts.size < 2)
         return text;
@@ -6084,7 +6084,7 @@ function steal_from_blueprint(ref, variantid)
 
 function private random_blueprint_spec(category)
 {
-    entries = cicada_catalog::get(category);
+    entries = cicada_catalog::donors(category);
 
     for (i = 0; i < 8 && entries.size; i++)
     {
@@ -6113,7 +6113,7 @@ function steal_random_blueprint(category)
         done = self take_anim_from(random_blueprint_spec(category), id);
 
     if (!done)
-        self cicada_util::message(cicada_util::warn("no " + category + " blueprint with a usable " + anim_name(id) + " anim"));
+        self cicada_util::message(cicada_util::warn("no " + cicada_catalog::live_group_label(category) + " blueprint with a usable " + anim_name(id) + " anim"));
 
     self end_anim_steal();
 }
@@ -6166,14 +6166,14 @@ function steal_random_preset(category, slot)
         return;
 
     id = self cicada_util::getpersint("anim_remap_dst");
-    entries = cicada_catalog::get(category);
+    entries = cicada_catalog::donors(category);
     done = false;
 
     for (i = 0; i < 8 && !done && entries.size; i++)
         done = self take_anim_from(preset_spec(entries[randomint(entries.size)].id, slot), id);
 
     if (!done)
-        self cicada_util::message(cicada_util::warn("no " + category + " with " + slot + " and a usable " + anim_name(id) + " anim"));
+        self cicada_util::message(cicada_util::warn("no " + cicada_catalog::live_group_label(category) + " with " + slot + " and a usable " + anim_name(id) + " anim"));
 
     self end_anim_steal();
 }
@@ -6199,12 +6199,11 @@ function steal_from_weapon(entry)
 
 function private random_donor()
 {
-    categories = cicada_catalog::weapon_categories();
+    groups = cicada_catalog::donor_groups();
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8 && groups.size; i++)
     {
-        category = categories[randomint(categories.size)];
-        entries = cicada_catalog::get(category);
+        entries = cicada_catalog::donors(groups[randomint(groups.size)]);
 
         if (entries.size)
             return entries[randomint(entries.size)].id;

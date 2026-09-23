@@ -518,6 +518,61 @@ function live_count(slot)
     return total;
 }
 
+function private build_donors()
+{
+    if (isdefined(level.cicada_donors) || !isdefined(level.weaponmapdata))
+        return;
+
+    level.cicada_donors = [];
+    level.cicada_donor_groups = [];
+
+    foreach (ref, data in level.weaponmapdata)
+    {
+        if (!isdefined(data.group) || data.group == "")
+            continue;
+
+        list = isdefined(level.cicada_donors[data.group]) ? level.cicada_donors[data.group] : [];
+
+        if (!list.size)
+            level.cicada_donor_groups[level.cicada_donor_groups.size] = data.group;
+
+        entry = spawnstruct();
+        entry.id = ref;
+        entry.name = donor_name(ref);
+        list[list.size] = entry;
+
+        level.cicada_donors[data.group] = list;
+    }
+}
+
+function donor_name(ref)
+{
+    if (isstartstr(ref, "iw9_"))
+        return label(ref) + " ^:mw2";
+
+    return label(ref);
+}
+
+function donor_groups()
+{
+    build_donors();
+
+    if (!isdefined(level.cicada_donor_groups))
+        return [];
+
+    return level.cicada_donor_groups;
+}
+
+function donors(group)
+{
+    build_donors();
+
+    if (!isdefined(group) || !isdefined(level.cicada_donors) || !isdefined(level.cicada_donors[group]))
+        return [];
+
+    return level.cicada_donors[group];
+}
+
 function weapon_categories()
 {
     return cicada_util::list("assault rifles,battle rifles,sub machine guns,shotguns,light machine guns,snipers,pistols,launchers,misc,equipment");
