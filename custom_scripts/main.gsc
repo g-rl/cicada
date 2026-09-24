@@ -10,8 +10,7 @@
 #using custom_scripts\menu;
 #using custom_scripts\mods;
 #using custom_scripts\movement;
-#using custom_scripts\extras;
-#using custom_scripts\leftovers;
+#using custom_scripts\weapon;
 //#using custom_scripts\link;
 #using custom_scripts\mechanics;
 #using custom_scripts\props;
@@ -62,6 +61,7 @@ function private on_player_spawned(params)
     {
         self thread [[&cicada_mods::strip_bot_laststand]]();
         self thread [[&cicada_mods::restore_bot_position]]();
+        self cicada_mods::apply_operator();
 
         if (cicada_mods::anyone_using("frozen_bots"))
             self freezecontrols(1);

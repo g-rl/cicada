@@ -7,8 +7,7 @@
 #using custom_scripts\catalog;
 #using custom_scripts\cinematics;
 #using custom_scripts\killcam;
-#using custom_scripts\extras;
-#using custom_scripts\leftovers;
+#using custom_scripts\weapon;
 //#using custom_scripts\link;
 #using custom_scripts\stations;
 #using custom_scripts\loadout;
@@ -702,7 +701,7 @@ function structure()
         case "leftovers":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("radiation " + self accent() + "zones", ("^:" + self cicada_leftovers::zone_count() + " ^7zones"), &new_menu, "radiation zones");
+            self add_option("radiation " + self accent() + "zones", ("^:" + self cicada_world::zone_count() + " ^7zones"), &new_menu, "radiation zones");
             self add_option("explosive " + self accent() + "rounds", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &new_menu, "explosive rounds");
             self add_option("station " + self accent() + "manager", self cicada_stations::summary(), &new_menu, "station manager");
             self add_option("what is loaded", "prints it for you", &cicada_stations::probe_report);
@@ -821,7 +820,7 @@ function structure()
         case "radiation zones":
             self.bind_index = false;
             self add_menu(menu);
-            self add_array_pers("zone manager", sliders, &cicada_leftovers::manage_zones, cicada_util::list("place,delete last,clear"), "pick_zone");
+            self add_array_pers("zone manager", sliders, &cicada_world::manage_zones, cicada_util::list("place,delete last,clear"), "pick_zone");
             self add_increment("zone width", increments, &cicada_mods::set_value, self cicada_util::getpersint("zone_radius"), 50, 3000, 50, "zone_radius");
             self add_increment("zone damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("zone_damage"), 1, 200, 1, "zone_damage");
             self add_increment("damage every", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("zone_rate"), 0.05, 5, 0.05, "zone_rate");
@@ -840,7 +839,7 @@ function structure()
         case "explosive rounds":
             self.bind_index = false;
             self add_menu(menu);
-            self add_option("turn on or off", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &cicada_leftovers::explosive_rounds);
+            self add_option("turn on or off", (istrue(self.cicada_xrounds) ? "^2on" : "^1off"), &cicada_world::explosive_rounds);
             self add_increment("blast damage", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_damage"), 10, 1000, 10, "xrounds_damage");
             self add_increment("blast width", increments, &cicada_mods::set_value, self cicada_util::getpersint("xrounds_blast"), 32, 1000, 16, "xrounds_blast");
             self add_increment("wait between", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("xrounds_rate"), 0, 2, 0.05, "xrounds_rate");
@@ -875,12 +874,32 @@ function structure()
             self add_array("spawn bot", "^5[{+gostand}] ^7to spawn", &cicada_mods::spawn_bot_of, cicada_util::list("enemy,friendly"), self cicada_util::getpers("bot_team"), "bot_team");
             self add_option("auto setup next", self cicada_mods::auto_target_summary("auto_bot"), &new_menu, "auto bot setup");
             self add_option("experimental combat", self cicada_mods::bot_combat_summary(), &new_menu, "bot combat");
+            self add_option("bot models", self cicada_mods::operator_summary(), &new_menu, "bot models");
             self add_array("bot difficulty", sliders, &cicada_mods::set_value, cicada_util::list("recruit,regular,hardened,veteran"), self cicada_util::getpers("bot_difficulty"), "bot_difficulty");
             self add_array_pers("teleport bots", sliders, &cicada_mods::move_bots, cicada_util::list("crosshair,self"), "pick_bots");
             self add_feature("freeze bots", undefined, "frozen_bots");
             self add_increment("auto respawn delay", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("bot_respawn_delay"), 0.5, 30, 0.5, "bot_respawn_delay");
             self add_increment("look at me hold", increments, &cicada_mods::set_value, self cicada_util::getpersfloat("look_hold"), 0.5, 30, 0.5, "look_hold");
             self add_option("kill bots", "^:" + self cicada_util::getpers("kill_bot_mode"), &cicada_binds::kill_bots);
+            break;
+
+        case "bot models":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_array("target", sliders, &cicada_mods::set_value, cicada_binds::bot_targets(), self cicada_util::getpers("model_bot_mode"), "model_bot_mode");
+            if (self cicada_util::getpers("model_bot_mode") == "selected bot")
+                self add_array("which bot", sliders, &cicada_mods::set_value, cicada_binds::bot_names(), self cicada_util::getpers("model_bot_name"), "model_bot_name");
+            self add_option("random operator", "each bot rolls its own skin", &cicada_mods::randomize_bot_operator);
+            self add_option(cicada_util::warn("reset models"), "back to their team operator", &cicada_mods::reset_bot_operator);
+            foreach (operatorref in cicada_mods::operator_refs())
+                self add_option(cicada_mods::operator_label(operatorref), "^:" + cicada_mods::operator_skins(operatorref).size + " ^7skins", &open_operator, operatorref);
+            break;
+
+        case "bot model skins":
+            self.bind_index = false;
+            self add_menu(cicada_mods::operator_label(self.select_operator));
+            foreach (skinref in cicada_mods::operator_skins(self.select_operator))
+                self add_option(cicada_mods::operator_label(skinref), "^:" + skinref, &cicada_mods::set_bot_operator, skinref);
             break;
 
         case "bot paths":
@@ -2662,7 +2681,7 @@ function zombie_options(zombie, increments, sliders)
     self add_toggle("freeze", "pins it in place & blinds it", cicada_pve::is_frozen(zombie), &cicada_pve::toggle_freeze, zombie);
     self add_array_pers("teleport", sliders, &cicada_pve::manage_teleport, cicada_util::list("to crosshair,to me,to them"), "pick_teleport", zombie);
     self add_array("archetype", sliders, &cicada_pve::set_archetype, cicada_pve::archetypes(), cicada_pve::archetype_of(zombie), zombie);
-    self add_toggle("final killcam target", undefined, cicada_pve::is_killcam_target(zombie), &cicada_pve::toggle_killcam_target, zombie);
+    self add_toggle("final killcam target", undefined, cicada_killcam::is_killcam_target(zombie), &cicada_killcam::toggle_killcam_target, zombie);
     self add_toggle("teleport near target", "for the teleport near bind", cicada_mods::is_teleport_target(zombie), &cicada_mods::toggle_teleport_target, zombie);
     self add_toggle("bind target", "for the " + cicada_mods::ai_class(zombie) + " velocity and bolt binds", cicada_mods::is_ai_target(zombie), &cicada_mods::toggle_ai_target, zombie);
     self add_option("kill", "^:" + zombie.health + " ^7hp", &cicada_pve::kill_zombie, zombie);
@@ -3529,6 +3548,12 @@ function open_anim_category(category, menu)
 {
     self.select_anim_category = category;
     self new_menu(menu);
+}
+
+function open_operator(operatorref)
+{
+    self.select_operator = operatorref;
+    self new_menu("bot model skins");
 }
 
 function open_anim_blueprints(entry)

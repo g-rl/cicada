@@ -1,8 +1,8 @@
 #using scripts\engine\utility;
 
 #using custom_scripts\catalog;
-#using custom_scripts\extras;
-#using custom_scripts\leftovers;
+#using custom_scripts\weapon;
+#using custom_scripts\world;
 #using custom_scripts\loadout;
 #using custom_scripts\menu;
 #using custom_scripts\mods;
@@ -972,7 +972,7 @@ function private use_buy(station)
     switch (station.mode)
     {
         case "ammo refill":
-            self cicada_extras::max_ammo();
+            self cicada_weapon::max_ammo();
             self fire_event("reward", station.model.origin + (0, 0, 40));
             return;
     }

@@ -3,8 +3,6 @@
 #using scripts\mp\weapons;
 
 #using custom_scripts\cinematics;
-#using custom_scripts\extras;
-#using custom_scripts\leftovers;
 //#using custom_scripts\link;
 #using custom_scripts\stations;
 #using custom_scripts\loadout;
@@ -37,9 +35,9 @@ function init()
     register("one bullet", &one_bullet);
     register("pull equipment", &pull_equipment);
     register("instant tac", &instant_tac);
-    register("max ammo", &cicada_extras::max_ammo);
-    register("fill the clip", &cicada_extras::fill_clip);
-    register("explosive rounds", &cicada_leftovers::explosive_rounds);
+    register("max ammo", &cicada_weapon::max_ammo);
+    register("fill the clip", &cicada_weapon::fill_clip);
+    register("explosive rounds", &cicada_world::explosive_rounds);
     register("scavenger", &scavenger);
     register("hitmarker", &hitmarker);
     register("stuck", &stuck);
@@ -98,7 +96,7 @@ function init()
     register("spawn vehicle", &cicada_world::spawn_vehicle);
     register("shockwave", &cicada_world::shockwave);
     register("launch models", &cicada_world::launch_models);
-    register("radiation zone", &cicada_leftovers::make_zone);
+    register("radiation zone", &cicada_world::make_zone);
     register("place station", &cicada_stations::place_station);
     register("invis crate", &cicada_mods::save_crate);
     register("open doors near me", &open_doors);

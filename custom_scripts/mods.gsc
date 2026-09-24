@@ -22,8 +22,6 @@
 #using custom_scripts\builds;
 #using custom_scripts\catalog;
 #using custom_scripts\cinematics;
-#using custom_scripts\extras;
-#using custom_scripts\leftovers;
 //#using custom_scripts\link;
 #using custom_scripts\mechanics;
 #using custom_scripts\loadout;
@@ -4201,6 +4199,133 @@ function give_bot_weapon(player_, weapon)
 {
     player_ giveweapon(weapon);
     player_ switchtoweapon(weapon);
+}
+
+function operator_refs()
+{
+    return scripts\cp_mp\operator::function_462ac94dd54da47d();
+}
+
+function operator_skins(operatorref)
+{
+    return scripts\cp_mp\operator::function_58145d3d8b15c8(operatorref);
+}
+
+function operator_label(ref)
+{
+    text = "";
+
+    foreach (part in strtok(ref, "_"))
+    {
+        if (part == "jup" || part == "mp" || part == "skin")
+            continue;
+
+        text = (text == "") ? part : text + " " + part;
+    }
+
+    return (text == "") ? ref : text;
+}
+
+function operator_summary()
+{
+    mode = self cicada_util::getpers("model_bot_mode");
+    return "^:" + (isdefined(mode) ? mode : "all bots");
+}
+
+function model_targets()
+{
+    mode = self cicada_util::getpers("model_bot_mode");
+
+    if (!isdefined(mode))
+        mode = "all bots";
+
+    if (mode == "selected bot")
+    {
+        target = cicada_binds::bot_by_name(self cicada_util::getpers("model_bot_name"));
+        return isdefined(target) ? [target] : [];
+    }
+
+    targets = [];
+
+    foreach (player_ in level.players)
+        if (cicada_util::is_bot(player_) && self cicada_binds::bot_wanted(player_, mode))
+            targets[targets.size] = player_;
+
+    return targets;
+}
+
+function set_bot_operator(skinref)
+{
+    targets = self model_targets();
+
+    if (!targets.size)
+    {
+        self cicada_util::message_bold("^1no bots matched that filter");
+        return;
+    }
+
+    foreach (player_ in targets)
+    {
+        player_ cicada_util::setpers("operator_skin", skinref);
+        player_ apply_operator();
+    }
+
+    self cicada_util::message("model set to ^:" + operator_label(skinref) + " ^7on ^:" + targets.size + " ^7bots");
+    self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function randomize_bot_operator()
+{
+    targets = self model_targets();
+    skins = scripts\cp_mp\operator::function_6ab347c553a20a68();
+
+    if (!targets.size || !skins.size)
+    {
+        self cicada_util::message_bold("^1no bots matched that filter");
+        return;
+    }
+
+    foreach (player_ in targets)
+    {
+        player_ cicada_util::setpers("operator_skin", skins[randomint(skins.size)]);
+        player_ apply_operator();
+    }
+
+    self cicada_util::message("random models on ^:" + targets.size + " ^7bots");
+    self cicada_util::sound("scavenger_pack_pickup");
+}
+
+function reset_bot_operator()
+{
+    targets = self model_targets();
+
+    foreach (player_ in targets)
+    {
+        player_ cicada_util::setpers("operator_skin", undefined);
+
+        if (isdefined(player_.operatorcustomization))
+            player_.operatorcustomization.rebuild = 1;
+
+        if (isalive(player_))
+            player_ scripts\mp\teams::setupplayermodel();
+    }
+
+    self cicada_util::message("models reset on ^:" + targets.size + " ^7bots");
+}
+
+function apply_operator()
+{
+    skinref = self cicada_util::getpers("operator_skin");
+
+    if (!isdefined(skinref) || !isalive(self))
+        return;
+
+    if (isdefined(self.operatorcustomization) && self.operatorcustomization.skinref == skinref)
+        return;
+
+    operatorref = scripts\cp_mp\operator::function_605079124463a67b(skinref);
+    self scripts\mp\teams::createoperatorcustomization(operatorref, skinref);
+    self scripts\mp\teams::setupplayermodel();
 }
 
 function set_class(newclass)
