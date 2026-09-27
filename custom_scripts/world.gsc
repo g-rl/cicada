@@ -1319,6 +1319,101 @@ function capture_every_crate()
     self cicada_menu::update_menu();
 }
 
+function private spot_label(key)
+{
+    spot = self cicada_util::getmappers(key);
+
+    if (!isdefined(spot))
+        return "^1not saved";
+
+    return "^:" + int(spot[0]) + " ^7/ ^:" + int(spot[1]) + " ^7/ ^:" + int(spot[2]);
+}
+
+function package_summary()
+{
+    return self spot_label("package_spot");
+}
+
+function marker_summary()
+{
+    return self spot_label("package_marker");
+}
+
+function save_package_spot()
+{
+    if (!isalive(self))
+        return;
+
+    self cicada_util::setmappers("package_spot", self.origin);
+    self cicada_util::message("care package spot ^2saved");
+    self cicada_menu::update_menu();
+}
+
+function save_marker_spot()
+{
+    if (!isalive(self))
+        return;
+
+    self cicada_util::setmappers("package_marker", self.origin);
+    self cicada_util::message("drop marker spot ^2saved");
+    self cicada_menu::update_menu();
+}
+
+function clear_package_spots()
+{
+    self cicada_util::setmappers("package_spot", undefined);
+    self cicada_util::setmappers("package_marker", undefined);
+    self cicada_util::message("care package spots ^1cleared");
+    self cicada_menu::update_menu();
+}
+
+function drop_package()
+{
+    spot = self cicada_util::getmappers("package_spot");
+    marker = self cicada_util::getmappers("package_marker");
+
+    if (!isdefined(spot))
+        spot = self.origin;
+
+    if (!isdefined(marker))
+        marker = spot;
+
+    flight = self.angles + (0, 180, 0);
+
+    if (distance2d(marker, spot) > 1)
+        flight = vectortoangles((spot - marker) * (1, 1, 0));
+
+    scenenode = scripts\cp_mp\killstreaks\airdrop::dropkillstreakcratefromscriptedheli(self, self.team, undefined, spot, flight, spot, 0, undefined);
+
+    if (!isdefined(scenenode))
+    {
+        self cicada_util::message(cicada_util::warn("care package could not drop"));
+        return;
+    }
+
+    level thread [[&marker_smoke]](marker, self);
+    self cicada_util::message("care package ^2inbound");
+}
+
+function private marker_smoke(position, owner)
+{
+    if (level.teambased)
+    {
+        smoke = spawnscriptable("airdrop_marker", position, (0, 0, 1));
+        smoke setscriptablepartstate("smokeSignal", "active");
+    }
+    else
+    {
+        smoke = spawnscriptable("airdrop_marker", position, (0, 0, 1), undefined, [#"teamselect", owner getentitynumber()]);
+        smoke setscriptablepartstate("smokeSignal", "activeFFA");
+    }
+
+    wait 30;
+
+    if (isdefined(smoke))
+        smoke freescriptable();
+}
+
 function objectives()
 {
     list = [];

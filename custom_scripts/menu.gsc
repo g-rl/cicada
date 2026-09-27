@@ -1850,6 +1850,7 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_option("physics toys", "shockwaves and ragdolls", &new_menu, "physics toys");
             self add_option("map control", self cicada_world::door_summary(), &new_menu, "map control");
             self add_option("capture", cicada_world::crate_summary(), &new_menu, "capture");
+            self add_option("care package", self cicada_world::package_summary(), &new_menu, "care package");
             self add_option("capture bar", self cicada_world::bar_summary(), &new_menu, "capture bar");
             self add_option("what is around me", "prints a count of everything", &cicada_world::radius_report);
             break;
@@ -1960,6 +1961,15 @@ function structure_two(menu, increments, sliders, live_sliders, credits, gametyp
             self add_increment("objective speed", increments, &cicada_world::set_objective_speed, self cicada_util::getpersfloat("objective_speed"), 1, 25, 0.5, "objective_speed");
             self add_state("use agent speed", "bots, actors and zombies", "objective_speed_ai");
             self add_increment("team capture cap", increments, &cicada_world::set_objective_cap, self cicada_util::getpersfloat("objective_cap"), 1, 10, 0.5, "objective_cap");
+            break;
+
+        case "care package":
+            self.bind_index = false;
+            self add_menu(menu);
+            self add_option("save care package spot", self cicada_world::package_summary(), &cicada_world::save_package_spot);
+            self add_option("save drop marker spot", self cicada_world::marker_summary(), &cicada_world::save_marker_spot);
+            self add_option("drop care package", "lands on the saved spot", &cicada_world::drop_package);
+            self add_option(cicada_util::warn("clear spots"), undefined, &cicada_world::clear_package_spots);
             break;
 
         case "map control":

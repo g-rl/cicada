@@ -104,6 +104,9 @@ function init()
     register("capture bar", &cicada_world::run_bar);
     register("capture crate", &cicada_world::capture_crate);
     register("capture every crate", &cicada_world::capture_every_crate);
+    register("drop care package", &cicada_world::drop_package);
+    register("save care package spot", &cicada_world::save_package_spot);
+    register("save drop marker spot", &cicada_world::save_marker_spot);
     register("capture objective", &cicada_world::capture_objective);
     register("finish use bar", &cicada_world::finish_bar);
 
